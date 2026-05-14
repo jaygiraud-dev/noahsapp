@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
+import { supabase } from '../../lib/supabase';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import SerifTitle from '../../components/SerifTitle';
 import MicroLabel from '../../components/MicroLabel';
@@ -25,6 +26,7 @@ export default function SignInScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [mode, setMode] = useState<Mode>('signin');
   const setPhase = useStore((s) => s.setPhase);
   const vibe = useStore((s) => s.vibe);
@@ -32,12 +34,34 @@ export default function SignInScreen({ navigation }: any) {
   const theme = makeTheme(vibe, darkMode);
 
   async function handleAuth() {
+    setError('');
     setLoading(true);
-    // TODO: wire up Supabase auth — supabase.auth.signIn / signUp
-    // Pass accountType as user metadata: { role: accountType }
-    await new Promise((r) => setTimeout(r, 800));
+
+    let authError: string | null = null;
+    let role: string = accountType;
+
+    if (mode === 'signup') {
+      const { data, error: e } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { role: accountType } },
+      });
+      if (e) authError = e.message;
+      else role = data.user?.user_metadata?.role ?? accountType;
+    } else {
+      const { data, error: e } = await supabase.auth.signInWithPassword({ email, password });
+      if (e) authError = e.message;
+      else role = data.user?.user_metadata?.role ?? accountType;
+    }
+
     setLoading(false);
-    setPhase(accountType === 'parent' ? 'parent' : 'onboarding');
+
+    if (authError) {
+      setError(authError);
+      return;
+    }
+
+    setPhase(role === 'parent' ? 'parent' : 'onboarding');
   }
 
   const isStudent = accountType === 'student';
@@ -109,7 +133,7 @@ export default function SignInScreen({ navigation }: any) {
               <TextInput
                 style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(v) => { setEmail(v); setError(''); }}
                 placeholder={isStudent ? 'you@school.ca' : 'you@email.com'}
                 placeholderTextColor={theme.soft}
                 autoCapitalize="none"
@@ -123,13 +147,19 @@ export default function SignInScreen({ navigation }: any) {
               <TextInput
                 style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(v) => { setPassword(v); setError(''); }}
                 placeholder="••••••••"
                 placeholderTextColor={theme.soft}
                 secureTextEntry
                 autoComplete="password"
               />
             </View>
+
+            {error !== '' && (
+              <Text style={[styles.errorText, { fontFamily: theme.fBody, color: theme.red }]}>
+                {error}
+              </Text>
+            )}
 
             {mode === 'signin' && (
               <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')} style={styles.forgotWrap}>
@@ -146,7 +176,7 @@ export default function SignInScreen({ navigation }: any) {
               style={styles.btn}
             />
 
-            <TouchableOpacity onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')} style={styles.switchWrap}>
+            <TouchableOpacity onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); }} style={styles.switchWrap}>
               <Text style={[styles.switch, { fontFamily: theme.fBody, color: theme.soft }]}>
                 {mode === 'signin' ? "Don't have an account? " : 'Already have one? '}
                 <Text style={{ color: theme.accent }}>
@@ -196,6 +226,7 @@ const styles = StyleSheet.create({
   form: { marginTop: 20 },
   fieldGroup: { marginBottom: 14 },
   input: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16 },
+  errorText: { fontSize: 14, marginBottom: 10, textAlign: 'center' },
   forgotWrap: { alignSelf: 'flex-end', marginBottom: 4 },
   forgot: { fontSize: 14 },
   btn: { marginTop: 6, marginBottom: 16 },

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
@@ -19,10 +19,13 @@ import {
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useStore } from './src/store/useStore';
+import { supabase } from './src/lib/supabase';
 
 export default function App() {
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
+  const setPhase = useStore((s) => s.setPhase);
+  const phase = useStore((s) => s.phase);
 
   const [fontsLoaded] = useFonts({
     InstrumentSerif_400Regular,
@@ -34,6 +37,28 @@ export default function App() {
     JetBrainsMono_400Regular,
     JetBrainsMono_500Medium,
   });
+
+  useEffect(() => {
+    // Restore session on load — keeps user logged in after refresh
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        // No session: only reset to auth if we're not in demo mode
+        if (phase !== 'onboarding' && phase !== 'main' && phase !== 'parent') {
+          setPhase('auth');
+        }
+        return;
+      }
+      const role = session.user.user_metadata?.role;
+      setPhase(role === 'parent' ? 'parent' : 'main');
+    });
+
+    // Sign out on auth state change
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') setPhase('auth');
+    });
+
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   if (!fontsLoaded) {
     return (
