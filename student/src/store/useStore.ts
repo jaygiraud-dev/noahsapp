@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Homework, CalEvent, Class, School, Friend, FriendRequest, ActivityNotif } from '../types';
 import { Vibe } from '../theme';
 
-export type AppPhase = 'auth' | 'onboarding' | 'main';
+export type AppPhase = 'auth' | 'onboarding' | 'main' | 'parent';
 
 interface AppState {
   phase: AppPhase;

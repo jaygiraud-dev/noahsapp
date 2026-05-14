@@ -9,6 +9,8 @@ import SchoolPickerScreen from '../screens/Onboarding/SchoolPickerScreen';
 import ClassesScreen from '../screens/Onboarding/ClassesScreen';
 import ParentPairScreen from '../screens/Onboarding/ParentPairScreen';
 import MainTabNavigator from './MainTabNavigator';
+import ParentDashboardScreen from '../screens/Parent/ParentDashboardScreen';
+import ParentActivityScreen from '../screens/Parent/ParentActivityScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -48,6 +50,12 @@ export default function RootNavigator() {
         )}
         {phase === 'main' && (
           <Stack.Screen name="Main" component={MainTabNavigator} />
+        )}
+        {phase === 'parent' && (
+          <>
+            <Stack.Screen name="ParentDashboard" component={ParentDashboardScreen} />
+            <Stack.Screen name="ParentActivity" component={ParentActivityScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

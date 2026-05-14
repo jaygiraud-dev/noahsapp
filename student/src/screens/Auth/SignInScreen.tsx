@@ -37,7 +37,7 @@ export default function SignInScreen({ navigation }: any) {
     // Pass accountType as user metadata: { role: accountType }
     await new Promise((r) => setTimeout(r, 800));
     setLoading(false);
-    setPhase('onboarding');
+    setPhase(accountType === 'parent' ? 'parent' : 'onboarding');
   }
 
   const isStudent = accountType === 'student';
@@ -157,9 +157,9 @@ export default function SignInScreen({ navigation }: any) {
           </View>
 
           <View style={styles.footer}>
-            <TouchableOpacity onPress={() => setPhase('onboarding')}>
+            <TouchableOpacity onPress={() => setPhase(accountType === 'parent' ? 'parent' : 'onboarding')}>
               <Text style={[styles.demo, { fontFamily: theme.fMono, color: theme.soft }]}>
-                try demo — set up your classes
+                {accountType === 'parent' ? 'try parent demo' : 'try demo — set up your classes'}
               </Text>
             </TouchableOpacity>
           </View>
