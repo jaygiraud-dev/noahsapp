@@ -1,0 +1,13 @@
+[build]
+  base    = "student"
+  command = "npm ci --legacy-peer-deps && npx expo export --platform web"
+  publish = "dist"
+
+[build.environment]
+  EXPO_OFFLINE = "1"
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

@@ -1,0 +1,15 @@
+node_modules/
+student/node_modules/
+parent/node_modules/
+.expo/
+student/.expo/
+parent/.expo/
+dist/
+student/dist/
+parent/dist/
+web-build/
+student/web-build/
+parent/web-build/
+*.log
+.env
+.env.local
