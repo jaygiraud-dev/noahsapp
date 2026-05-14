@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useParentStore, LinkedKid } from '../../store/useParentStore';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
+import { supabase } from '../../lib/supabase';
 
 function KidCard({ kid, theme, onViewActivity }: { kid: LinkedKid; theme: ReturnType<typeof makeTheme>; onViewActivity: () => void }) {
   const hwPct = kid.homeworkDue > 0 ? (kid.homeworkDone / kid.homeworkDue) * 100 : 0;
@@ -127,7 +128,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setPhase('auth')}>
+          <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); setPhase('auth'); }}>
             <Text style={[styles.signOut, { fontFamily: theme.fMono, color: theme.soft }]}>sign out</Text>
           </TouchableOpacity>
         </View>
