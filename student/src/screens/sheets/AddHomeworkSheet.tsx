@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
+import { Class } from '../../types';
 import { HW_TAGS, DUE_OPTIONS } from '../../data/constants';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import MicroLabel from '../../components/MicroLabel';
@@ -23,15 +24,20 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   defaultDate?: Date;
+  defaultClass?: Class | null;
 }
 
-export default function AddHomeworkSheet({ visible, onClose, defaultDate }: Props) {
+export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaultClass }: Props) {
   const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState('');
+  const [subject, setSubject] = useState(defaultClass?.name ?? '');
   const [tag, setTag] = useState(HW_TAGS[0].label);
   const [due, setDue] = useState(DUE_OPTIONS[0].label);
   const addHomework = useStore((s) => s.addHomework);
   const classes = useStore((s) => s.classes);
+
+  useEffect(() => {
+    if (visible) setSubject(defaultClass?.name ?? '');
+  }, [visible, defaultClass]);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -42,15 +48,18 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate }: Prop
     if (due === 'Tomorrow') dueDate.setDate(dueDate.getDate() + 1);
     else if (due === 'In 3 days') dueDate.setDate(dueDate.getDate() + 3);
     else if (due === 'Next week') dueDate.setDate(dueDate.getDate() + 7);
+    const matchedClass = classes.find((c) => c.name === subject);
     addHomework({
       id: Date.now().toString(),
-      title: title.trim(),
+      classId: matchedClass?.id,
       subject: subject || 'General',
+      classColor: matchedClass?.color,
+      title: title.trim(),
       tag,
       due,
       dueDate: dueDate.toISOString(),
       done: false,
-      classColor: classes.find((c) => c.name === subject)?.color,
+      points: 10,
     });
     setTitle('');
     setSubject('');
