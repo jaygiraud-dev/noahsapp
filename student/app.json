@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "my agenda",
+    "slug": "my-agenda-student",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0c0820"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.jaygiraud.myagenda"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0c0820"
+      },
+      "package": "dev.jaygiraud.myagenda"
+    },
+    "plugins": [
+      "expo-av",
+      ["expo-font", { "fonts": [] }]
+    ]
+  }
+}

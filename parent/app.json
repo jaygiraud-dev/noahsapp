@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "my agenda — for parents",
+    "slug": "my-agenda-parent",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#f3eee3"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.jaygiraud.myagendaparent"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f3eee3"
+      },
+      "package": "dev.jaygiraud.myagendaparent"
+    }
+  }
+}
