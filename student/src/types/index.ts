@@ -15,11 +15,14 @@ export interface Class {
 
 export interface Homework {
   id: string;
-  classId: string;
+  classId?: string;
+  subject?: string;
+  classColor?: string;
   title: string;
   notes?: string;
   tag?: string;
   due?: string;
+  dueDate?: string;
   dueUrgent?: boolean;
   reminder?: string | null;
   points: number;
@@ -30,9 +33,13 @@ export interface Homework {
 export interface CalEvent {
   id: string;
   title: string;
-  kind: string;
-  icon: string;
-  time: string;
+  kind?: string;
+  type?: string;
+  icon?: string;
+  time?: string;
+  date?: string;
+  location?: string;
+  reminder?: string;
   done: boolean;
 }
 
