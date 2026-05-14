@@ -79,7 +79,7 @@ function NewsTicker({ theme }: any) {
       Animated.timing(scrollX, {
         toValue: -totalWidth,
         duration: totalWidth * 38,
-        useNativeDriver: true,
+        useNativeDriver: false,
       })
     );
     loop.start();
@@ -94,13 +94,17 @@ function NewsTicker({ theme }: any) {
           GOOD THINGS HAPPENING · LIVE
         </Text>
       </View>
-      <View style={styles.tickerWrap} pointerEvents="none">
-        <Animated.View style={[styles.tickerRow, { transform: [{ translateX: scrollX }] }]}>
+      <View style={styles.tickerWrap}>
+        <Animated.View style={[styles.tickerScroll, { transform: [{ translateX: scrollX }] }]}>
           {[...POSITIVE_NEWS, ...POSITIVE_NEWS].map((n, i) => (
-            <Text key={i} style={[styles.tickerItem, { fontFamily: theme.fMono, color: theme.sub }]}>
-              <Text style={{ color: theme.accent }}>{n.src}</Text>
-              {'  '}{n.text}{'   ·   '}
-            </Text>
+            <View key={i} style={styles.tickerItemWrap}>
+              <Text style={[styles.tickerSrc, { fontFamily: theme.fMono, color: theme.accent }]}>
+                {n.src}
+              </Text>
+              <Text style={[styles.tickerText, { fontFamily: theme.fMono, color: theme.sub }]}>
+                {'  '}{n.text}{'   ·   '}
+              </Text>
+            </View>
           ))}
         </Animated.View>
       </View>
@@ -344,12 +348,13 @@ const styles = StyleSheet.create({
   pointsDot: { fontSize: 14 },
   pointsNum: { color: '#fff', fontSize: 14 },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 32, gap: 12 },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 32, paddingTop: 4 },
   quoteCard: {
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
     gap: 8,
+    marginBottom: 12,
   },
   quoteHeader: { flexDirection: 'row', alignItems: 'center' },
   quoteFuel: { fontSize: 10, letterSpacing: 1.5 },
@@ -358,26 +363,35 @@ const styles = StyleSheet.create({
   tickerContainer: {
     borderRadius: 12,
     borderWidth: 1,
-    overflow: 'hidden',
     paddingTop: 10,
-    paddingBottom: 4,
+    paddingBottom: 8,
+    marginBottom: 12,
+    overflow: 'hidden',
   },
   tickerLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     paddingHorizontal: 12,
     paddingBottom: 6,
   },
-  tickerDot: { width: 6, height: 6, borderRadius: 3 },
+  tickerDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
   tickerLabel: { fontSize: 9, letterSpacing: 1.5 },
-  tickerWrap: { height: 22, overflow: 'hidden' },
-  tickerRow: { flexDirection: 'row', alignItems: 'center' },
-  tickerItem: { fontSize: 12, letterSpacing: 0.2 } as any,
+  tickerWrap: { height: 20, overflow: 'hidden' },
+  tickerScroll: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    top: 0,
+    left: 0,
+  },
+  tickerItemWrap: { flexDirection: 'row' },
+  tickerSrc: { fontSize: 11, letterSpacing: 0.3 },
+  tickerText: { fontSize: 11, letterSpacing: 0.2 },
   classBlock: {
     borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
+    marginBottom: 12,
   },
   classHeader: {
     flexDirection: 'row',
