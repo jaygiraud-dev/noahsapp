@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Homework, CalEvent, Class, School, Friend, FriendRequest, ActivityNotif } from '../types';
 import { Vibe } from '../theme';
 
@@ -66,7 +68,9 @@ const STARTING_EVENTS: CalEvent[] = [
   { id: 'e2', title: 'Work shift at Earnest', icon: '$', kind: 'Work',   time: '5:00 – 8:00 pm', date: daysFromNow(0), done: false },
 ];
 
-export const useStore = create<AppState>((set, get) => ({
+export const useStore = create<AppState>()(
+  persist(
+    (set, get) => ({
   phase: 'auth',
   school: { city: 'Vancouver', name: 'Eric Hamber Secondary' },
   classes: SAMPLE_CLASSES,
@@ -159,4 +163,27 @@ export const useStore = create<AppState>((set, get) => ({
   declineFriendRequest: (id) => set(s => ({ friendRequests: s.friendRequests.filter(r => r.id !== id) })),
 
   pushNotification: (n) => set(s => ({ notifications: [n, ...s.notifications] })),
-}));
+    }),
+    {
+      name: 'my-agenda-store',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        phase: state.phase,
+        school: state.school,
+        classes: state.classes,
+        useClassTimes: state.useClassTimes,
+        pairingCode: state.pairingCode,
+        parentPaired: state.parentPaired,
+        points: state.points,
+        streak: state.streak,
+        homework: state.homework,
+        events: state.events,
+        friends: state.friends,
+        friendRequests: state.friendRequests,
+        notifications: state.notifications,
+        vibe: state.vibe,
+        darkMode: state.darkMode,
+      }),
+    }
+  )
+);
