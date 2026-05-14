@@ -41,9 +41,9 @@ export default function RootNavigator() {
         )}
         {phase === 'onboarding' && (
           <>
-            <Stack.Screen name="SchoolPicker" component={SchoolPickerScreen} />
             <Stack.Screen name="Classes" component={ClassesScreen} />
             <Stack.Screen name="ParentPair" component={ParentPairScreen} />
+            <Stack.Screen name="SchoolPicker" component={SchoolPickerScreen} />
           </>
         )}
         {phase === 'main' && (
