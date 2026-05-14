@@ -55,10 +55,10 @@ function QuoteCard({ theme }: any) {
   return (
     <View style={[styles.quoteCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
       <Text style={[styles.quoteText, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
-        “{q.text}”
+        “{q.t}”
       </Text>
       <Text style={[styles.quoteAuthor, { fontFamily: theme.fMono, color: theme.soft }]}>
-        — {q.author}
+        — {q.a}
       </Text>
     </View>
   );
@@ -175,8 +175,8 @@ export default function TodayScreen() {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
-  const todayHw = homework.filter((h) => isSameDay(new Date(h.dueDate), selectedDate));
-  const todayEvents = events.filter((e) => isSameDay(new Date(e.date), selectedDate));
+  const todayHw = homework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), selectedDate));
+  const todayEvents = events.filter((e) => e.date && isSameDay(new Date(e.date), selectedDate));
 
   const today = new Date();
   const isToday = isSameDay(selectedDate, today);
