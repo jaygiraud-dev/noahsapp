@@ -1,11 +1,11 @@
 [build]
   base    = "student"
-  command = "npm ci --legacy-peer-deps && npx expo export --platform web"
+  command = "npm ci --legacy-peer-deps && npx expo export --platform web --no-minify"
   publish = "dist"
 
 [build.environment]
-  EXPO_OFFLINE = "1"
   NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [[redirects]]
   from   = "/*"
