@@ -133,9 +133,9 @@ export default function SignInScreen({ navigation }: any) {
           </View>
 
           <View style={styles.footer}>
-            <TouchableOpacity onPress={() => setPhase('main')}>
+            <TouchableOpacity onPress={() => setPhase('onboarding')}>
               <Text style={[styles.demo, { fontFamily: theme.fMono, color: theme.soft }]}>
-                demo mode — skip auth
+                try demo — set up your classes
               </Text>
             </TouchableOpacity>
           </View>
