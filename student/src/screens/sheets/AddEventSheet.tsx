@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -22,15 +22,20 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   defaultDate?: Date;
+  defaultTime?: string;
 }
 
-export default function AddEventSheet({ visible, onClose, defaultDate }: Props) {
+export default function AddEventSheet({ visible, onClose, defaultDate, defaultTime }: Props) {
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
-  const [time, setTime] = useState('3:30 PM');
+  const [time, setTime] = useState(defaultTime ?? '3:30 PM');
   const [type, setType] = useState(EVENT_TYPES[0].label);
   const [reminder, setReminder] = useState(REMINDER_OPTIONS[0].label);
   const addEvent = useStore((s) => s.addEvent);
+
+  useEffect(() => {
+    if (visible) setTime(defaultTime ?? '3:30 PM');
+  }, [visible, defaultTime]);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);

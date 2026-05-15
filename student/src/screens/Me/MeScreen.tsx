@@ -6,6 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Switch,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,17 +33,32 @@ export default function MeScreen({ navigation }: any) {
   const setDarkMode = useStore((s) => s.setDarkMode);
   const setPhase = useStore((s) => s.setPhase);
   const school = useStore((s) => s.school);
+  const setSchool = useStore((s) => s.setSchool);
   const classes = useStore((s) => s.classes);
   const pairingCode = useStore((s) => s.pairingCode);
   const theme = makeTheme(vibe, darkMode);
 
   const [email, setEmail] = useState('');
+  const [editingSchool, setEditingSchool] = useState(false);
+  const [draftSchoolName, setDraftSchoolName] = useState(school.name);
+  const [draftSchoolCity, setDraftSchoolCity] = useState(school.city);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user?.email) setEmail(data.user.email);
     });
   }, []);
+
+  function openEditSchool() {
+    setDraftSchoolName(school.name);
+    setDraftSchoolCity(school.city);
+    setEditingSchool(true);
+  }
+
+  function saveSchool() {
+    setSchool({ name: draftSchoolName.trim() || school.name, city: draftSchoolCity.trim() || school.city });
+    setEditingSchool(false);
+  }
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -76,7 +95,12 @@ export default function MeScreen({ navigation }: any) {
 
         {/* Account info */}
         <View style={styles.section}>
-          <MicroLabel>Account</MicroLabel>
+          <View style={styles.sectionHeader}>
+            <MicroLabel>Account</MicroLabel>
+            <TouchableOpacity onPress={openEditSchool}>
+              <Text style={[styles.editLink, { fontFamily: theme.fMono, color: theme.accent }]}>Edit school →</Text>
+            </TouchableOpacity>
+          </View>
           <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
             {email !== '' && (
               <View style={[styles.infoRow, { borderBottomColor: theme.line }]}>
@@ -178,6 +202,48 @@ export default function MeScreen({ navigation }: any) {
           <Text style={[styles.signOutText, { fontFamily: theme.fMono, color: theme.red }]}>SIGN OUT</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Edit school modal */}
+      <Modal visible={editingSchool} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setEditingSchool(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={[styles.editModal, { backgroundColor: theme.bg }]}
+        >
+          <View style={[styles.modalHandle, { backgroundColor: theme.line }]} />
+          <View style={styles.editModalContent}>
+            <View style={styles.editModalHeader}>
+              <Text style={[styles.editModalTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Edit school.</Text>
+              <TouchableOpacity onPress={() => setEditingSchool(false)}>
+                <Text style={[styles.editModalClose, { color: theme.soft }]}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.fieldGroup}>
+              <MicroLabel>School Name</MicroLabel>
+              <TextInput
+                style={[styles.editInput, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
+                value={draftSchoolName}
+                onChangeText={setDraftSchoolName}
+                placeholder="e.g. Sutherland Secondary"
+                placeholderTextColor={theme.soft}
+                autoFocus
+              />
+            </View>
+            <View style={styles.fieldGroup}>
+              <MicroLabel>City</MicroLabel>
+              <TextInput
+                style={[styles.editInput, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
+                value={draftSchoolCity}
+                onChangeText={setDraftSchoolCity}
+                placeholder="e.g. North Vancouver"
+                placeholderTextColor={theme.soft}
+              />
+            </View>
+            <TouchableOpacity style={[styles.saveBtn, { backgroundColor: theme.accent }]} onPress={saveSchool}>
+              <Text style={[styles.saveBtnText, { fontFamily: theme.fMono }]}>Save changes</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -268,4 +334,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   signOutText: { fontSize: 13, letterSpacing: 1.5 },
+  editModal: { flex: 1 },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 8 },
+  editModalContent: { padding: 20, gap: 20 },
+  editModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  editModalTitle: { fontSize: 26 },
+  editModalClose: { fontSize: 28, lineHeight: 32 },
+  fieldGroup: { gap: 8 },
+  editInput: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    fontSize: 15,
+  },
+  saveBtn: { borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
+  saveBtnText: { color: '#fff', fontSize: 14, letterSpacing: 0.5 },
 });

@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { getClosedReason } from '../../data/schoolClosed';
+import AddEventSheet from '../sheets/AddEventSheet';
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const START_HOUR = 8;
@@ -18,6 +19,7 @@ const END_HOUR = 17;
 const ROW_H = 56;
 const COL_W = 110;
 const GUTTER = 44;
+const DAY_HDR_H = 54;
 
 function getWeekDays(anchor: Date): Date[] {
   const days: Date[] = [];
@@ -47,18 +49,21 @@ function timeToMinutes(t: string) {
 
 export default function WeekScreen() {
   const [anchor, setAnchor] = useState(new Date());
+  const [addEventDate, setAddEventDate] = useState<Date | null>(null);
+  const [addEventTime, setAddEventTime] = useState('');
   const homework = useStore((s) => s.homework);
   const classes = useStore((s) => s.classes);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
 
   const weekDays = getWeekDays(anchor);
   const today = new Date();
-  const totalWidth = GUTTER + COL_W * 7;
+  const totalDayWidth = COL_W * 7;
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR);
-  const gridHeight = height - 160; // approx header + day-header + safe area
+  const gridContentHeight = DAY_HDR_H + hours.length * ROW_H;
+  const scrollAreaHeight = height - 120;
 
   function prevWeek() {
     const d = new Date(anchor);
@@ -92,72 +97,103 @@ export default function WeekScreen() {
         </View>
       </View>
 
-      {/* Scrollable grid — horizontal to see all 7 days */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ width: totalWidth }}
-      >
-        <View style={{ width: totalWidth }}>
+      {/* Grid area: fixed time gutter + horizontally scrollable day columns */}
+      <View style={[styles.gridArea, { height: scrollAreaHeight }]}>
 
-          {/* Day name headers */}
-          <View style={[styles.dayHeaderRow, { borderBottomColor: theme.line }]}>
-            <View style={{ width: GUTTER }} />
-            {weekDays.map((day) => {
-              const isToday = isSameDay(day, today);
-              const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-              const closed = !isWeekend && getClosedReason(day);
-              return (
-                <View
-                  key={day.toISOString()}
-                  style={[
-                    styles.dayHeader,
-                    { width: COL_W },
-                    isToday && { borderBottomColor: theme.accent, borderBottomWidth: 2 },
-                  ]}
-                >
-                  <Text style={[styles.dayAbbr, { fontFamily: theme.fMono, color: isToday ? theme.accent : isWeekend ? theme.soft : theme.sub }]}>
-                    {DAY_ABBR[day.getDay()]}
-                  </Text>
-                  <Text style={[styles.dayNum, { fontFamily: isToday ? 'Inter_600SemiBold' : 'Inter_400Regular', color: isToday ? theme.accent : theme.ink }]}>
-                    {day.getDate()}
-                  </Text>
-                  {(isWeekend || closed) && (
-                    <Text style={[styles.dayTag, { fontFamily: theme.fMono, color: theme.soft }]}>
-                      {isWeekend ? 'off' : 'pro-d'}
-                    </Text>
-                  )}
-                </View>
-              );
-            })}
-          </View>
+        {/* Fixed time gutter column */}
+        <ScrollView
+          style={{ width: GUTTER }}
+          scrollEnabled={false}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled
+        >
+          {/* Spacer matching day header height */}
+          <View style={{ height: DAY_HDR_H, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.line }} />
+          {/* Hour labels */}
+          {hours.map((hour) => (
+            <View key={hour} style={[styles.gutterRow, { height: ROW_H, borderTopColor: theme.line }]}>
+              <Text style={[styles.timeLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
+                {hour}:00
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
 
-          {/* Hour grid — scrollable vertically */}
+        {/* Horizontally scrollable day columns */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ width: totalDayWidth }}
+        >
+          {/* Outer vertical scroll for the day grid */}
           <ScrollView
-            style={{ height: gridHeight }}
+            style={{ width: totalDayWidth }}
             showsVerticalScrollIndicator={false}
+            nestedScrollEnabled
           >
-            {/* Class blocks — absolutely positioned inside a relative container */}
-            <View style={{ height: hours.length * ROW_H, position: 'relative' }}>
+            <View style={{ height: gridContentHeight, position: 'relative', width: totalDayWidth }}>
+
+              {/* Day name headers */}
+              <View style={[styles.dayHeaderRow, { height: DAY_HDR_H, borderBottomColor: theme.line }]}>
+                {weekDays.map((day) => {
+                  const isToday = isSameDay(day, today);
+                  const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                  const closed = !isWeekend && getClosedReason(day);
+                  return (
+                    <View
+                      key={day.toISOString()}
+                      style={[
+                        styles.dayHeader,
+                        { width: COL_W },
+                        isToday && { borderBottomColor: theme.accent, borderBottomWidth: 2 },
+                      ]}
+                    >
+                      <Text style={[styles.dayAbbr, { fontFamily: theme.fMono, color: isToday ? theme.accent : isWeekend ? theme.soft : theme.sub }]}>
+                        {DAY_ABBR[day.getDay()]}
+                      </Text>
+                      <Text style={[styles.dayNum, { fontFamily: isToday ? 'Inter_600SemiBold' : 'Inter_400Regular', color: isToday ? theme.accent : theme.ink }]}>
+                        {day.getDate()}
+                      </Text>
+                      {(isWeekend || closed) && (
+                        <Text style={[styles.dayTag, { fontFamily: theme.fMono, color: theme.soft }]}>
+                          {isWeekend ? 'off' : 'pro-d'}
+                        </Text>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
 
               {/* Hour grid lines */}
               {hours.map((hour, i) => (
                 <View
                   key={hour}
-                  style={[styles.hourRow, { top: i * ROW_H, borderTopColor: theme.line }]}
+                  style={[
+                    styles.hourRow,
+                    {
+                      top: DAY_HDR_H + i * ROW_H,
+                      width: totalDayWidth,
+                      borderTopColor: theme.line,
+                    },
+                  ]}
                 >
-                  <View style={[styles.timeGutter, { width: GUTTER }]}>
-                    <Text style={[styles.timeLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
-                      {hour}:00
-                    </Text>
-                  </View>
-                  {weekDays.map((day) => (
-                    <View
-                      key={day.toISOString()}
-                      style={[styles.cell, { width: COL_W, borderLeftColor: theme.line }]}
-                    />
-                  ))}
+                  {weekDays.map((day) => {
+                    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                    const closed = !isWeekend && getClosedReason(day);
+                    return (
+                      <TouchableOpacity
+                        key={day.toISOString()}
+                        style={[styles.cell, { width: COL_W, borderLeftColor: theme.line }]}
+                        onPress={() => {
+                          if (isWeekend || closed) return;
+                          setAddEventDate(day);
+                          setAddEventTime(`${hour}:00`);
+                        }}
+                        activeOpacity={0.5}
+                      />
+                    );
+                  })}
                 </View>
               ))}
 
@@ -171,9 +207,9 @@ export default function WeekScreen() {
                   if (!cls.start || !cls.end) return null;
                   const startMin = timeToMinutes(cls.start);
                   const endMin = timeToMinutes(cls.end);
-                  const top = (startMin - START_HOUR * 60) / 60 * ROW_H;
+                  const top = DAY_HDR_H + (startMin - START_HOUR * 60) / 60 * ROW_H;
                   const blockH = (endMin - startMin) / 60 * ROW_H;
-                  const left = GUTTER + dayIdx * COL_W + 2;
+                  const left = dayIdx * COL_W + 2;
 
                   return (
                     <View
@@ -205,7 +241,7 @@ export default function WeekScreen() {
               {weekDays.map((day, dayIdx) => {
                 const dayHw = homework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), day) && !h.done);
                 if (dayHw.length === 0) return null;
-                const left = GUTTER + dayIdx * COL_W + 2;
+                const left = dayIdx * COL_W + 2;
                 return dayHw.map((hw, hwIdx) => {
                   const color = hw.classColor ?? theme.accent;
                   return (
@@ -214,7 +250,7 @@ export default function WeekScreen() {
                       style={[
                         styles.hwChip,
                         {
-                          top: hwIdx * 20 + 4,
+                          top: DAY_HDR_H + hwIdx * 20 + 4,
                           left,
                           width: COL_W - 8,
                           backgroundColor: color + '22',
@@ -232,8 +268,15 @@ export default function WeekScreen() {
 
             </View>
           </ScrollView>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
+
+      <AddEventSheet
+        visible={!!addEventDate}
+        onClose={() => setAddEventDate(null)}
+        defaultDate={addEventDate ?? undefined}
+        defaultTime={addEventTime}
+      />
     </SafeAreaView>
   );
 }
@@ -253,14 +296,28 @@ const styles = StyleSheet.create({
   navBtn: { padding: 4 },
   navArrow: { fontSize: 18 },
   monthLabel: { fontSize: 11, letterSpacing: 1.5 },
+  gridArea: {
+    flexDirection: 'row',
+    flex: 1,
+  },
+  gutterRow: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'flex-start',
+    paddingTop: 3,
+    paddingLeft: 4,
+  },
+  timeLabel: { fontSize: 9, letterSpacing: 0.3 },
   dayHeaderRow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingBottom: 6,
   },
   dayHeader: {
     alignItems: 'center',
     paddingBottom: 4,
+    paddingTop: 6,
     gap: 1,
   },
   dayAbbr: { fontSize: 9, letterSpacing: 1, textTransform: 'uppercase' },
@@ -269,19 +326,12 @@ const styles = StyleSheet.create({
   hourRow: {
     position: 'absolute',
     left: 0,
-    right: 0,
     height: ROW_H,
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  timeGutter: {
-    justifyContent: 'flex-start',
-    paddingTop: 3,
-    paddingLeft: 4,
-  },
-  timeLabel: { fontSize: 9, letterSpacing: 0.3 },
   cell: {
-    flex: 1,
+    height: ROW_H,
     borderLeftWidth: StyleSheet.hairlineWidth,
   },
   classBlock: {
