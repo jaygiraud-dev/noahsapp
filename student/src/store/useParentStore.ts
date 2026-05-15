@@ -24,15 +24,11 @@ export interface ParentNotif {
 }
 
 interface ParentState {
-  phase: 'pair' | 'main';
   linkedKids: LinkedKid[];
   notifications: ParentNotif[];
-  pin: string | null;
 
-  setPhase: (phase: 'pair' | 'main') => void;
-  pairKid: (code: string) => void;
+  pairKid: (code: string) => boolean;
   markNotifRead: (id: string) => void;
-  setPin: (pin: string) => void;
 }
 
 const SAMPLE_KID: LinkedKid = {
@@ -49,31 +45,29 @@ const SAMPLE_KID: LinkedKid = {
   lastActive: '10 min ago',
 };
 
-const SAMPLE_NOTIFS: ParentNotif[] = [
-  { id: 'n1', kidId: 'kid-1', type: 'hw_done', text: 'Noah finished Math homework — Textbook p.45', time: '2h ago', read: false },
-  { id: 'n2', kidId: 'kid-1', type: 'streak', text: 'Noah hit a 12-day streak! 🔥', time: '1d ago', read: false },
-  { id: 'n3', kidId: 'kid-1', type: 'hw_due', text: 'Science project due tomorrow', time: '1d ago', read: true },
-  { id: 'n4', kidId: 'kid-1', type: 'points', text: 'Noah earned 50 points today', time: '2d ago', read: true },
-];
-
 export const useParentStore = create<ParentState>((set, get) => ({
-  phase: 'pair',
   linkedKids: [],
-  notifications: SAMPLE_NOTIFS,
-  pin: null,
-
-  setPhase: (phase) => set({ phase }),
+  notifications: [],
 
   pairKid: (code) => {
-    if (code === SAMPLE_KID.pairingCode) {
-      set((s) => ({ linkedKids: [...s.linkedKids, SAMPLE_KID], phase: 'main' }));
+    if (code.toUpperCase() === SAMPLE_KID.pairingCode) {
+      const alreadyLinked = get().linkedKids.some((k) => k.id === SAMPLE_KID.id);
+      if (!alreadyLinked) {
+        const notifs: ParentNotif[] = [
+          { id: 'n1', kidId: 'kid-1', type: 'hw_done', text: 'Noah finished Math homework — Textbook p.45', time: '2h ago', read: false },
+          { id: 'n2', kidId: 'kid-1', type: 'streak', text: 'Noah hit a 12-day streak! 🔥', time: '1d ago', read: false },
+          { id: 'n3', kidId: 'kid-1', type: 'hw_due', text: 'Science project due tomorrow', time: '1d ago', read: true },
+          { id: 'n4', kidId: 'kid-1', type: 'points', text: 'Noah earned 50 points today', time: '2d ago', read: true },
+        ];
+        set((s) => ({ linkedKids: [...s.linkedKids, SAMPLE_KID], notifications: [...s.notifications, ...notifs] }));
+      }
+      return true;
     }
+    return false;
   },
 
   markNotifRead: (id) =>
     set((s) => ({
       notifications: s.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
     })),
-
-  setPin: (pin) => set({ pin }),
 }));
