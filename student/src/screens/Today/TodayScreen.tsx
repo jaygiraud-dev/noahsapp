@@ -54,7 +54,7 @@ function NewsTicker({ theme }: any) {
     const loop = Animated.loop(
       Animated.timing(scrollX, {
         toValue: -totalWidth,
-        duration: totalWidth * 38,
+        duration: totalWidth * 10,
         useNativeDriver: false,
       })
     );
