@@ -186,7 +186,9 @@ function EventBlock({ ev, theme, onToggle }: { ev: CalEvent; theme: any; onToggl
 export default function TodayScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [hwSheetClass, setHwSheetClass] = useState<Class | null>(null);
+  const [hwSheetOpen, setHwSheetOpen] = useState(false);
   const [showEvSheet, setShowEvSheet] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
 
   const homework = useStore((s) => s.homework);
   const events = useStore((s) => s.events);
@@ -281,9 +283,41 @@ export default function TodayScreen() {
         )}
       </ScrollView>
 
+      {/* Floating action button */}
+      {fabOpen && (
+        <TouchableOpacity style={styles.fabBackdrop} onPress={() => setFabOpen(false)} activeOpacity={1} />
+      )}
+      <View style={styles.fabArea}>
+        {fabOpen && (
+          <View style={styles.fabMenu}>
+            <TouchableOpacity
+              style={[styles.fabMenuItem, { backgroundColor: theme.surface, borderColor: theme.line }]}
+              onPress={() => { setFabOpen(false); setHwSheetOpen(true); }}
+            >
+              <Text style={[styles.fabMenuIcon, { fontFamily: theme.fMono, color: theme.accent }]}>📚</Text>
+              <Text style={[styles.fabMenuLabel, { fontFamily: theme.fMono, color: theme.ink }]}>Homework</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.fabMenuItem, { backgroundColor: theme.surface, borderColor: theme.line }]}
+              onPress={() => { setFabOpen(false); setShowEvSheet(true); }}
+            >
+              <Text style={[styles.fabMenuIcon, { fontFamily: theme.fMono, color: theme.accent }]}>📅</Text>
+              <Text style={[styles.fabMenuLabel, { fontFamily: theme.fMono, color: theme.ink }]}>Event / Task</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: theme.accent }]}
+          onPress={() => setFabOpen((v) => !v)}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.fabIcon, { transform: [{ rotate: fabOpen ? '45deg' : '0deg' }] }]}>+</Text>
+        </TouchableOpacity>
+      </View>
+
       <AddHomeworkSheet
-        visible={!!hwSheetClass}
-        onClose={() => setHwSheetClass(null)}
+        visible={!!hwSheetClass || hwSheetOpen}
+        onClose={() => { setHwSheetClass(null); setHwSheetOpen(false); }}
         defaultDate={selectedDate}
         defaultClass={hwSheetClass}
       />
@@ -439,4 +473,41 @@ const styles = StyleSheet.create({
   noSchoolText: { fontSize: 22 },
   empty: { alignItems: 'center', paddingTop: 40 },
   emptyText: { fontSize: 22, textAlign: 'center' },
+  fabBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
+  fabArea: {
+    position: 'absolute',
+    bottom: 28,
+    right: 20,
+    alignItems: 'flex-end',
+    zIndex: 20,
+  },
+  fabMenu: {
+    gap: 8,
+    marginBottom: 12,
+    alignItems: 'flex-end',
+  },
+  fabMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+  },
+  fabMenuIcon: { fontSize: 16 },
+  fabMenuLabel: { fontSize: 13, letterSpacing: 0.3 },
+  fab: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabIcon: { color: '#fff', fontSize: 28, lineHeight: 32, marginTop: -2 },
 });

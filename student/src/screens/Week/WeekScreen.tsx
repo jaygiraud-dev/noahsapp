@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { getClosedReason } from '../../data/schoolClosed';
+import AddEventSheet from '../sheets/AddEventSheet';
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const START_HOUR = 8;
@@ -48,6 +49,8 @@ function timeToMinutes(t: string) {
 
 export default function WeekScreen() {
   const [anchor, setAnchor] = useState(new Date());
+  const [addEventDate, setAddEventDate] = useState<Date | null>(null);
+  const [addEventTime, setAddEventTime] = useState('');
   const homework = useStore((s) => s.homework);
   const classes = useStore((s) => s.classes);
   const vibe = useStore((s) => s.vibe);
@@ -175,12 +178,22 @@ export default function WeekScreen() {
                     },
                   ]}
                 >
-                  {weekDays.map((day) => (
-                    <View
-                      key={day.toISOString()}
-                      style={[styles.cell, { width: COL_W, borderLeftColor: theme.line }]}
-                    />
-                  ))}
+                  {weekDays.map((day) => {
+                    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                    const closed = !isWeekend && getClosedReason(day);
+                    return (
+                      <TouchableOpacity
+                        key={day.toISOString()}
+                        style={[styles.cell, { width: COL_W, borderLeftColor: theme.line }]}
+                        onPress={() => {
+                          if (isWeekend || closed) return;
+                          setAddEventDate(day);
+                          setAddEventTime(`${hour}:00`);
+                        }}
+                        activeOpacity={0.5}
+                      />
+                    );
+                  })}
                 </View>
               ))}
 
@@ -257,6 +270,13 @@ export default function WeekScreen() {
           </ScrollView>
         </ScrollView>
       </View>
+
+      <AddEventSheet
+        visible={!!addEventDate}
+        onClose={() => setAddEventDate(null)}
+        defaultDate={addEventDate ?? undefined}
+        defaultTime={addEventTime}
+      />
     </SafeAreaView>
   );
 }

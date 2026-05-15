@@ -81,6 +81,30 @@ function ClassEditor({
           placeholderTextColor={theme.soft}
         />
       </View>
+
+      <View style={styles.timeRow}>
+        <View style={styles.timeField}>
+          <Text style={[styles.timeFieldLabel, { fontFamily: theme.fMono, color: theme.soft }]}>START</Text>
+          <TextInput
+            style={[styles.timeInput, { fontFamily: theme.fMono, color: theme.ink, backgroundColor: theme.surfaceHi, borderColor: theme.line }]}
+            value={cls.start ?? ''}
+            onChangeText={(start) => onUpdate({ ...cls, start })}
+            placeholder="8:45"
+            placeholderTextColor={theme.soft}
+          />
+        </View>
+        <Text style={[styles.timeSep, { color: theme.soft, fontFamily: theme.fMono }]}>→</Text>
+        <View style={styles.timeField}>
+          <Text style={[styles.timeFieldLabel, { fontFamily: theme.fMono, color: theme.soft }]}>END</Text>
+          <TextInput
+            style={[styles.timeInput, { fontFamily: theme.fMono, color: theme.ink, backgroundColor: theme.surfaceHi, borderColor: theme.line }]}
+            value={cls.end ?? ''}
+            onChangeText={(end) => onUpdate({ ...cls, end })}
+            placeholder="9:55"
+            placeholderTextColor={theme.soft}
+          />
+        </View>
+      </View>
     </View>
   );
 }
@@ -198,6 +222,18 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 14,
   },
+  timeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  timeField: { flex: 1, gap: 4 },
+  timeFieldLabel: { fontSize: 9, letterSpacing: 1.2 },
+  timeInput: {
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  timeSep: { fontSize: 14, paddingBottom: 10 },
   addRow: {
     borderRadius: 14,
     borderWidth: 1,
