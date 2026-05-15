@@ -121,15 +121,12 @@ export default function ClassesScreen({ navigation }: any) {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={[styles.back, { fontFamily: theme.fMono, color: theme.accent }]}>← back</Text>
-        </TouchableOpacity>
-        <MicroLabel color={theme.accent}>Step 2 of 3</MicroLabel>
+        <MicroLabel color={theme.accent}>Your schedule</MicroLabel>
         <SerifTitle size={28} style={styles.title}>
-          Your classes.
+          Set up your classes.
         </SerifTitle>
         <Text style={[styles.subtitle, { fontFamily: theme.fBody, color: theme.sub }]}>
-          Add your subjects. You can always edit these later.
+          We've pre-filled some examples — edit them to match your real timetable, or add your own.
         </Text>
       </View>
 
@@ -162,7 +159,7 @@ export default function ClassesScreen({ navigation }: any) {
       />
 
       <View style={[styles.footer, { borderTopColor: theme.line }]}>
-        <PrimaryBtn label="Next → Parent pair" onPress={handleNext} />
+        <PrimaryBtn label="Let's go →" onPress={handleNext} />
         <TouchableOpacity onPress={() => setPhase('main')} style={styles.skipWrap}>
           <Text style={[styles.skip, { fontFamily: theme.fMono, color: theme.soft }]}>
             skip for now

@@ -1,8 +1,10 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Homework, CalEvent, Class, School, Friend, FriendRequest, ActivityNotif } from '../types';
 import { Vibe } from '../theme';
 
-export type AppPhase = 'auth' | 'onboarding' | 'main';
+export type AppPhase = 'auth' | 'onboarding' | 'main' | 'parent';
 
 interface AppState {
   phase: AppPhase;
@@ -21,8 +23,10 @@ interface AppState {
   vibe: Vibe;
   darkMode: boolean;
   reward: { points: number; streak: number } | null;
+  userId: string;
 
   setPhase: (phase: AppPhase) => void;
+  resetForUser: (uid: string, role: 'student' | 'parent') => void;
   setSchool: (school: School) => void;
   setClasses: (classes: Class[]) => void;
   setUseClassTimes: (v: boolean) => void;
@@ -47,20 +51,28 @@ const SAMPLE_CLASSES: Class[] = [
   { id: 'c5', name: 'PE / Athletics', teacher: 'Coach Patel', start: '14:25', end: '15:25', color: '#34d399', emoji: '🏐' },
 ];
 
+function daysFromNow(n: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString();
+}
+
 const STARTING_HW: Homework[] = [
-  { id: 'h1', classId: 'c1', title: 'Read Romeo & Juliet Act 2', tag: 'Reading', due: 'Tomorrow', points: 10, done: false },
-  { id: 'h2', classId: 'c1', title: 'Vocab quiz — chapter 5', tag: 'Quiz', due: 'Today', dueUrgent: true, points: 15, done: false },
-  { id: 'h3', classId: 'c2', title: 'Worksheet 3.2 — derivatives', tag: 'Worksheet', due: 'Tomorrow', points: 10, done: false },
-  { id: 'h4', classId: 'c3', title: 'Lab writeup — page 124', tag: 'Lab', due: 'Fri', points: 15, done: false },
-  { id: 'h5', classId: 'c4', title: 'Read pages 88–102', tag: 'Reading', due: 'Mon', points: 10, done: true },
+  { id: 'h1', classId: 'c1', subject: 'English 11',    classColor: '#ec4899', title: 'Vocab quiz — chapter 5',        tag: 'Quiz',      due: 'Today',     dueDate: daysFromNow(0),  dueUrgent: true, points: 15, done: false },
+  { id: 'h2', classId: 'c2', subject: 'Pre-Calc 11',   classColor: '#a78bfa', title: 'Worksheet 3.2 — derivatives',   tag: 'Worksheet', due: 'Today',     dueDate: daysFromNow(0),  points: 10, done: false },
+  { id: 'h3', classId: 'c3', subject: 'Chemistry 11',  classColor: '#06d6e0', title: 'Lab writeup — page 124',        tag: 'Lab',       due: 'Tomorrow',  dueDate: daysFromNow(1),  points: 15, done: false },
+  { id: 'h4', classId: 'c1', subject: 'English 11',    classColor: '#ec4899', title: 'Read Romeo & Juliet Act 2',     tag: 'Reading',   due: 'Tomorrow',  dueDate: daysFromNow(1),  points: 10, done: false },
+  { id: 'h5', classId: 'c4', subject: 'Socials 11',    classColor: '#fbbf24', title: 'Read pages 88–102',             tag: 'Reading',   due: 'Next week', dueDate: daysFromNow(7),  points: 10, done: true  },
 ];
 
 const STARTING_EVENTS: CalEvent[] = [
-  { id: 'e1', title: 'Volleyball practice', icon: '▲', kind: 'Practice', time: '3:30 pm', done: false },
-  { id: 'e2', title: 'Work shift at Earnest', icon: '$', kind: 'Work', time: '5:00 – 8:00 pm', done: false },
+  { id: 'e1', title: 'Volleyball practice', icon: '▲', kind: 'Practice', time: '3:30 pm', date: daysFromNow(0), done: false },
+  { id: 'e2', title: 'Work shift at Earnest', icon: '$', kind: 'Work',   time: '5:00 – 8:00 pm', date: daysFromNow(0), done: false },
 ];
 
-export const useStore = create<AppState>((set, get) => ({
+export const useStore = create<AppState>()(
+  persist(
+    (set, get) => ({
   phase: 'auth',
   school: { city: 'Vancouver', name: 'Eric Hamber Secondary' },
   classes: SAMPLE_CLASSES,
@@ -93,8 +105,24 @@ export const useStore = create<AppState>((set, get) => ({
   vibe: 'twilight',
   darkMode: true,
   reward: null,
+  userId: '',
 
   setPhase: (phase) => set({ phase }),
+
+  resetForUser: (uid, role) => set({
+    userId: uid,
+    classes: [],
+    homework: [],
+    events: [],
+    points: 0,
+    streak: 0,
+    friends: [],
+    friendRequests: [],
+    notifications: [],
+    parentPaired: false,
+    reward: null,
+    phase: role === 'parent' ? 'parent' : 'onboarding',
+  }),
   setSchool: (school) => set({ school }),
   setClasses: (classes) => set({ classes }),
   setUseClassTimes: (v) => set({ useClassTimes: v }),
@@ -153,4 +181,28 @@ export const useStore = create<AppState>((set, get) => ({
   declineFriendRequest: (id) => set(s => ({ friendRequests: s.friendRequests.filter(r => r.id !== id) })),
 
   pushNotification: (n) => set(s => ({ notifications: [n, ...s.notifications] })),
-}));
+    }),
+    {
+      name: 'my-agenda-store',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        phase: state.phase,
+        school: state.school,
+        classes: state.classes,
+        useClassTimes: state.useClassTimes,
+        pairingCode: state.pairingCode,
+        parentPaired: state.parentPaired,
+        points: state.points,
+        streak: state.streak,
+        homework: state.homework,
+        events: state.events,
+        friends: state.friends,
+        friendRequests: state.friendRequests,
+        notifications: state.notifications,
+        vibe: state.vibe,
+        darkMode: state.darkMode,
+        userId: state.userId,
+      }),
+    }
+  )
+);
