@@ -15,7 +15,6 @@ import { quoteOfDay } from '../../data/quotes';
 import { POSITIVE_NEWS } from '../../data/news';
 import { Class, Homework, CalEvent } from '../../types';
 import DayPicker from '../../components/DayPicker';
-import MicroLabel from '../../components/MicroLabel';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
 import AddEventSheet from '../sheets/AddEventSheet';
 
@@ -40,33 +39,10 @@ function PointsChip({ points, streak, theme }: any) {
       end={{ x: 1, y: 0 }}
       style={styles.pointsChip}
     >
-      <Text style={[styles.pointsStreak, { fontFamily: theme.fMono }]}>
-        🔥{streak}
-      </Text>
+      <Text style={[styles.pointsStreak, { fontFamily: theme.fMono }]}>🔥{streak}</Text>
       <Text style={[styles.pointsDot, { fontFamily: theme.fMono, color: 'rgba(255,255,255,0.5)' }]}>·</Text>
-      <Text style={[styles.pointsNum, { fontFamily: theme.fMono }]}>
-        {points.toLocaleString()} pts
-      </Text>
+      <Text style={[styles.pointsNum, { fontFamily: theme.fMono }]}>{points.toLocaleString()} pts</Text>
     </LinearGradient>
-  );
-}
-
-function QuoteCard({ theme }: any) {
-  const today = new Date();
-  const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const q = quoteOfDay(dateStr);
-  return (
-    <View style={[styles.quoteCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
-      <View style={styles.quoteHeader}>
-        <Text style={[styles.quoteFuel, { fontFamily: theme.fMono, color: theme.accent }]}>✦ DAILY FUEL</Text>
-      </View>
-      <Text style={[styles.quoteText, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
-        "{q.t}"
-      </Text>
-      <Text style={[styles.quoteAuthor, { fontFamily: theme.fMono, color: theme.soft }]}>
-        — {q.a}
-      </Text>
-    </View>
   );
 }
 
@@ -87,7 +63,7 @@ function NewsTicker({ theme }: any) {
   }, []);
 
   return (
-    <View style={[styles.tickerContainer, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+    <View style={[styles.tickerContainer, { backgroundColor: theme.surface, borderBottomColor: theme.line }]}>
       <View style={styles.tickerLabelRow}>
         <View style={[styles.tickerDot, { backgroundColor: theme.mint }]} />
         <Text style={[styles.tickerLabel, { fontFamily: theme.fMono, color: theme.mint }]}>
@@ -98,12 +74,8 @@ function NewsTicker({ theme }: any) {
         <Animated.View style={[styles.tickerScroll, { transform: [{ translateX: scrollX }] }]}>
           {[...POSITIVE_NEWS, ...POSITIVE_NEWS].map((n, i) => (
             <View key={i} style={styles.tickerItemWrap}>
-              <Text style={[styles.tickerSrc, { fontFamily: theme.fMono, color: theme.accent }]}>
-                {n.src}
-              </Text>
-              <Text style={[styles.tickerText, { fontFamily: theme.fMono, color: theme.sub }]}>
-                {'  '}{n.text}{'   ·   '}
-              </Text>
+              <Text style={[styles.tickerSrc, { fontFamily: theme.fMono, color: theme.accent }]}>{n.src}</Text>
+              <Text style={[styles.tickerText, { fontFamily: theme.fMono, color: theme.sub }]}>{'  '}{n.text}{'   ·   '}</Text>
             </View>
           ))}
         </Animated.View>
@@ -112,23 +84,28 @@ function NewsTicker({ theme }: any) {
   );
 }
 
+function QuoteCard({ theme }: any) {
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const q = quoteOfDay(dateStr);
+  return (
+    <View style={[styles.quoteCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+      <Text style={[styles.quoteFuel, { fontFamily: theme.fMono, color: theme.accent }]}>✦ DAILY FUEL</Text>
+      <Text style={[styles.quoteText, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>"{q.t}"</Text>
+      <Text style={[styles.quoteAuthor, { fontFamily: theme.fMono, color: theme.soft }]}>— {q.a}</Text>
+    </View>
+  );
+}
+
 function HwRow({ hw, theme, onToggle }: { hw: Homework; theme: any; onToggle: () => void }) {
   const color = hw.classColor ?? theme.accent;
   return (
-    <TouchableOpacity
-      style={[styles.hwRow, hw.done && styles.hwRowDone]}
-      onPress={onToggle}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={[styles.hwRow, hw.done && styles.hwRowDone]} onPress={onToggle} activeOpacity={0.7}>
       <View style={[styles.hwCheck, { borderColor: color, backgroundColor: hw.done ? color : 'transparent' }]}>
         {hw.done && <Text style={styles.hwCheckMark}>✓</Text>}
       </View>
       <View style={styles.hwInfo}>
-        <Text style={[
-          styles.hwTitle,
-          { fontFamily: theme.fBody, color: hw.done ? theme.soft : theme.ink },
-          hw.done && { textDecorationLine: 'line-through' },
-        ]}>
+        <Text style={[styles.hwTitle, { fontFamily: theme.fBody, color: hw.done ? theme.soft : theme.ink }, hw.done && { textDecorationLine: 'line-through' }]}>
           {hw.title}
         </Text>
         <View style={styles.hwMeta}>
@@ -140,13 +117,7 @@ function HwRow({ hw, theme, onToggle }: { hw: Homework; theme: any; onToggle: ()
             </View>
           )}
           {hw.due && (
-            <Text style={[
-              styles.hwDue,
-              {
-                fontFamily: theme.fMono,
-                color: hw.dueUrgent ? theme.amber : theme.soft,
-              },
-            ]}>
+            <Text style={[styles.hwDue, { fontFamily: theme.fMono, color: hw.dueUrgent ? theme.amber : theme.soft }]}>
               {hw.dueUrgent && '△ '}{hw.due}
             </Text>
           )}
@@ -156,26 +127,18 @@ function HwRow({ hw, theme, onToggle }: { hw: Homework; theme: any; onToggle: ()
   );
 }
 
-function ClassBlock({
-  cls, homework, isNow, theme, onAddHw, onToggleHw,
-}: {
+function ClassBlock({ cls, homework, isNow, theme, onAddHw, onToggleHw }: {
   cls: Class; homework: Homework[]; isNow: boolean;
   theme: any; onAddHw: () => void; onToggleHw: (id: string) => void;
 }) {
   return (
-    <View style={[
-      styles.classBlock,
-      { backgroundColor: theme.surface, borderColor: isNow ? cls.color : theme.line },
-      isNow && { borderWidth: 1.5 },
-    ]}>
+    <View style={[styles.classBlock, { backgroundColor: theme.surface, borderColor: isNow ? cls.color : theme.line }, isNow && { borderWidth: 1.5 }]}>
       <View style={styles.classHeader}>
         <View style={[styles.classIcon, { backgroundColor: cls.color + '33' }]}>
           <Text style={styles.classEmoji}>{cls.emoji ?? '📚'}</Text>
         </View>
         <View style={styles.classInfo}>
-          <Text style={[styles.className, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
-            {cls.name}
-          </Text>
+          <Text style={[styles.className, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{cls.name}</Text>
           <Text style={[styles.classMeta, { fontFamily: theme.fMono, color: theme.soft }]}>
             {cls.start} – {cls.end}  ·  {cls.teacher}
           </Text>
@@ -186,15 +149,10 @@ function ClassBlock({
             <Text style={[styles.nowText, { fontFamily: theme.fMono }]}>NOW</Text>
           </View>
         )}
-        <TouchableOpacity
-          style={[styles.addHwBtn, { borderColor: cls.color + '88' }]}
-          onPress={onAddHw}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={[styles.addHwBtn, { borderColor: cls.color + '88' }]} onPress={onAddHw} activeOpacity={0.7}>
           <Text style={{ color: cls.color, fontSize: 20, lineHeight: 24 }}>+</Text>
         </TouchableOpacity>
       </View>
-
       {homework.length > 0 && (
         <View style={[styles.hwList, { borderTopColor: theme.line }]}>
           {homework.map((hw) => (
@@ -213,17 +171,11 @@ function EventBlock({ ev, theme, onToggle }: { ev: CalEvent; theme: any; onToggl
       onPress={onToggle}
       activeOpacity={0.8}
     >
-      <Text style={[styles.eventTime, { fontFamily: theme.fMono, color: theme.purple }]}>
-        {ev.time}
-      </Text>
+      <Text style={[styles.eventTime, { fontFamily: theme.fMono, color: theme.purple }]}>{ev.time}</Text>
       <View style={styles.eventInfo}>
-        <Text style={[styles.eventTitle, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>
-          {ev.title}
-        </Text>
+        <Text style={[styles.eventTitle, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{ev.title}</Text>
         {ev.location && (
-          <Text style={[styles.eventLoc, { fontFamily: theme.fMono, color: theme.soft }]}>
-            {ev.location}
-          </Text>
+          <Text style={[styles.eventLoc, { fontFamily: theme.fMono, color: theme.soft }]}>{ev.location}</Text>
         )}
       </View>
     </TouchableOpacity>
@@ -248,8 +200,7 @@ export default function TodayScreen() {
 
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
-  const today = new Date();
-  const isToday = isSameDay(selectedDate, today);
+  const isToday = isSameDay(selectedDate, new Date());
 
   function isClassNow(cls: Class) {
     if (!isToday || !cls.start || !cls.end) return false;
@@ -258,33 +209,31 @@ export default function TodayScreen() {
 
   const todayEvents = events.filter((e) => e.date && isSameDay(new Date(e.date), selectedDate));
 
-  const dayAbbr = selectedDate.toLocaleDateString('en-CA', { weekday: 'short' }).toUpperCase();
-  const dateStr2 = selectedDate.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }).toUpperCase();
-
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
-      <View style={styles.topBar}>
-        <View>
-          <Text style={[styles.dateLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
-            {dayAbbr} · {dateStr2}
-          </Text>
-          <Text style={[styles.screenTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
-            today
-          </Text>
-        </View>
-        <PointsChip points={points} streak={streak} theme={theme} />
-      </View>
-
-      <DayPicker selected={selectedDate} onSelect={setSelectedDate} />
+      {/* News ticker pinned at top */}
+      <NewsTicker theme={theme} />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <QuoteCard theme={theme} />
-        <NewsTicker theme={theme} />
+        {/* Header: title + points chip */}
+        <View style={styles.topBar}>
+          <Text style={[styles.screenTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>today</Text>
+          <PointsChip points={points} streak={streak} theme={theme} />
+        </View>
 
+        {/* Day picker */}
+        <View style={styles.dayPickerWrap}>
+          <DayPicker selected={selectedDate} onSelect={setSelectedDate} />
+        </View>
+
+        {/* Daily Fuel */}
+        <QuoteCard theme={theme} />
+
+        {/* Class blocks */}
         {classes.map((cls) => {
           const classHw = homework.filter((h) => h.classId === cls.id);
           return (
@@ -300,6 +249,7 @@ export default function TodayScreen() {
           );
         })}
 
+        {/* Events */}
         {todayEvents.map((ev) => (
           <EventBlock key={ev.id} ev={ev} theme={theme} onToggle={() => toggleEvent(ev.id)} />
         ))}
@@ -326,16 +276,40 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  tickerContainer: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingTop: 8,
+    paddingBottom: 6,
+  },
+  tickerLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  tickerDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  tickerLabel: { fontSize: 9, letterSpacing: 1.5 },
+  tickerWrap: { height: 18, overflow: 'hidden' },
+  tickerScroll: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    top: 0,
+    left: 0,
+  },
+  tickerItemWrap: { flexDirection: 'row' },
+  tickerSrc: { fontSize: 11, letterSpacing: 0.3 },
+  tickerText: { fontSize: 11, letterSpacing: 0.2, paddingHorizontal: 4 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 32 },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingHorizontal: 20,
-    paddingTop: 4,
+    alignItems: 'center',
+    paddingTop: 8,
     paddingBottom: 4,
   },
-  dateLabel: { fontSize: 11, letterSpacing: 1.5, marginBottom: 2 },
-  screenTitle: { fontSize: 40, lineHeight: 44 },
+  screenTitle: { fontSize: 40, lineHeight: 48 },
   pointsChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -347,46 +321,20 @@ const styles = StyleSheet.create({
   pointsStreak: { color: '#fff', fontSize: 14 },
   pointsDot: { fontSize: 14 },
   pointsNum: { color: '#fff', fontSize: 14 },
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 32, paddingTop: 4 },
+  dayPickerWrap: {
+    marginHorizontal: -16,
+    marginBottom: 12,
+  },
   quoteCard: {
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
-    gap: 8,
+    gap: 6,
     marginBottom: 12,
   },
-  quoteHeader: { flexDirection: 'row', alignItems: 'center' },
   quoteFuel: { fontSize: 10, letterSpacing: 1.5 },
   quoteText: { fontSize: 18, lineHeight: 26 },
   quoteAuthor: { fontSize: 12, letterSpacing: 0.3 },
-  tickerContainer: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingTop: 10,
-    paddingBottom: 8,
-    marginBottom: 12,
-    overflow: 'hidden',
-  },
-  tickerLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingBottom: 6,
-  },
-  tickerDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
-  tickerLabel: { fontSize: 9, letterSpacing: 1.5 },
-  tickerWrap: { height: 20, overflow: 'hidden' },
-  tickerScroll: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'center',
-    top: 0,
-    left: 0,
-  },
-  tickerItemWrap: { flexDirection: 'row' },
-  tickerSrc: { fontSize: 11, letterSpacing: 0.3 },
-  tickerText: { fontSize: 11, letterSpacing: 0.2 },
   classBlock: {
     borderRadius: 16,
     borderWidth: 1,
@@ -429,12 +377,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   hwList: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 14, paddingBottom: 8 },
-  hwRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 10,
-    gap: 10,
-  },
+  hwRow: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 10, gap: 10 },
   hwRowDone: { opacity: 0.5 },
   hwCheck: {
     width: 20,
@@ -460,6 +403,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginBottom: 12,
   },
   eventTime: { fontSize: 13, letterSpacing: 0.5, minWidth: 52 },
   eventInfo: { flex: 1 },

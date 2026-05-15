@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
 import { makeTheme, Vibe } from '../../theme';
-import SerifTitle from '../../components/SerifTitle';
 import MicroLabel from '../../components/MicroLabel';
+import { supabase } from '../../lib/supabase';
 
 const VIBES: { id: Vibe; label: string; accent: string }[] = [
   { id: 'twilight', label: 'Twilight', accent: '#a78bfa' },
@@ -20,42 +20,37 @@ const VIBES: { id: Vibe; label: string; accent: string }[] = [
   { id: 'mono', label: 'Mono', accent: '#22c55e' },
 ];
 
-function NotifRow({ notif, theme }: any) {
-  return (
-    <View style={[styles.notifRow, { borderColor: theme.line }]}>
-      <View
-        style={[
-          styles.notifDot,
-          { backgroundColor: notif.type === 'hw' ? theme.accent : notif.type === 'friend' ? theme.magenta : theme.cyan },
-        ]}
-      />
-      <View style={styles.notifInfo}>
-        <Text style={[styles.notifText, { fontFamily: theme.fBody, color: theme.ink }]}>
-          {notif.text}
-        </Text>
-        <Text style={[styles.notifTime, { fontFamily: theme.fMono, color: theme.soft }]}>
-          {notif.time}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-export default function MeScreen() {
+export default function MeScreen({ navigation }: any) {
   const points = useStore((s) => s.points);
   const streak = useStore((s) => s.streak);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const setVibe = useStore((s) => s.setVibe);
   const setDarkMode = useStore((s) => s.setDarkMode);
-  const notifications = useStore((s) => s.notifications);
   const setPhase = useStore((s) => s.setPhase);
+  const school = useStore((s) => s.school);
+  const classes = useStore((s) => s.classes);
+  const pairingCode = useStore((s) => s.pairingCode);
   const theme = makeTheme(vibe, darkMode);
+
+  const [email, setEmail] = useState('');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email) setEmail(data.user.email);
+    });
+  }, []);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    setPhase('auth');
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Profile header */}
+
+        {/* Profile card */}
         <LinearGradient
           colors={theme.accentGrad}
           start={{ x: 0, y: 0 }}
@@ -65,25 +60,88 @@ export default function MeScreen() {
           <View style={styles.profileAvatar}>
             <Text style={[styles.profileInitial, { fontFamily: theme.fDisplayItalic }]}>N</Text>
           </View>
-          <Text style={[styles.profileName, { fontFamily: theme.fBodySemiBold, color: '#fff' }]}>
-            Noah
-          </Text>
+          <Text style={[styles.profileName, { fontFamily: theme.fBodySemiBold, color: '#fff' }]}>Noah</Text>
           <View style={styles.profileStats}>
             <View style={styles.statItem}>
-              <Text style={[styles.statNum, { fontFamily: theme.fMono, color: '#fff' }]}>{points}</Text>
-              <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: 'rgba(255,255,255,0.7)' }]}>pts</Text>
+              <Text style={[styles.statNum, { fontFamily: theme.fMono, color: '#fff' }]}>{points.toLocaleString()}</Text>
+              <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: 'rgba(255,255,255,0.7)' }]}>PTS</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={[styles.statNum, { fontFamily: theme.fMono, color: '#fff' }]}>{streak}</Text>
-              <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: 'rgba(255,255,255,0.7)' }]}>day streak</Text>
+              <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: 'rgba(255,255,255,0.7)' }]}>DAY STREAK</Text>
             </View>
           </View>
         </LinearGradient>
 
-        {/* Vibe picker */}
+        {/* Account info */}
         <View style={styles.section}>
-          <MicroLabel>Vibe</MicroLabel>
+          <MicroLabel>Account</MicroLabel>
+          <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+            {email !== '' && (
+              <View style={[styles.infoRow, { borderBottomColor: theme.line }]}>
+                <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>EMAIL</Text>
+                <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]} numberOfLines={1}>{email}</Text>
+              </View>
+            )}
+            <View style={[styles.infoRow, { borderBottomColor: theme.line }]}>
+              <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>SCHOOL</Text>
+              <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]}>{school.name}</Text>
+            </View>
+            <View style={[styles.infoRow, { borderBottomColor: theme.line }]}>
+              <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>CITY</Text>
+              <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]}>{school.city}</Text>
+            </View>
+            <View style={[styles.infoRow, { borderBottomColor: 'transparent' }]}>
+              <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>PAIRING CODE</Text>
+              <Text style={[styles.infoValue, { fontFamily: theme.fMono, color: theme.accent, letterSpacing: 3 }]}>{pairingCode}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Classes */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MicroLabel>My Classes</MicroLabel>
+            <TouchableOpacity onPress={() => setPhase('onboarding')}>
+              <Text style={[styles.editLink, { fontFamily: theme.fMono, color: theme.accent }]}>Edit schedule →</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+            {classes.length === 0 ? (
+              <View style={styles.emptyClasses}>
+                <Text style={[styles.emptyClassesText, { fontFamily: theme.fBody, color: theme.soft }]}>
+                  No classes set up yet.
+                </Text>
+              </View>
+            ) : (
+              classes.map((cls, i) => (
+                <View
+                  key={cls.id}
+                  style={[styles.classRow, { borderBottomColor: theme.line, borderBottomWidth: i < classes.length - 1 ? StyleSheet.hairlineWidth : 0 }]}
+                >
+                  <View style={[styles.classDot, { backgroundColor: cls.color }]} />
+                  <View style={styles.classText}>
+                    <Text style={[styles.className, { fontFamily: theme.fBody, color: theme.ink }]}>{cls.name}</Text>
+                    {cls.teacher && (
+                      <Text style={[styles.classTeacher, { fontFamily: theme.fMono, color: theme.soft }]}>{cls.teacher}</Text>
+                    )}
+                  </View>
+                  <Text style={[styles.classTime, { fontFamily: theme.fMono, color: theme.sub }]}>
+                    {cls.start}–{cls.end}
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
+          <Text style={[styles.editHint, { fontFamily: theme.fMono, color: theme.soft }]}>
+            Tap "Edit schedule" at the start of a new semester to update your classes.
+          </Text>
+        </View>
+
+        {/* Appearance */}
+        <View style={styles.section}>
+          <MicroLabel>Appearance</MicroLabel>
           <View style={styles.vibeRow}>
             {VIBES.map((v) => (
               <TouchableOpacity
@@ -104,37 +162,20 @@ export default function MeScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
-
-        {/* Dark mode */}
-        <View style={[styles.settingRow, { borderColor: theme.line }]}>
-          <Text style={[styles.settingLabel, { fontFamily: theme.fBody, color: theme.ink }]}>Dark mode</Text>
-          <Switch
-            value={darkMode}
-            onValueChange={setDarkMode}
-            trackColor={{ false: theme.line, true: theme.accent + '88' }}
-            thumbColor={darkMode ? theme.accent : theme.soft}
-          />
-        </View>
-
-        {/* Notifications */}
-        {notifications.length > 0 && (
-          <View style={styles.section}>
-            <MicroLabel>Activity</MicroLabel>
-            {notifications.slice(0, 5).map((n) => (
-              <NotifRow key={n.id} notif={n} theme={theme} />
-            ))}
+          <View style={[styles.settingRow, { borderColor: theme.line, backgroundColor: theme.surface }]}>
+            <Text style={[styles.settingLabel, { fontFamily: theme.fBody, color: theme.ink }]}>Dark mode</Text>
+            <Switch
+              value={darkMode}
+              onValueChange={setDarkMode}
+              trackColor={{ false: theme.line, true: theme.accent + '88' }}
+              thumbColor={darkMode ? theme.accent : theme.soft}
+            />
           </View>
-        )}
+        </View>
 
         {/* Sign out */}
-        <TouchableOpacity
-          style={[styles.signOut, { borderColor: theme.red + '55' }]}
-          onPress={() => setPhase('auth')}
-        >
-          <Text style={[styles.signOutText, { fontFamily: theme.fMono, color: theme.red }]}>
-            sign out
-          </Text>
+        <TouchableOpacity style={[styles.signOut, { borderColor: theme.red + '55' }]} onPress={handleSignOut}>
+          <Text style={[styles.signOutText, { fontFamily: theme.fMono, color: theme.red }]}>SIGN OUT</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -143,17 +184,12 @@ export default function MeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  content: { padding: 20, gap: 20, paddingBottom: 40 },
+  content: { padding: 20, gap: 20, paddingBottom: 48 },
   profileCard: {
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
     gap: 8,
-    shadowColor: '#a78bfa',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
   },
   profileAvatar: {
     width: 64,
@@ -171,6 +207,39 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' },
   statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.3)' },
   section: { gap: 10 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  editLink: { fontSize: 11, letterSpacing: 0.5 },
+  infoCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+  },
+  infoLabel: { fontSize: 10, letterSpacing: 1, flexShrink: 0 },
+  infoValue: { fontSize: 14, textAlign: 'right', flex: 1 },
+  classRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  classDot: { width: 10, height: 10, borderRadius: 5, flexShrink: 0 },
+  classText: { flex: 1 },
+  className: { fontSize: 15 },
+  classTeacher: { fontSize: 11, letterSpacing: 0.3, marginTop: 1 },
+  classTime: { fontSize: 11, letterSpacing: 0.3 },
+  emptyClasses: { padding: 16 },
+  emptyClassesText: { fontSize: 14 },
+  editHint: { fontSize: 11, letterSpacing: 0.3, paddingHorizontal: 4 },
   vibeRow: { flexDirection: 'row', gap: 10 },
   vibeOption: {
     flex: 1,
@@ -186,27 +255,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 12,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   settingLabel: { fontSize: 15 },
-  notifRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    alignItems: 'flex-start',
-  },
-  notifDot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
-  notifInfo: { flex: 1, gap: 2 },
-  notifText: { fontSize: 14, lineHeight: 20 },
-  notifTime: { fontSize: 10, letterSpacing: 0.5 },
   signOut: {
     borderRadius: 12,
     borderWidth: 1,
     padding: 14,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
   },
-  signOutText: { fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' },
+  signOutText: { fontSize: 13, letterSpacing: 1.5 },
 });
