@@ -18,7 +18,7 @@ const START_HOUR = 8;
 const END_HOUR = 17;
 const ROW_H = 56;
 const COL_W = 110;
-const GUTTER = 44;
+const GUTTER = 32;
 const DAY_HDR_H = 54;
 
 function getWeekDays(anchor: Date): Date[] {
