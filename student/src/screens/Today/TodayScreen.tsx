@@ -17,6 +17,7 @@ import { Class, Homework, CalEvent } from '../../types';
 import DayPicker from '../../components/DayPicker';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
 import AddEventSheet from '../sheets/AddEventSheet';
+import { getClosedReason } from '../../data/schoolClosed';
 
 function isSameDay(a: Date, b: Date) {
   return (
@@ -202,6 +203,11 @@ export default function TodayScreen() {
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const isToday = isSameDay(selectedDate, new Date());
 
+  const dayOfWeek = selectedDate.getDay(); // 0=Sun, 6=Sat
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const closedReason = getClosedReason(selectedDate);
+  const showClasses = !isWeekend && !closedReason;
+
   function isClassNow(cls: Class) {
     if (!isToday || !cls.start || !cls.end) return false;
     return nowMin >= timeToMinutes(cls.start) && nowMin <= timeToMinutes(cls.end);
@@ -233,8 +239,20 @@ export default function TodayScreen() {
         {/* Daily Fuel */}
         <QuoteCard theme={theme} />
 
+        {/* No-school banner */}
+        {(isWeekend || closedReason) && (
+          <View style={[styles.noSchoolBanner, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+            <Text style={[styles.noSchoolIcon, { color: theme.soft }]}>
+              {isWeekend ? '🛋️' : '🏫'}
+            </Text>
+            <Text style={[styles.noSchoolText, { fontFamily: theme.fDisplayItalic, color: theme.sub }]}>
+              {isWeekend ? 'Weekend' : closedReason}
+            </Text>
+          </View>
+        )}
+
         {/* Class blocks */}
-        {classes.map((cls) => {
+        {showClasses && classes.map((cls) => {
           const classHw = homework.filter((h) => h.classId === cls.id);
           return (
             <ClassBlock
@@ -254,7 +272,7 @@ export default function TodayScreen() {
           <EventBlock key={ev.id} ev={ev} theme={theme} onToggle={() => toggleEvent(ev.id)} />
         ))}
 
-        {classes.length === 0 && todayEvents.length === 0 && (
+        {showClasses && classes.length === 0 && todayEvents.length === 0 && (
           <View style={styles.empty}>
             <Text style={[styles.emptyText, { fontFamily: theme.fDisplayItalic, color: theme.sub }]}>
               Nothing due. Enjoy the day.
@@ -409,6 +427,16 @@ const styles = StyleSheet.create({
   eventInfo: { flex: 1 },
   eventTitle: { fontSize: 15 },
   eventLoc: { fontSize: 11, letterSpacing: 0.5, marginTop: 2 },
+  noSchoolBanner: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  noSchoolIcon: { fontSize: 36 },
+  noSchoolText: { fontSize: 22 },
   empty: { alignItems: 'center', paddingTop: 40 },
   emptyText: { fontSize: 22, textAlign: 'center' },
 });

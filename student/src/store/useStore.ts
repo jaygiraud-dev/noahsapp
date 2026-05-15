@@ -23,8 +23,10 @@ interface AppState {
   vibe: Vibe;
   darkMode: boolean;
   reward: { points: number; streak: number } | null;
+  userId: string;
 
   setPhase: (phase: AppPhase) => void;
+  resetForUser: (uid: string, role: 'student' | 'parent') => void;
   setSchool: (school: School) => void;
   setClasses: (classes: Class[]) => void;
   setUseClassTimes: (v: boolean) => void;
@@ -103,8 +105,24 @@ export const useStore = create<AppState>()(
   vibe: 'twilight',
   darkMode: true,
   reward: null,
+  userId: '',
 
   setPhase: (phase) => set({ phase }),
+
+  resetForUser: (uid, role) => set({
+    userId: uid,
+    classes: [],
+    homework: [],
+    events: [],
+    points: 0,
+    streak: 0,
+    friends: [],
+    friendRequests: [],
+    notifications: [],
+    parentPaired: false,
+    reward: null,
+    phase: role === 'parent' ? 'parent' : 'onboarding',
+  }),
   setSchool: (school) => set({ school }),
   setClasses: (classes) => set({ classes }),
   setUseClassTimes: (v) => set({ useClassTimes: v }),
@@ -183,6 +201,7 @@ export const useStore = create<AppState>()(
         notifications: state.notifications,
         vibe: state.vibe,
         darkMode: state.darkMode,
+        userId: state.userId,
       }),
     }
   )

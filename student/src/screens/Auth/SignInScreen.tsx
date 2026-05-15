@@ -29,6 +29,8 @@ export default function SignInScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const [mode, setMode] = useState<Mode>('signin');
   const setPhase = useStore((s) => s.setPhase);
+  const storedUserId = useStore((s) => s.userId);
+  const resetForUser = useStore((s) => s.resetForUser);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -39,6 +41,7 @@ export default function SignInScreen({ navigation }: any) {
 
     let authError: string | null = null;
     let role: string = accountType;
+    let uid = '';
 
     if (mode === 'signup') {
       const { data, error: e } = await supabase.auth.signUp({
@@ -47,11 +50,11 @@ export default function SignInScreen({ navigation }: any) {
         options: { data: { role: accountType } },
       });
       if (e) authError = e.message;
-      else role = data.user?.user_metadata?.role ?? accountType;
+      else { role = data.user?.user_metadata?.role ?? accountType; uid = data.user?.id ?? ''; }
     } else {
       const { data, error: e } = await supabase.auth.signInWithPassword({ email, password });
       if (e) authError = e.message;
-      else role = data.user?.user_metadata?.role ?? accountType;
+      else { role = data.user?.user_metadata?.role ?? accountType; uid = data.user?.id ?? ''; }
     }
 
     setLoading(false);
@@ -61,7 +64,11 @@ export default function SignInScreen({ navigation }: any) {
       return;
     }
 
-    setPhase(role === 'parent' ? 'parent' : 'onboarding');
+    if (uid && uid !== storedUserId) {
+      resetForUser(uid, role as 'student' | 'parent');
+    } else {
+      setPhase(role === 'parent' ? 'parent' : 'onboarding');
+    }
   }
 
   const isStudent = accountType === 'student';
