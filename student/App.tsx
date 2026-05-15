@@ -25,7 +25,8 @@ export default function App() {
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const setPhase = useStore((s) => s.setPhase);
-  const phase = useStore((s) => s.phase);
+  const storedUserId = useStore((s) => s.userId);
+  const resetForUser = useStore((s) => s.resetForUser);
 
   const [fontsLoaded] = useFonts({
     InstrumentSerif_400Regular,
@@ -39,20 +40,20 @@ export default function App() {
   });
 
   useEffect(() => {
-    // Restore session on load — keeps user logged in after refresh
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        // No session: only reset to auth if we're not in demo mode
-        if (phase !== 'onboarding' && phase !== 'main' && phase !== 'parent') {
-          setPhase('auth');
-        }
+        setPhase('auth');
         return;
       }
-      const role = session.user.user_metadata?.role;
-      setPhase(role === 'parent' ? 'parent' : 'main');
+      const role = (session.user.user_metadata?.role ?? 'student') as 'student' | 'parent';
+      if (session.user.id !== storedUserId) {
+        // Different user logged in — wipe previous user's data
+        resetForUser(session.user.id, role);
+      } else {
+        setPhase(role === 'parent' ? 'parent' : 'main');
+      }
     });
 
-    // Sign out on auth state change
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') setPhase('auth');
     });
