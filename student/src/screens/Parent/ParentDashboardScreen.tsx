@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -94,6 +95,51 @@ function KidCard({ kid, theme, onViewActivity }: { kid: LinkedKid; theme: Return
   );
 }
 
+function PairKidCard({ theme }: { theme: ReturnType<typeof makeTheme> }) {
+  const pairKid = useParentStore((s) => s.pairKid);
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+
+  function handlePair() {
+    if (code.trim().length === 0) return;
+    const success = pairKid(code.trim());
+    if (!success) {
+      setError('Code not found. Ask your child to check their pairing code in the app.');
+    }
+  }
+
+  return (
+    <View style={[styles.pairCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+      <Text style={[styles.pairTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
+        Link a student
+      </Text>
+      <Text style={[styles.pairHint, { fontFamily: theme.fBody, color: theme.sub }]}>
+        Ask your child for their 6-digit pairing code. They can find it in the app under Me → Pair with Parent.
+      </Text>
+      <View style={styles.pairRow}>
+        <TextInput
+          style={[styles.pairInput, { backgroundColor: theme.surfaceHi, borderColor: error ? theme.red : theme.line, color: theme.ink, fontFamily: theme.fMono }]}
+          value={code}
+          onChangeText={(v) => { setCode(v.toUpperCase()); setError(''); }}
+          placeholder="e.g. 7K4M2D"
+          placeholderTextColor={theme.soft}
+          autoCapitalize="characters"
+          maxLength={6}
+        />
+        <TouchableOpacity
+          style={[styles.pairBtn, { backgroundColor: theme.accent }]}
+          onPress={handlePair}
+        >
+          <Text style={[styles.pairBtnText, { fontFamily: theme.fMono }]}>Link</Text>
+        </TouchableOpacity>
+      </View>
+      {error !== '' && (
+        <Text style={[styles.pairError, { fontFamily: theme.fBody, color: theme.red }]}>{error}</Text>
+      )}
+    </View>
+  );
+}
+
 export default function ParentDashboardScreen({ navigation }: any) {
   const linkedKids = useParentStore((s) => s.linkedKids);
   const notifications = useParentStore((s) => s.notifications);
@@ -115,19 +161,21 @@ export default function ParentDashboardScreen({ navigation }: any) {
           </Text>
         </View>
         <View style={styles.topRight}>
-          <TouchableOpacity
-            style={[styles.notifBtn, { backgroundColor: theme.surface, borderColor: theme.line }]}
-            onPress={() => navigation.navigate('ParentActivity')}
-          >
-            <Text style={[styles.notifIcon, { color: unreadCount > 0 ? theme.magenta : theme.soft }]}>
-              🔔
-            </Text>
-            {unreadCount > 0 && (
-              <View style={[styles.notifBadge, { backgroundColor: theme.magenta }]}>
-                <Text style={[styles.notifBadgeText, { fontFamily: theme.fMono }]}>{unreadCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          {linkedKids.length > 0 && (
+            <TouchableOpacity
+              style={[styles.notifBtn, { backgroundColor: theme.surface, borderColor: theme.line }]}
+              onPress={() => navigation.navigate('ParentActivity')}
+            >
+              <Text style={[styles.notifIcon, { color: unreadCount > 0 ? theme.magenta : theme.soft }]}>
+                🔔
+              </Text>
+              {unreadCount > 0 && (
+                <View style={[styles.notifBadge, { backgroundColor: theme.magenta }]}>
+                  <Text style={[styles.notifBadgeText, { fontFamily: theme.fMono }]}>{unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); setPhase('auth'); }}>
             <Text style={[styles.signOut, { fontFamily: theme.fMono, color: theme.soft }]}>sign out</Text>
           </TouchableOpacity>
@@ -144,17 +192,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
           />
         ))}
 
-        {linkedKids.length === 0 && (
-          <View style={styles.empty}>
-            <Text style={[styles.emptyIcon, { color: theme.soft }]}>👀</Text>
-            <Text style={[styles.emptyText, { fontFamily: theme.fDisplayItalic, color: theme.sub }]}>
-              No kids linked yet.
-            </Text>
-            <Text style={[styles.emptyHint, { fontFamily: theme.fBody, color: theme.soft }]}>
-              Ask your child for their 6-digit pairing code from the app.
-            </Text>
-          </View>
-        )}
+        <PairKidCard theme={theme} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -232,8 +270,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activityBtnText: { fontSize: 13, letterSpacing: 0.5 },
-  empty: { alignItems: 'center', paddingTop: 60, gap: 12 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 22 },
-  emptyHint: { fontSize: 14, textAlign: 'center' },
+  pairCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 20,
+    gap: 12,
+  },
+  pairTitle: { fontSize: 22 },
+  pairHint: { fontSize: 14, lineHeight: 20 },
+  pairRow: { flexDirection: 'row', gap: 10 },
+  pairInput: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 18,
+    letterSpacing: 4,
+    textAlign: 'center',
+  },
+  pairBtn: {
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pairBtnText: { color: '#fff', fontSize: 14, letterSpacing: 0.5 },
+  pairError: { fontSize: 13, lineHeight: 18 },
 });
