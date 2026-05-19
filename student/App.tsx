@@ -26,6 +26,8 @@ export default function App() {
   const darkMode = useStore((s) => s.darkMode);
   const setPhase = useStore((s) => s.setPhase);
   const storedUserId = useStore((s) => s.userId);
+  const storedUserRole = useStore((s) => s.userRole);
+  const hasHydrated = useStore((s) => s._hasHydrated);
   const resetForUser = useStore((s) => s.resetForUser);
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -41,24 +43,29 @@ export default function App() {
   });
 
   useEffect(() => {
+    if (!hasHydrated) return;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         setPhase('auth');
       } else {
-        const role = (session.user.user_metadata?.role ?? 'student') as 'student' | 'parent';
         if (session.user.id !== storedUserId) {
+          // Different (or new) user — determine role from metadata, fallback to student
+          const role = (session.user.user_metadata?.role ?? 'student') as 'student' | 'parent';
           resetForUser(session.user.id, role);
         } else {
-          setPhase(role === 'parent' ? 'parent' : 'main');
+          // Same user returning — trust the persisted role, not metadata
+          setPhase(storedUserRole === 'parent' ? 'parent' : 'main');
         }
       }
       setSessionReady(true);
     });
+  }, [hasHydrated]);
 
+  useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') setPhase('auth');
     });
-
     return () => sub.subscription.unsubscribe();
   }, []);
 

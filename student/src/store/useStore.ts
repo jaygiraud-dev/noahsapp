@@ -24,8 +24,11 @@ interface AppState {
   darkMode: boolean;
   reward: { points: number; streak: number } | null;
   userId: string;
+  userRole: 'student' | 'parent';
+  _hasHydrated: boolean;
 
   setPhase: (phase: AppPhase) => void;
+  setHasHydrated: (v: boolean) => void;
   resetForUser: (uid: string, role: 'student' | 'parent') => void;
   setSchool: (school: School) => void;
   setClasses: (classes: Class[]) => void;
@@ -106,11 +109,15 @@ export const useStore = create<AppState>()(
   darkMode: true,
   reward: null,
   userId: '',
+  userRole: 'student',
+  _hasHydrated: false,
 
   setPhase: (phase) => set({ phase }),
+  setHasHydrated: (v) => set({ _hasHydrated: v }),
 
   resetForUser: (uid, role) => set({
     userId: uid,
+    userRole: role,
     classes: [],
     homework: [],
     events: [],
@@ -185,6 +192,9 @@ export const useStore = create<AppState>()(
     {
       name: 'my-agenda-store',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
       partialize: (state) => ({
         phase: state.phase,
         school: state.school,
@@ -202,6 +212,7 @@ export const useStore = create<AppState>()(
         vibe: state.vibe,
         darkMode: state.darkMode,
         userId: state.userId,
+        userRole: state.userRole,
       }),
     }
   )
