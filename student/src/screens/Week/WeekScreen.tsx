@@ -18,7 +18,7 @@ const START_HOUR = 8;
 const END_HOUR = 17;
 const ROW_H = 56;
 const COL_W = 110;
-const GUTTER = 40;
+const GUTTER = 52;
 const DAY_HDR_H = 54;
 
 function getWeekDays(anchor: Date): Date[] {
@@ -303,9 +303,8 @@ const styles = StyleSheet.create({
   },
   gutterRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    justifyContent: 'flex-start',
-    paddingTop: 3,
-    paddingLeft: 4,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   },
   timeLabel: { fontSize: 9, letterSpacing: 0.3 },
   dayHeaderRow: {
