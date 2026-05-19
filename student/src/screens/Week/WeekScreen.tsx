@@ -97,36 +97,16 @@ export default function WeekScreen() {
         </View>
       </View>
 
-      {/* Grid area: fixed time gutter + horizontally scrollable day columns */}
+      {/* Grid area */}
       <View style={[styles.gridArea, { height: scrollAreaHeight }]}>
 
-        {/* Fixed time gutter column */}
-        <ScrollView
-          style={{ width: GUTTER }}
-          scrollEnabled={false}
-          showsVerticalScrollIndicator={false}
-          nestedScrollEnabled
-        >
-          {/* Spacer matching day header height */}
-          <View style={{ height: DAY_HDR_H, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.line }} />
-          {/* Hour labels */}
-          {hours.map((hour) => (
-            <View key={hour} style={[styles.gutterRow, { height: ROW_H, borderTopColor: theme.line }]}>
-              <Text style={[styles.timeLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
-                {hour}:00
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* Horizontally scrollable day columns */}
+        {/* Horizontally scrollable day columns — full width, padded left by GUTTER */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={{ flex: 1 }}
-          contentContainerStyle={{ width: totalDayWidth }}
+          contentContainerStyle={{ paddingLeft: GUTTER }}
         >
-          {/* Outer vertical scroll for the day grid */}
           <ScrollView
             style={{ width: totalDayWidth }}
             showsVerticalScrollIndicator={false}
@@ -269,6 +249,18 @@ export default function WeekScreen() {
             </View>
           </ScrollView>
         </ScrollView>
+
+        {/* Time gutter — absolutely positioned on top so day content scrolls behind it */}
+        <View style={[styles.gutterOverlay, { backgroundColor: theme.bg, borderRightColor: theme.line }]}>
+          <View style={{ height: DAY_HDR_H }} />
+          {hours.map((hour) => (
+            <View key={hour} style={[styles.gutterRow, { height: ROW_H, borderTopColor: theme.line }]}>
+              <Text style={[styles.timeLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
+                {hour}:00
+              </Text>
+            </View>
+          ))}
+        </View>
       </View>
 
       <AddEventSheet
@@ -297,8 +289,17 @@ const styles = StyleSheet.create({
   navArrow: { fontSize: 18 },
   monthLabel: { fontSize: 11, letterSpacing: 1.5 },
   gridArea: {
-    flexDirection: 'row',
     flex: 1,
+    position: 'relative',
+  },
+  gutterOverlay: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: GUTTER,
+    zIndex: 10,
+    borderRightWidth: StyleSheet.hairlineWidth,
   },
   gutterRow: {
     borderTopWidth: StyleSheet.hairlineWidth,

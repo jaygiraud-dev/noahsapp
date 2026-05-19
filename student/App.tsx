@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
@@ -27,6 +27,7 @@ export default function App() {
   const setPhase = useStore((s) => s.setPhase);
   const storedUserId = useStore((s) => s.userId);
   const resetForUser = useStore((s) => s.resetForUser);
+  const [sessionReady, setSessionReady] = useState(false);
 
   const [fontsLoaded] = useFonts({
     InstrumentSerif_400Regular,
@@ -43,15 +44,15 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         setPhase('auth');
-        return;
-      }
-      const role = (session.user.user_metadata?.role ?? 'student') as 'student' | 'parent';
-      if (session.user.id !== storedUserId) {
-        // Different user logged in — wipe previous user's data
-        resetForUser(session.user.id, role);
       } else {
-        setPhase(role === 'parent' ? 'parent' : 'main');
+        const role = (session.user.user_metadata?.role ?? 'student') as 'student' | 'parent';
+        if (session.user.id !== storedUserId) {
+          resetForUser(session.user.id, role);
+        } else {
+          setPhase(role === 'parent' ? 'parent' : 'main');
+        }
       }
+      setSessionReady(true);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
@@ -61,7 +62,7 @@ export default function App() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !sessionReady) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator size="large" color="#a78bfa" />
