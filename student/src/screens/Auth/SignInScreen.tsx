@@ -50,12 +50,14 @@ export default function SignInScreen({ navigation }: any) {
         options: { data: { role: accountType } },
       });
       if (e) authError = e.message;
-      else { role = data.user?.user_metadata?.role ?? accountType; uid = data.user?.id ?? ''; }
+      else uid = data.user?.id ?? '';
     } else {
       const { data, error: e } = await supabase.auth.signInWithPassword({ email, password });
       if (e) authError = e.message;
-      else { role = data.user?.user_metadata?.role ?? accountType; uid = data.user?.id ?? ''; }
+      else uid = data.user?.id ?? '';
     }
+    // Always use the toggle the user selected — not Supabase metadata
+    role = accountType;
 
     setLoading(false);
 
