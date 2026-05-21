@@ -60,12 +60,23 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
     onClose();
   }
 
+  useEffect(() => {
+    if (visible) {
+      setTitle('');
+      setLocation('');
+      setType(EVENT_TYPES[0].label);
+      setReminder(REMINDER_OPTIONS[0].label);
+    }
+  }, [visible]);
+
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.modal, { backgroundColor: theme.bg }]}
+        style={styles.backdrop}
       >
+        <TouchableOpacity style={styles.backdropDismiss} activeOpacity={1} onPress={onClose} />
+        <View style={[styles.modal, { backgroundColor: theme.bg }]}>
         <View style={[styles.handle, { backgroundColor: theme.line }]} />
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.titleRow}>
@@ -151,13 +162,16 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
 
           <PrimaryBtn label="Add event +" onPress={handleAdd} disabled={!title.trim()} style={styles.addBtn} />
         </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modal: { flex: 1 },
+  backdrop: { flex: 1, justifyContent: 'flex-end' },
+  backdropDismiss: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modal: { borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '85%' },
   handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 8 },
   content: { padding: 20, gap: 20 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
