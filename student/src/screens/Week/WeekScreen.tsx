@@ -47,12 +47,24 @@ function timeToMinutes(t: string) {
   return h * 60 + m;
 }
 
+function parseTimeToMinutes(t: string): number | null {
+  const match = t.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+  if (!match) return null;
+  let h = parseInt(match[1]);
+  const m = parseInt(match[2]);
+  const ampm = match[3]?.toLowerCase();
+  if (ampm === 'pm' && h !== 12) h += 12;
+  if (ampm === 'am' && h === 12) h = 0;
+  return h * 60 + m;
+}
+
 export default function WeekScreen() {
   const [anchor, setAnchor] = useState(new Date());
   const [addEventDate, setAddEventDate] = useState<Date | null>(null);
   const [addEventTime, setAddEventTime] = useState('');
   const homework = useStore((s) => s.homework);
   const classes = useStore((s) => s.classes);
+  const events = useStore((s) => s.events);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -120,14 +132,21 @@ export default function WeekScreen() {
                   const isToday = isSameDay(day, today);
                   const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                   const closed = !isWeekend && getClosedReason(day);
+                  const canAdd = !isWeekend && !closed;
                   return (
-                    <View
+                    <TouchableOpacity
                       key={day.toISOString()}
                       style={[
                         styles.dayHeader,
                         { width: COL_W },
                         isToday && { borderBottomColor: theme.accent, borderBottomWidth: 2 },
                       ]}
+                      onPress={() => {
+                        if (!canAdd) return;
+                        setAddEventDate(day);
+                        setAddEventTime('09:00');
+                      }}
+                      activeOpacity={canAdd ? 0.6 : 1}
                     >
                       <Text style={[styles.dayAbbr, { fontFamily: theme.fMono, color: isToday ? theme.accent : isWeekend ? theme.soft : theme.sub }]}>
                         {DAY_ABBR[day.getDay()]}
@@ -135,12 +154,14 @@ export default function WeekScreen() {
                       <Text style={[styles.dayNum, { fontFamily: isToday ? 'Inter_600SemiBold' : 'Inter_400Regular', color: isToday ? theme.accent : theme.ink }]}>
                         {day.getDate()}
                       </Text>
-                      {(isWeekend || closed) && (
+                      {(isWeekend || closed) ? (
                         <Text style={[styles.dayTag, { fontFamily: theme.fMono, color: theme.soft }]}>
-                          {isWeekend ? 'off' : 'pro-d'}
+                          {isWeekend ? 'off' : closed}
                         </Text>
+                      ) : (
+                        <Text style={[styles.dayAddBtn, { color: theme.accent + '99', fontFamily: theme.fMono }]}>+</Text>
                       )}
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -214,6 +235,58 @@ export default function WeekScreen() {
                       </Text>
                     </View>
                   );
+                });
+              })}
+
+              {/* SD44 closed-day banners */}
+              {weekDays.map((day, dayIdx) => {
+                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                if (isWeekend) return null;
+                const reason = getClosedReason(day);
+                if (!reason) return null;
+                const left = dayIdx * COL_W;
+                return (
+                  <View
+                    key={`closed-${day.toISOString()}`}
+                    style={[styles.closedBanner, { left, width: COL_W, top: DAY_HDR_H, height: hours.length * ROW_H, backgroundColor: theme.surface + 'cc' }]}
+                  >
+                    <Text style={[styles.closedLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
+                      {reason.toUpperCase()}
+                    </Text>
+                  </View>
+                );
+              })}
+
+              {/* CalEvent blocks — positioned by time */}
+              {weekDays.map((day, dayIdx) => {
+                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                const closed = !isWeekend && getClosedReason(day);
+                if (isWeekend || closed) return null;
+                const dayEvts = events.filter((ev) => ev.date && isSameDay(new Date(ev.date), day));
+                if (dayEvts.length === 0) return null;
+                const left = dayIdx * COL_W + 2;
+                return dayEvts.map((ev, evIdx) => {
+                  const startMin = ev.time ? parseTimeToMinutes(ev.time) : null;
+                  const inGrid = startMin !== null && startMin >= START_HOUR * 60 && startMin < END_HOUR * 60;
+                  if (inGrid) {
+                    const top = DAY_HDR_H + (startMin - START_HOUR * 60) / 60 * ROW_H;
+                    return (
+                      <View
+                        key={ev.id}
+                        style={[styles.evtBlock, { top, left, width: COL_W - 4, backgroundColor: theme.accent + '33', borderLeftColor: theme.accent }]}
+                      >
+                        <Text style={[styles.evtBlockName, { fontFamily: theme.fMono, color: theme.accent }]} numberOfLines={1}>
+                          {ev.icon ? `${ev.icon} ` : ''}{ev.title}
+                        </Text>
+                        {ev.time && (
+                          <Text style={[styles.evtBlockTime, { fontFamily: theme.fMono, color: theme.accent + 'aa' }]}>
+                            {ev.time}
+                          </Text>
+                        )}
+                      </View>
+                    );
+                  }
+                  return null;
                 });
               })}
 
@@ -351,4 +424,21 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   hwChipText: { fontSize: 8, letterSpacing: 0.2 },
+  dayAddBtn: { fontSize: 13, lineHeight: 14 },
+  closedBanner: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closedLabel: { fontSize: 8, letterSpacing: 1.5, textTransform: 'uppercase', opacity: 0.6 },
+  evtBlock: {
+    position: 'absolute',
+    borderRadius: 4,
+    borderLeftWidth: 3,
+    padding: 4,
+    height: ROW_H - 2,
+    overflow: 'hidden',
+  },
+  evtBlockName: { fontSize: 9, letterSpacing: 0.3, lineHeight: 12 },
+  evtBlockTime: { fontSize: 8, letterSpacing: 0.3 },
 });
