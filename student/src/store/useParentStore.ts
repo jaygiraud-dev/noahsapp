@@ -31,6 +31,8 @@ interface ParentState {
 
   pairKid: (code: string) => boolean;
   markNotifRead: (id: string) => void;
+  markAllNotifsRead: () => void;
+  clearAllNotifications: () => void;
 }
 
 const SAMPLE_KID: LinkedKid = {
@@ -74,6 +76,13 @@ export const useParentStore = create<ParentState>()(
         set((s) => ({
           notifications: s.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
         })),
+
+      markAllNotifsRead: () =>
+        set((s) => ({
+          notifications: s.notifications.map((n) => ({ ...n, read: true })),
+        })),
+
+      clearAllNotifications: () => set({ notifications: [] }),
     }),
     {
       name: 'my-agenda-parent-store',
