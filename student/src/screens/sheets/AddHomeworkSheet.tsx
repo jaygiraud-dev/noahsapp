@@ -22,6 +22,8 @@ import MicroLabel from '../../components/MicroLabel';
 import Pill from '../../components/Pill';
 import SerifTitle from '../../components/SerifTitle';
 
+const MAX_PHOTOS = 3;
+
 interface Props {
   visible: boolean;
   onClose: () => void;
@@ -34,7 +36,7 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
   const [subject, setSubject] = useState(defaultClass?.name ?? '');
   const [tag, setTag] = useState(HW_TAGS[0].label);
   const [due, setDue] = useState(DUE_OPTIONS[0].label);
-  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
   const addHomework = useStore((s) => s.addHomework);
   const classes = useStore((s) => s.classes);
   const vibe = useStore((s) => s.vibe);
@@ -47,11 +49,13 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
       setTitle('');
       setTag(HW_TAGS[0].label);
       setDue(DUE_OPTIONS[0].label);
-      setAttachedImage(null);
+      setAttachedImages([]);
     }
   }, [visible, defaultClass]);
 
   async function pickImage(fromCamera: boolean) {
+    if (attachedImages.length >= MAX_PHOTOS) return;
+
     if (fromCamera) {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
@@ -79,7 +83,7 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
       const uri = Platform.OS === 'web' && asset.base64
         ? `data:image/jpeg;base64,${asset.base64}`
         : asset.uri;
-      setAttachedImage(uri);
+      setAttachedImages((prev) => [...prev, uri]);
     }
   }
 
@@ -93,6 +97,10 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
       { text: 'Photo library', onPress: () => pickImage(false) },
       { text: 'Cancel', style: 'cancel' },
     ]);
+  }
+
+  function removeImage(idx: number) {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== idx));
   }
 
   function handleAdd() {
@@ -113,10 +121,12 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
       dueDate: dueDate.toISOString(),
       done: false,
       points: 10,
-      attachedImage: attachedImage ?? undefined,
+      attachedImages: attachedImages.length > 0 ? attachedImages : undefined,
     });
     onClose();
   }
+
+  const canAddMore = attachedImages.length < MAX_PHOTOS;
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -182,27 +192,39 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
               </View>
             </View>
 
-            {/* Photo attachment */}
+            {/* Photo attachments — up to 3 */}
             <View style={styles.fieldGroup}>
-              <MicroLabel>Attach photo</MicroLabel>
-              {attachedImage ? (
-                <View style={styles.imagePreviewWrap}>
-                  <Image source={{ uri: attachedImage }} style={styles.imagePreview} resizeMode="cover" />
-                  <TouchableOpacity style={[styles.removeImg, { backgroundColor: theme.surface }]} onPress={() => setAttachedImage(null)}>
-                    <Text style={{ color: theme.soft, fontSize: 16 }}>×</Text>
+              <View style={styles.photoLabelRow}>
+                <MicroLabel>Photos</MicroLabel>
+                <Text style={[styles.photoCount, { fontFamily: theme.fMono, color: theme.soft }]}>
+                  {attachedImages.length}/{MAX_PHOTOS}
+                </Text>
+              </View>
+              <View style={styles.photoRow}>
+                {attachedImages.map((uri, idx) => (
+                  <View key={idx} style={styles.thumbWrap}>
+                    <Image source={{ uri }} style={styles.thumb} resizeMode="cover" />
+                    <TouchableOpacity
+                      style={[styles.thumbRemove, { backgroundColor: theme.bg }]}
+                      onPress={() => removeImage(idx)}
+                    >
+                      <Text style={[styles.thumbRemoveText, { color: theme.ink }]}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                {canAddMore && (
+                  <TouchableOpacity
+                    style={[styles.addPhotoTile, { backgroundColor: theme.surface, borderColor: theme.line }]}
+                    onPress={handleAttachPhoto}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.addPhotoIcon, { color: theme.soft }]}>📷</Text>
+                    <Text style={[styles.addPhotoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
+                      Add photo
+                    </Text>
                   </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.photoBtn, { backgroundColor: theme.surface, borderColor: theme.line }]}
-                  onPress={handleAttachPhoto}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.photoBtnText, { fontFamily: theme.fMono, color: theme.soft }]}>
-                    📷  Take / upload photo
-                  </Text>
-                </TouchableOpacity>
-              )}
+                )}
+              </View>
             </View>
 
             <PrimaryBtn label="Add homework +" onPress={handleAdd} disabled={!title.trim()} style={styles.addBtn} />
@@ -213,6 +235,8 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
   );
 }
 
+const THUMB_SIZE = 96;
+
 const styles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: 'flex-end' },
   backdropDismiss: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
@@ -222,36 +246,39 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   close: { fontSize: 28, lineHeight: 32 },
   fieldGroup: { gap: 8 },
-  input: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    fontSize: 15,
-  },
+  input: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 13, fontSize: 15 },
   pillRow: { gap: 8, flexDirection: 'row' },
   dueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   dueBtn: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
   dueBtnText: { fontSize: 12, letterSpacing: 0.5 },
-  photoBtn: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  photoBtnText: { fontSize: 13, letterSpacing: 0.5 },
-  imagePreviewWrap: { position: 'relative', borderRadius: 12, overflow: 'hidden' },
-  imagePreview: { width: '100%', height: 180, borderRadius: 12 },
-  removeImg: {
+  photoLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  photoCount: { fontSize: 10, letterSpacing: 0.5 },
+  photoRow: { flexDirection: 'row', gap: 10 },
+  thumbWrap: { position: 'relative', width: THUMB_SIZE, height: THUMB_SIZE },
+  thumb: { width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: 10 },
+  thumbRemove: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
+    opacity: 0.85,
   },
+  thumbRemoveText: { fontSize: 14, lineHeight: 18 },
+  addPhotoTile: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  addPhotoIcon: { fontSize: 22 },
+  addPhotoLabel: { fontSize: 9, letterSpacing: 0.5 },
   addBtn: { marginTop: 8 },
 });

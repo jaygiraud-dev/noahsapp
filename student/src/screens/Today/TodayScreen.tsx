@@ -142,10 +142,14 @@ function HwRow({ hw, theme, onToggle }: { hw: Homework; theme: any; onToggle: ()
             )}
           </View>
         </View>
-        {hw.attachedImage && (
-          <TouchableOpacity onPress={(e) => { e.stopPropagation?.(); setPreviewImage(hw.attachedImage!); }} activeOpacity={0.8}>
-            <Image source={{ uri: hw.attachedImage }} style={[styles.hwThumb, { borderColor: color + '55' }]} resizeMode="cover" />
-          </TouchableOpacity>
+        {(hw.attachedImages ?? []).length > 0 && (
+          <View style={styles.hwThumbs}>
+            {(hw.attachedImages ?? []).map((uri, i) => (
+              <TouchableOpacity key={i} onPress={(e) => { e.stopPropagation?.(); setPreviewImage(uri); }} activeOpacity={0.8}>
+                <Image source={{ uri }} style={[styles.hwThumb, { borderColor: color + '55' }]} resizeMode="cover" />
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
       </TouchableOpacity>
     </>
@@ -523,6 +527,7 @@ const styles = StyleSheet.create({
   hwTag: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
   hwTagText: { fontSize: 10, letterSpacing: 0.3 },
   hwDue: { fontSize: 11, letterSpacing: 0.3 },
+  hwThumbs: { flexDirection: 'column', gap: 4 },
   hwThumb: { width: 52, height: 52, borderRadius: 8, borderWidth: 1 },
   imgModalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
   imgModalFull: { width: '100%', height: '80%' },
