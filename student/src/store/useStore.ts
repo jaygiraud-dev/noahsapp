@@ -29,6 +29,7 @@ interface AppState {
 
   setPhase: (phase: AppPhase) => void;
   setHasHydrated: (v: boolean) => void;
+  setUserRole: (role: 'student' | 'parent') => void;
   resetForUser: (uid: string, role: 'student' | 'parent') => void;
   setSchool: (school: School) => void;
   setClasses: (classes: Class[]) => void;
@@ -114,6 +115,7 @@ export const useStore = create<AppState>()(
 
   setPhase: (phase) => set({ phase }),
   setHasHydrated: (v) => set({ _hasHydrated: v }),
+  setUserRole: (role) => set({ userRole: role }),
 
   resetForUser: (uid, role) => set({
     userId: uid,

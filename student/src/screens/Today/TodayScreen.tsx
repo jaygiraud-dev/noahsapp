@@ -195,7 +195,7 @@ function DueReminderBanner({ count, titles, theme, onDismiss }: {
   const slideY = useRef(new Animated.Value(-100)).current;
 
   useEffect(() => {
-    Animated.spring(slideY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 10 }).start();
+    Animated.spring(slideY, { toValue: 0, useNativeDriver: false, tension: 80, friction: 10 }).start();
     const t = setTimeout(onDismiss, 5000);
     return () => clearTimeout(t);
   }, []);
