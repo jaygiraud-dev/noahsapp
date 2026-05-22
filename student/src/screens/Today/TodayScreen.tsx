@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -98,33 +100,55 @@ function QuoteCard({ theme }: any) {
   );
 }
 
+function ImagePreviewModal({ uri, onClose }: { uri: string; onClose: () => void }) {
+  return (
+    <Modal visible animationType="fade" transparent onRequestClose={onClose}>
+      <TouchableOpacity style={styles.imgModalBackdrop} activeOpacity={1} onPress={onClose}>
+        <Image source={{ uri }} style={styles.imgModalFull} resizeMode="contain" />
+        <TouchableOpacity style={styles.imgModalClose} onPress={onClose}>
+          <Text style={styles.imgModalCloseText}>×</Text>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
 function HwRow({ hw, theme, onToggle }: { hw: Homework; theme: any; onToggle: () => void }) {
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const color = hw.classColor ?? theme.accent;
   return (
-    <TouchableOpacity style={[styles.hwRow, hw.done && styles.hwRowDone]} onPress={onToggle} activeOpacity={0.7}>
-      <View style={[styles.hwCheck, { borderColor: color, backgroundColor: hw.done ? color : 'transparent' }]}>
-        {hw.done && <Text style={styles.hwCheckMark}>✓</Text>}
-      </View>
-      <View style={styles.hwInfo}>
-        <Text style={[styles.hwTitle, { fontFamily: theme.fBody, color: hw.done ? theme.soft : theme.ink }, hw.done && { textDecorationLine: 'line-through' }]}>
-          {hw.title}
-        </Text>
-        <View style={styles.hwMeta}>
-          {hw.tag && (
-            <View style={[styles.hwTag, { backgroundColor: color + '22' }]}>
-              <Text style={[styles.hwTagText, { fontFamily: theme.fMono, color }]}>
-                {hw.tag === 'Reading' ? '📖' : hw.tag === 'Quiz' ? '✦' : hw.tag === 'Worksheet' ? '📋' : hw.tag === 'Lab' ? '🧪' : '•'} {hw.tag}
-              </Text>
-            </View>
-          )}
-          {hw.due && (
-            <Text style={[styles.hwDue, { fontFamily: theme.fMono, color: hw.dueUrgent ? theme.amber : theme.soft }]}>
-              {hw.dueUrgent && '△ '}{hw.due}
-            </Text>
-          )}
+    <>
+      {previewImage && <ImagePreviewModal uri={previewImage} onClose={() => setPreviewImage(null)} />}
+      <TouchableOpacity style={[styles.hwRow, hw.done && styles.hwRowDone]} onPress={onToggle} activeOpacity={0.7}>
+        <View style={[styles.hwCheck, { borderColor: color, backgroundColor: hw.done ? color : 'transparent' }]}>
+          {hw.done && <Text style={styles.hwCheckMark}>✓</Text>}
         </View>
-      </View>
-    </TouchableOpacity>
+        <View style={styles.hwInfo}>
+          <Text style={[styles.hwTitle, { fontFamily: theme.fBody, color: hw.done ? theme.soft : theme.ink }, hw.done && { textDecorationLine: 'line-through' }]}>
+            {hw.title}
+          </Text>
+          <View style={styles.hwMeta}>
+            {hw.tag && (
+              <View style={[styles.hwTag, { backgroundColor: color + '22' }]}>
+                <Text style={[styles.hwTagText, { fontFamily: theme.fMono, color }]}>
+                  {hw.tag === 'Reading' ? '📖' : hw.tag === 'Quiz' ? '✦' : hw.tag === 'Worksheet' ? '📋' : hw.tag === 'Lab' ? '🧪' : '•'} {hw.tag}
+                </Text>
+              </View>
+            )}
+            {hw.due && (
+              <Text style={[styles.hwDue, { fontFamily: theme.fMono, color: hw.dueUrgent ? theme.amber : theme.soft }]}>
+                {hw.dueUrgent && '△ '}{hw.due}
+              </Text>
+            )}
+          </View>
+        </View>
+        {hw.attachedImage && (
+          <TouchableOpacity onPress={(e) => { e.stopPropagation?.(); setPreviewImage(hw.attachedImage!); }} activeOpacity={0.8}>
+            <Image source={{ uri: hw.attachedImage }} style={[styles.hwThumb, { borderColor: color + '55' }]} resizeMode="cover" />
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    </>
   );
 }
 
@@ -447,6 +471,11 @@ const styles = StyleSheet.create({
   hwTag: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
   hwTagText: { fontSize: 10, letterSpacing: 0.3 },
   hwDue: { fontSize: 11, letterSpacing: 0.3 },
+  hwThumb: { width: 52, height: 52, borderRadius: 8, borderWidth: 1 },
+  imgModalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
+  imgModalFull: { width: '100%', height: '80%' },
+  imgModalClose: { position: 'absolute', top: 50, right: 20, width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  imgModalCloseText: { color: '#fff', fontSize: 32, lineHeight: 36 },
   eventBlock: {
     borderRadius: 12,
     borderWidth: 1,
