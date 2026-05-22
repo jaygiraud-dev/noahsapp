@@ -22,7 +22,7 @@ function isSameDay(a: Date, b: Date) {
   );
 }
 
-function PairKidCard({ theme }: { theme: ReturnType<typeof makeTheme> }) {
+function PairKidCard({ theme, hasLinked }: { theme: ReturnType<typeof makeTheme>; hasLinked: boolean }) {
   const pairKid = useParentStore((s) => s.pairKid);
   const pairingCode = useStore((s) => s.pairingCode);
   const [code, setCode] = useState('');
@@ -41,7 +41,7 @@ function PairKidCard({ theme }: { theme: ReturnType<typeof makeTheme> }) {
   return (
     <View style={[styles.pairCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
       <Text style={[styles.pairTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
-        Link a student
+        {hasLinked ? 'Link another student' : 'Link a student'}
       </Text>
       <Text style={[styles.pairHint, { fontFamily: theme.fBody, color: theme.sub }]}>
         Ask your child for their 6-digit pairing code. They can find it in the app under Me → Pair with Parent.
@@ -97,8 +97,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
       <View style={styles.topBar}>
         <View>
-          <Text style={[styles.appName, { fontFamily: theme.fMono, color: theme.soft }]}>my agenda</Text>
-          <Text style={[styles.headline, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Dashboard.</Text>
+              <Text style={[styles.headline, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Dashboard.</Text>
         </View>
         <View style={styles.topRight}>
           {linkedKids.length > 0 && (
@@ -222,7 +221,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
           </View>
         ))}
 
-        <PairKidCard theme={theme} />
+        <PairKidCard theme={theme} hasLinked={linkedKids.length > 0} />
       </ScrollView>
     </SafeAreaView>
   );
