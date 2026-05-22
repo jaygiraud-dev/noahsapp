@@ -189,6 +189,40 @@ function ClassBlock({ cls, homework, isNow, theme, onAddHw, onToggleHw }: {
   );
 }
 
+function DueReminderBanner({ count, titles, theme, onDismiss }: {
+  count: number; titles: string[]; theme: any; onDismiss: () => void;
+}) {
+  const slideY = useRef(new Animated.Value(-100)).current;
+
+  useEffect(() => {
+    Animated.spring(slideY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 10 }).start();
+    const t = setTimeout(onDismiss, 5000);
+    return () => clearTimeout(t);
+  }, []);
+
+  const label = count === 1 ? `"${titles[0]}"` : `${count} assignments`;
+
+  return (
+    <Animated.View
+      style={[
+        styles.reminderBanner,
+        { backgroundColor: theme.accent, transform: [{ translateY: slideY }] },
+      ]}
+    >
+      <View style={styles.reminderContent}>
+        <Text style={[styles.reminderIcon]}>🔔</Text>
+        <View style={styles.reminderText}>
+          <Text style={[styles.reminderTitle, { fontFamily: theme.fMono }]}>Due today</Text>
+          <Text style={[styles.reminderSub, { fontFamily: theme.fBody }]} numberOfLines={1}>{label}</Text>
+        </View>
+        <TouchableOpacity onPress={onDismiss} style={styles.reminderClose}>
+          <Text style={styles.reminderCloseText}>×</Text>
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  );
+}
+
 function EventBlock({ ev, theme, onToggle }: { ev: CalEvent; theme: any; onToggle: () => void }) {
   return (
     <TouchableOpacity
@@ -213,6 +247,7 @@ export default function TodayScreen() {
   const [hwSheetOpen, setHwSheetOpen] = useState(false);
   const [showEvSheet, setShowEvSheet] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
 
   const homework = useStore((s) => s.homework);
   const events = useStore((s) => s.events);
@@ -227,6 +262,15 @@ export default function TodayScreen() {
 
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  const dueToday = homework.filter((h) => !h.done && h.dueDate && isSameDay(new Date(h.dueDate), now));
+
+  useEffect(() => {
+    if (dueToday.length > 0) {
+      const t = setTimeout(() => setShowReminder(true), 800);
+      return () => clearTimeout(t);
+    }
+  }, []);
   const isToday = isSameDay(selectedDate, new Date());
 
   const dayOfWeek = selectedDate.getDay(); // 0=Sun, 6=Sat
@@ -243,6 +287,14 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+      {showReminder && (
+        <DueReminderBanner
+          count={dueToday.length}
+          titles={dueToday.map((h) => h.title)}
+          theme={theme}
+          onDismiss={() => setShowReminder(false)}
+        />
+      )}
       {/* News ticker pinned at top */}
       <NewsTicker theme={theme} />
 
@@ -539,4 +591,25 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabIcon: { color: '#fff', fontSize: 28, lineHeight: 32, marginTop: -2 },
+  reminderBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 12,
+  },
+  reminderContent: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
+  reminderIcon: { fontSize: 22 },
+  reminderText: { flex: 1 },
+  reminderTitle: { color: '#fff', fontSize: 11, letterSpacing: 1, opacity: 0.85 },
+  reminderSub: { color: '#fff', fontSize: 14, marginTop: 1 },
+  reminderClose: { padding: 4 },
+  reminderCloseText: { color: '#fff', fontSize: 24, lineHeight: 28, opacity: 0.8 },
 });
