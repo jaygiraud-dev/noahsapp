@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   useWindowDimensions,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { getClosedReason } from '../../data/schoolClosed';
+import { Class, CalEvent } from '../../types';
 import AddEventSheet from '../sheets/AddEventSheet';
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -62,6 +64,8 @@ export default function WeekScreen() {
   const [anchor, setAnchor] = useState(new Date());
   const [addEventDate, setAddEventDate] = useState<Date | null>(null);
   const [addEventTime, setAddEventTime] = useState('');
+  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
   const homework = useStore((s) => s.homework);
   const classes = useStore((s) => s.classes);
   const events = useStore((s) => s.events);
@@ -213,7 +217,7 @@ export default function WeekScreen() {
                   const left = dayIdx * COL_W + 2;
 
                   return (
-                    <View
+                    <TouchableOpacity
                       key={`${day.toISOString()}-${cls.id}`}
                       style={[
                         styles.classBlock,
@@ -226,6 +230,8 @@ export default function WeekScreen() {
                           borderLeftColor: cls.color,
                         },
                       ]}
+                      onPress={() => setSelectedClass(cls)}
+                      activeOpacity={0.75}
                     >
                       <Text style={[styles.classBlockName, { fontFamily: theme.fMono, color: cls.color }]} numberOfLines={2}>
                         {cls.name}
@@ -233,7 +239,7 @@ export default function WeekScreen() {
                       <Text style={[styles.classBlockTime, { fontFamily: theme.fMono, color: cls.color + 'aa' }]}>
                         {cls.start}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
                   );
                 });
               })}
@@ -271,19 +277,21 @@ export default function WeekScreen() {
                   if (inGrid) {
                     const top = DAY_HDR_H + (startMin - START_HOUR * 60) / 60 * ROW_H;
                     return (
-                      <View
+                      <TouchableOpacity
                         key={ev.id}
                         style={[styles.evtBlock, { top, left, width: COL_W - 4, backgroundColor: theme.accent + '33', borderLeftColor: theme.accent }]}
+                        onPress={() => setSelectedEvent(ev)}
+                        activeOpacity={0.75}
                       >
                         <Text style={[styles.evtBlockName, { fontFamily: theme.fMono, color: theme.accent }]} numberOfLines={1}>
                           {ev.icon ? `${ev.icon} ` : ''}{ev.title}
                         </Text>
                         {ev.time && (
                           <Text style={[styles.evtBlockTime, { fontFamily: theme.fMono, color: theme.accent + 'aa' }]}>
-                            {ev.time}
+                            {ev.time}{ev.endTime ? ` – ${ev.endTime}` : ''}
                           </Text>
                         )}
-                      </View>
+                      </TouchableOpacity>
                     );
                   }
                   return null;
@@ -342,9 +350,80 @@ export default function WeekScreen() {
         defaultDate={addEventDate ?? undefined}
         defaultTime={addEventTime}
       />
+
+      {/* Class detail modal */}
+      <Modal visible={!!selectedClass} transparent animationType="fade" onRequestClose={() => setSelectedClass(null)}>
+        <TouchableOpacity style={detailStyles.backdrop} activeOpacity={1} onPress={() => setSelectedClass(null)}>
+          <View style={[detailStyles.card, { backgroundColor: theme.bg, borderColor: selectedClass?.color ?? theme.line }]}
+            onStartShouldSetResponder={() => true}>
+            <View style={[detailStyles.colorBar, { backgroundColor: selectedClass?.color }]} />
+            <View style={detailStyles.body}>
+              <Text style={[detailStyles.cardTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
+                {selectedClass?.emoji ?? '📚'}  {selectedClass?.name}
+              </Text>
+              {selectedClass?.teacher && (
+                <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.soft }]}>
+                  {selectedClass.teacher}
+                </Text>
+              )}
+              {selectedClass?.start && (
+                <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: selectedClass.color }]}>
+                  {selectedClass.start} – {selectedClass.end}
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity onPress={() => setSelectedClass(null)}>
+              <Text style={[detailStyles.closeX, { color: theme.soft }]}>×</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Event detail modal */}
+      <Modal visible={!!selectedEvent} transparent animationType="fade" onRequestClose={() => setSelectedEvent(null)}>
+        <TouchableOpacity style={detailStyles.backdrop} activeOpacity={1} onPress={() => setSelectedEvent(null)}>
+          <View style={[detailStyles.card, { backgroundColor: theme.bg, borderColor: theme.accent }]}
+            onStartShouldSetResponder={() => true}>
+            <View style={[detailStyles.colorBar, { backgroundColor: theme.accent }]} />
+            <View style={detailStyles.body}>
+              <Text style={[detailStyles.cardTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
+                {selectedEvent?.title}
+              </Text>
+              {selectedEvent?.time && (
+                <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.accent }]}>
+                  {selectedEvent.time}{selectedEvent.endTime ? ` – ${selectedEvent.endTime}` : ''}
+                </Text>
+              )}
+              {selectedEvent?.date && (
+                <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.soft }]}>
+                  {new Date(selectedEvent.date).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </Text>
+              )}
+              {selectedEvent?.location && (
+                <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.soft }]}>
+                  📍 {selectedEvent.location}
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity onPress={() => setSelectedEvent(null)}>
+              <Text style={[detailStyles.closeX, { color: theme.soft }]}>×</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
+
+const detailStyles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 },
+  card: { borderRadius: 20, borderWidth: 1, flexDirection: 'row', alignItems: 'stretch', overflow: 'hidden' },
+  colorBar: { width: 5 },
+  body: { flex: 1, padding: 16, gap: 6 },
+  cardTitle: { fontSize: 22, lineHeight: 28 },
+  cardMeta: { fontSize: 12, letterSpacing: 0.3 },
+  closeX: { fontSize: 24, lineHeight: 28, paddingHorizontal: 14, paddingTop: 12 },
+});
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },

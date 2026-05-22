@@ -19,6 +19,7 @@ import { Class, Homework, CalEvent } from '../../types';
 import DayPicker from '../../components/DayPicker';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
 import AddEventSheet from '../sheets/AddEventSheet';
+import HomeworkDetailSheet from '../sheets/HomeworkDetailSheet';
 import { getClosedReason } from '../../data/schoolClosed';
 
 function isSameDay(a: Date, b: Date) {
@@ -113,52 +114,52 @@ function ImagePreviewModal({ uri, onClose }: { uri: string; onClose: () => void 
   );
 }
 
-function HwRow({ hw, theme, onToggle }: { hw: Homework; theme: any; onToggle: () => void }) {
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+function HwRow({ hw, theme, onToggle, onDetail }: { hw: Homework; theme: any; onToggle: () => void; onDetail: () => void }) {
   const color = hw.classColor ?? theme.accent;
   return (
-    <>
-      {previewImage && <ImagePreviewModal uri={previewImage} onClose={() => setPreviewImage(null)} />}
-      <TouchableOpacity style={[styles.hwRow, hw.done && styles.hwRowDone]} onPress={onToggle} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.hwRow, hw.done && styles.hwRowDone]} onPress={onDetail} activeOpacity={0.7}>
+      <TouchableOpacity
+        onPress={onToggle}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        activeOpacity={0.7}
+      >
         <View style={[styles.hwCheck, { borderColor: color, backgroundColor: hw.done ? color : 'transparent' }]}>
           {hw.done && <Text style={styles.hwCheckMark}>✓</Text>}
         </View>
-        <View style={styles.hwInfo}>
-          <Text style={[styles.hwTitle, { fontFamily: theme.fBody, color: hw.done ? theme.soft : theme.ink }, hw.done && { textDecorationLine: 'line-through' }]}>
-            {hw.title}
-          </Text>
-          <View style={styles.hwMeta}>
-            {hw.tag && (
-              <View style={[styles.hwTag, { backgroundColor: color + '22' }]}>
-                <Text style={[styles.hwTagText, { fontFamily: theme.fMono, color }]}>
-                  {hw.tag === 'Reading' ? '📖' : hw.tag === 'Quiz' ? '✦' : hw.tag === 'Worksheet' ? '📋' : hw.tag === 'Lab' ? '🧪' : '•'} {hw.tag}
-                </Text>
-              </View>
-            )}
-            {hw.due && (
-              <Text style={[styles.hwDue, { fontFamily: theme.fMono, color: hw.dueUrgent ? theme.amber : theme.soft }]}>
-                {hw.dueUrgent && '△ '}{hw.due}
-              </Text>
-            )}
-          </View>
-        </View>
-        {(hw.attachedImages ?? []).length > 0 && (
-          <View style={styles.hwThumbs}>
-            {(hw.attachedImages ?? []).map((uri, i) => (
-              <TouchableOpacity key={i} onPress={(e) => { e.stopPropagation?.(); setPreviewImage(uri); }} activeOpacity={0.8}>
-                <Image source={{ uri }} style={[styles.hwThumb, { borderColor: color + '55' }]} resizeMode="cover" />
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
       </TouchableOpacity>
-    </>
+      <View style={styles.hwInfo}>
+        <Text style={[styles.hwTitle, { fontFamily: theme.fBody, color: hw.done ? theme.soft : theme.ink }, hw.done && { textDecorationLine: 'line-through' }]}>
+          {hw.title}
+        </Text>
+        <View style={styles.hwMeta}>
+          {hw.tag && (
+            <View style={[styles.hwTag, { backgroundColor: color + '22' }]}>
+              <Text style={[styles.hwTagText, { fontFamily: theme.fMono, color }]}>
+                {hw.tag === 'Reading' ? '📖' : hw.tag === 'Quiz' ? '✦' : hw.tag === 'Worksheet' ? '📋' : hw.tag === 'Lab' ? '🧪' : '•'} {hw.tag}
+              </Text>
+            </View>
+          )}
+          {hw.due && (
+            <Text style={[styles.hwDue, { fontFamily: theme.fMono, color: hw.dueUrgent ? theme.amber : theme.soft }]}>
+              {hw.dueUrgent && '△ '}{hw.due}
+            </Text>
+          )}
+        </View>
+      </View>
+      {(hw.attachedImages ?? []).length > 0 && (
+        <View style={styles.hwThumbs}>
+          {(hw.attachedImages ?? []).map((uri, i) => (
+            <Image key={i} source={{ uri }} style={[styles.hwThumb, { borderColor: color + '55' }]} resizeMode="cover" />
+          ))}
+        </View>
+      )}
+    </TouchableOpacity>
   );
 }
 
-function ClassBlock({ cls, homework, isNow, theme, onAddHw, onToggleHw }: {
+function ClassBlock({ cls, homework, isNow, theme, onAddHw, onToggleHw, onDetailHw }: {
   cls: Class; homework: Homework[]; isNow: boolean;
-  theme: any; onAddHw: () => void; onToggleHw: (id: string) => void;
+  theme: any; onAddHw: () => void; onToggleHw: (id: string) => void; onDetailHw: (hw: Homework) => void;
 }) {
   return (
     <View style={[styles.classBlock, { backgroundColor: theme.surface, borderColor: isNow ? cls.color : theme.line }, isNow && { borderWidth: 1.5 }]}>
@@ -185,7 +186,7 @@ function ClassBlock({ cls, homework, isNow, theme, onAddHw, onToggleHw }: {
       {homework.length > 0 && (
         <View style={[styles.hwList, { borderTopColor: theme.line }]}>
           {homework.map((hw) => (
-            <HwRow key={hw.id} hw={hw} theme={theme} onToggle={() => onToggleHw(hw.id)} />
+            <HwRow key={hw.id} hw={hw} theme={theme} onToggle={() => onToggleHw(hw.id)} onDetail={() => onDetailHw(hw)} />
           ))}
         </View>
       )}
@@ -250,6 +251,7 @@ export default function TodayScreen() {
   const [hwSheetClass, setHwSheetClass] = useState<Class | null>(null);
   const [hwSheetOpen, setHwSheetOpen] = useState(false);
   const [showEvSheet, setShowEvSheet] = useState(false);
+  const [hwDetail, setHwDetail] = useState<Homework | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
 
@@ -345,6 +347,7 @@ export default function TodayScreen() {
               theme={theme}
               onAddHw={() => setHwSheetClass(cls)}
               onToggleHw={toggleHomework}
+              onDetailHw={setHwDetail}
             />
           );
         })}
@@ -402,6 +405,12 @@ export default function TodayScreen() {
         defaultClass={hwSheetClass}
       />
       <AddEventSheet visible={showEvSheet} onClose={() => setShowEvSheet(false)} defaultDate={selectedDate} />
+      <HomeworkDetailSheet
+        hw={hwDetail}
+        visible={!!hwDetail}
+        onClose={() => setHwDetail(null)}
+        onToggle={() => hwDetail && toggleHomework(hwDetail.id)}
+      />
     </SafeAreaView>
   );
 }

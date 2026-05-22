@@ -37,6 +37,7 @@ export interface CalEvent {
   type?: string;
   icon?: string;
   time?: string;
+  endTime?: string;
   date?: string;
   location?: string;
   reminder?: string;
