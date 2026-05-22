@@ -29,6 +29,7 @@ export default function SignInScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const [mode, setMode] = useState<Mode>('signin');
   const setPhase = useStore((s) => s.setPhase);
+  const setUserRole = useStore((s) => s.setUserRole);
   const storedUserId = useStore((s) => s.userId);
   const resetForUser = useStore((s) => s.resetForUser);
   const vibe = useStore((s) => s.vibe);
@@ -69,7 +70,9 @@ export default function SignInScreen({ navigation }: any) {
     if (uid && uid !== storedUserId) {
       resetForUser(uid, role as 'student' | 'parent');
     } else {
-      setPhase(role === 'parent' ? 'parent' : 'onboarding');
+      // Always persist the selected role so App.tsx startup reads it correctly on reload
+      setUserRole(role as 'student' | 'parent');
+      setPhase(role === 'parent' ? 'parent' : 'main');
     }
   }
 
