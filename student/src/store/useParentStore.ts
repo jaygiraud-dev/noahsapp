@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface LinkedKid {
   id: string;
@@ -45,29 +47,37 @@ const SAMPLE_KID: LinkedKid = {
   lastActive: '10 min ago',
 };
 
-export const useParentStore = create<ParentState>((set, get) => ({
-  linkedKids: [],
-  notifications: [],
+export const useParentStore = create<ParentState>()(
+  persist(
+    (set, get) => ({
+      linkedKids: [],
+      notifications: [],
 
-  pairKid: (code) => {
-    if (code.toUpperCase() === SAMPLE_KID.pairingCode) {
-      const alreadyLinked = get().linkedKids.some((k) => k.id === SAMPLE_KID.id);
-      if (!alreadyLinked) {
-        const notifs: ParentNotif[] = [
-          { id: 'n1', kidId: 'kid-1', type: 'hw_done', text: 'Noah finished Math homework — Textbook p.45', time: '2h ago', read: false },
-          { id: 'n2', kidId: 'kid-1', type: 'streak', text: 'Noah hit a 12-day streak! 🔥', time: '1d ago', read: false },
-          { id: 'n3', kidId: 'kid-1', type: 'hw_due', text: 'Science project due tomorrow', time: '1d ago', read: true },
-          { id: 'n4', kidId: 'kid-1', type: 'points', text: 'Noah earned 50 points today', time: '2d ago', read: true },
-        ];
-        set((s) => ({ linkedKids: [...s.linkedKids, SAMPLE_KID], notifications: [...s.notifications, ...notifs] }));
-      }
-      return true;
+      pairKid: (code) => {
+        if (code.toUpperCase() === SAMPLE_KID.pairingCode) {
+          const alreadyLinked = get().linkedKids.some((k) => k.id === SAMPLE_KID.id);
+          if (!alreadyLinked) {
+            const notifs: ParentNotif[] = [
+              { id: 'n1', kidId: 'kid-1', type: 'hw_done', text: 'Noah finished Math homework — Textbook p.45', time: '2h ago', read: false },
+              { id: 'n2', kidId: 'kid-1', type: 'streak', text: 'Noah hit a 12-day streak! 🔥', time: '1d ago', read: false },
+              { id: 'n3', kidId: 'kid-1', type: 'hw_due', text: 'Science project due tomorrow', time: '1d ago', read: true },
+              { id: 'n4', kidId: 'kid-1', type: 'points', text: 'Noah earned 50 points today', time: '2d ago', read: true },
+            ];
+            set((s) => ({ linkedKids: [...s.linkedKids, SAMPLE_KID], notifications: [...s.notifications, ...notifs] }));
+          }
+          return true;
+        }
+        return false;
+      },
+
+      markNotifRead: (id) =>
+        set((s) => ({
+          notifications: s.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+        })),
+    }),
+    {
+      name: 'my-agenda-parent-store',
+      storage: createJSONStorage(() => AsyncStorage),
     }
-    return false;
-  },
-
-  markNotifRead: (id) =>
-    set((s) => ({
-      notifications: s.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    })),
-}));
+  )
+);
