@@ -131,7 +131,6 @@ function PairKidCard({
 export default function ParentDashboardScreen({ navigation }: any) {
   const linkedKids = useParentStore((s) => s.linkedKids);
   const addLinkedKid = useParentStore((s) => s.addLinkedKid);
-  const removeLinkedKid = useParentStore((s) => s.removeLinkedKid);
   const notifications = useParentStore((s) => s.notifications);
   const setPhase = useStore((s) => s.setPhase);
   const vibe = useStore((s) => s.vibe);
@@ -234,9 +233,6 @@ export default function ParentDashboardScreen({ navigation }: any) {
           {isReal && snap === undefined && (
             <ActivityIndicator size="small" color={theme.soft} />
           )}
-          <TouchableOpacity onPress={() => removeLinkedKid(kid.id)} style={styles.unlinkBtn}>
-            <Text style={[styles.unlinkText, { color: theme.soft }]}>×</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.statsRow}>
@@ -358,8 +354,6 @@ const styles = StyleSheet.create({
   kidAvatar: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   kidInitial: { fontSize: 28, color: '#fff' },
   kidInfo: { flex: 1, gap: 2 },
-  unlinkBtn: { padding: 6 },
-  unlinkText: { fontSize: 26, lineHeight: 28 },
   kidName: { fontSize: 18 },
   kidSchool: { fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
