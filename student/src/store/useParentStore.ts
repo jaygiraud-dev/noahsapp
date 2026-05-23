@@ -32,6 +32,7 @@ interface ParentState {
 
   pairKid: (code: string) => boolean;
   addLinkedKid: (kid: LinkedKid) => void;
+  removeLinkedKid: (id: string) => void;
   markNotifRead: (id: string) => void;
   markAllNotifsRead: () => void;
   clearAllNotifications: () => void;
@@ -89,6 +90,9 @@ export const useParentStore = create<ParentState>()(
           set((s) => ({ linkedKids: [...s.linkedKids, kid] }));
         }
       },
+
+      removeLinkedKid: (id) =>
+        set((s) => ({ linkedKids: s.linkedKids.filter((k) => k.id !== id) })),
 
       markNotifRead: (id) =>
         set((s) => ({
