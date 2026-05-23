@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Homework, CalEvent, Class, School, Friend, FriendRequest, ActivityNotif } from '../types';
 import { Vibe } from '../theme';
+import { upsertHomework, upsertEvent, fetchHomework, fetchEvents } from '../lib/db';
 
 export type AppPhase = 'auth' | 'onboarding' | 'main' | 'parent';
 
@@ -45,6 +46,7 @@ interface AppState {
   acceptFriendRequest: (id: string) => void;
   declineFriendRequest: (id: string) => void;
   pushNotification: (n: ActivityNotif) => void;
+  loadDataFromSupabase: () => Promise<void>;
 }
 
 const SAMPLE_CLASSES: Class[] = [
@@ -138,12 +140,13 @@ export const useStore = create<AppState>()(
   setParentPaired: (v) => set({ parentPaired: v }),
 
   toggleHomework: (id) => {
-    const { homework, streak, classes } = get();
+    const { homework, streak, classes, userId } = get();
     const hw = homework.find(h => h.id === id);
     if (!hw) return;
     const newDone = !hw.done;
+    const updated = { ...hw, done: newDone };
     set({
-      homework: homework.map(h => h.id === id ? { ...h, done: newDone } : h),
+      homework: homework.map(h => h.id === id ? updated : h),
       points: newDone ? get().points + (hw.points || 10) : get().points - (hw.points || 10),
       reward: newDone ? { points: hw.points || 10, streak } : null,
     });
@@ -151,26 +154,37 @@ export const useStore = create<AppState>()(
       const cls = classes.find(c => c.id === hw.classId);
       get().pushNotification({ type: 'done', who: 'Alex', what: hw.title, cls: cls?.name, when: 'just now', clr: cls?.color });
     }
+    if (userId) upsertHomework(userId, updated).catch(() => {});
   },
 
   addHomework: (data) => {
-    const { streak, classes } = get();
+    const { streak, classes, userId } = get();
     const id = 'h' + Date.now();
+    const newHw: Homework = { ...data, id, done: false };
     set(s => ({
-      homework: [...s.homework, { ...data, id, done: false }],
+      homework: [...s.homework, newHw],
       points: s.points + 5,
       reward: { points: 5, streak: s.streak },
     }));
     const cls = classes.find(c => c.id === data.classId);
     get().pushNotification({ type: 'add', who: 'Alex', what: data.title, cls: cls?.name, when: 'just now', clr: cls?.color });
+    if (userId) upsertHomework(userId, newHw).catch(() => {});
   },
 
-  toggleEvent: (id) => set(s => ({ events: s.events.map(e => e.id === id ? { ...e, done: !e.done } : e) })),
+  toggleEvent: (id) => {
+    const { userId } = get();
+    set(s => ({ events: s.events.map(e => e.id === id ? { ...e, done: !e.done } : e) }));
+    const updated = get().events.find(e => e.id === id);
+    if (userId && updated) upsertEvent(userId, updated).catch(() => {});
+  },
 
   addEvent: (data) => {
+    const { userId } = get();
     const id = 'e' + Date.now();
-    set(s => ({ events: [...s.events, { ...data, id, done: false }] }));
+    const newEv: CalEvent = { ...data, id, done: false };
+    set(s => ({ events: [...s.events, newEv] }));
     get().pushNotification({ type: 'event', who: 'Alex', what: `${data.title} · ${data.time}`, when: 'just now' });
+    if (userId) upsertEvent(userId, newEv).catch(() => {});
   },
 
   setVibe: (vibe) => set({ vibe }),
@@ -190,6 +204,26 @@ export const useStore = create<AppState>()(
   declineFriendRequest: (id) => set(s => ({ friendRequests: s.friendRequests.filter(r => r.id !== id) })),
 
   pushNotification: (n) => set(s => ({ notifications: [n, ...s.notifications] })),
+
+  loadDataFromSupabase: async () => {
+    const { userId, homework: localHw, events: localEv } = get();
+    if (!userId) return;
+    const [sbHw, sbEv] = await Promise.all([fetchHomework(userId), fetchEvents(userId)]);
+    if (sbHw.length > 0 || sbEv.length > 0) {
+      // Supabase is source of truth — merge with local (keep local images)
+      const merged = sbHw.map(sh => {
+        const local = localHw.find(lh => lh.id === sh.id);
+        return local ? { ...sh, attachedImages: local.attachedImages } : sh;
+      });
+      set({ homework: merged, events: sbEv });
+    } else {
+      // No Supabase data yet — push local data up
+      await Promise.all([
+        ...localHw.map(hw => upsertHomework(userId, hw)),
+        ...localEv.map(ev => upsertEvent(userId, ev)),
+      ]);
+    }
+  },
     }),
     {
       name: 'my-agenda-store',

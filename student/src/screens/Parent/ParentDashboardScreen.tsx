@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +15,8 @@ import { useParentStore } from '../../store/useParentStore';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { supabase } from '../../lib/supabase';
+import { lookupStudentByCode, createParentLink, fetchLinkedStudents, fetchStudentData } from '../../lib/db';
+import { Homework, CalEvent } from '../../types';
 
 function isSameDay(a: Date, b: Date) {
   return (
@@ -22,19 +26,70 @@ function isSameDay(a: Date, b: Date) {
   );
 }
 
-function PairKidCard({ theme, hasLinked }: { theme: ReturnType<typeof makeTheme>; hasLinked: boolean }) {
+interface StudentSnapshot {
+  studentUserId: string;
+  name: string;
+  school: string;
+  homework: Homework[];
+  events: CalEvent[];
+}
+
+function PairKidCard({
+  theme,
+  hasLinked,
+  parentUserId,
+  onLinked,
+}: {
+  theme: ReturnType<typeof makeTheme>;
+  hasLinked: boolean;
+  parentUserId: string;
+  onLinked: () => void;
+}) {
   const pairKid = useParentStore((s) => s.pairKid);
-  const pairingCode = useStore((s) => s.pairingCode);
+  const addLinkedKid = useParentStore((s) => s.addLinkedKid);
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handlePair() {
+  async function handlePair() {
     const trimmed = code.trim().toUpperCase();
     if (!trimmed) return;
-    // Try the live student store's pairing code first, then fall back to sample
-    const success = trimmed === pairingCode.toUpperCase() ? pairKid(pairingCode) : pairKid(trimmed);
+    setLoading(true);
+    setError('');
+
+    if (parentUserId) {
+      const student = await lookupStudentByCode(trimmed);
+      if (student) {
+        const displayName = student.display_name ?? 'Student';
+        await createParentLink(parentUserId, student.id, trimmed, displayName);
+        addLinkedKid({
+          id: student.id,
+          studentUserId: student.id,
+          name: displayName,
+          pairingCode: trimmed,
+          school: student.school_name ?? '',
+          grade: '',
+          points: 0,
+          streak: 0,
+          homeworkDue: 0,
+          homeworkDone: 0,
+          eventsToday: 0,
+          lastActive: 'just now',
+        });
+        setCode('');
+        setLoading(false);
+        onLinked();
+        return;
+      }
+    }
+
+    const success = pairKid(trimmed);
+    setLoading(false);
     if (!success) {
       setError('Code not found. Ask your child to check their pairing code in the app under Me → Pair with Parent.');
+    } else {
+      setCode('');
+      onLinked();
     }
   }
 
@@ -59,8 +114,11 @@ function PairKidCard({ theme, hasLinked }: { theme: ReturnType<typeof makeTheme>
         <TouchableOpacity
           style={[styles.pairBtn, { backgroundColor: theme.accent }]}
           onPress={handlePair}
+          disabled={loading}
         >
-          <Text style={[styles.pairBtnText, { fontFamily: theme.fMono }]}>Link</Text>
+          {loading
+            ? <ActivityIndicator size="small" color="#fff" />
+            : <Text style={[styles.pairBtnText, { fontFamily: theme.fMono }]}>Link</Text>}
         </TouchableOpacity>
       </View>
       {error !== '' && (
@@ -72,6 +130,7 @@ function PairKidCard({ theme, hasLinked }: { theme: ReturnType<typeof makeTheme>
 
 export default function ParentDashboardScreen({ navigation }: any) {
   const linkedKids = useParentStore((s) => s.linkedKids);
+  const addLinkedKid = useParentStore((s) => s.addLinkedKid);
   const notifications = useParentStore((s) => s.notifications);
   const setPhase = useStore((s) => s.setPhase);
   const vibe = useStore((s) => s.vibe);
@@ -79,26 +138,170 @@ export default function ParentDashboardScreen({ navigation }: any) {
   const theme = makeTheme(vibe, darkMode);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // Live student data from the shared store
-  const studentHomework = useStore((s) => s.homework);
-  const studentEvents = useStore((s) => s.events);
-  const studentPoints = useStore((s) => s.points);
-  const studentStreak = useStore((s) => s.streak);
-  const studentSchool = useStore((s) => s.school);
-  const studentClasses = useStore((s) => s.classes);
+  const [parentUserId, setParentUserId] = useState('');
+  const [snapshots, setSnapshots] = useState<Record<string, StudentSnapshot>>({});
+  const [refreshing, setRefreshing] = useState(false);
+  const [linkVersion, setLinkVersion] = useState(0);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setParentUserId(data.user?.id ?? '');
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!parentUserId) return;
+    fetchLinkedStudents(parentUserId).then((links) => {
+      links.forEach((link) => {
+        addLinkedKid({
+          id: link.student_id,
+          studentUserId: link.student_id,
+          name: link.student_name ?? 'Student',
+          pairingCode: link.pairing_code,
+          school: '',
+          grade: '',
+          points: 0,
+          streak: 0,
+          homeworkDue: 0,
+          homeworkDone: 0,
+          eventsToday: 0,
+          lastActive: 'recently',
+        });
+      });
+    });
+  }, [parentUserId]);
+
+  const loadSnapshots = useCallback(async () => {
+    const realKids = linkedKids.filter((k) => k.studentUserId !== '');
+    if (realKids.length === 0) return;
+    const results = await Promise.all(
+      realKids.map(async (kid) => {
+        const data = await fetchStudentData(kid.studentUserId);
+        return { kid, data };
+      })
+    );
+    const next: Record<string, StudentSnapshot> = {};
+    results.forEach(({ kid, data }) => {
+      next[kid.studentUserId] = {
+        studentUserId: kid.studentUserId,
+        name: data.profile?.display_name ?? kid.name,
+        school: data.profile?.school_name ?? kid.school,
+        homework: data.homework,
+        events: data.events,
+      };
+    });
+    setSnapshots(next);
+  }, [linkedKids]);
+
+  useEffect(() => {
+    loadSnapshots();
+  }, [linkVersion, linkedKids.length]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadSnapshots();
+    setRefreshing(false);
+  }, [loadSnapshots]);
 
   const today = new Date();
-  const hwDueToday = studentHomework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), today));
-  const hwDone = hwDueToday.filter((h) => h.done).length;
-  const eventsToday = studentEvents.filter((e) => e.date && isSameDay(new Date(e.date), today));
-  const hwPct = hwDueToday.length > 0 ? (hwDone / hwDueToday.length) * 100 : 0;
+
+  function renderKidCard(kid: typeof linkedKids[0]) {
+    const isReal = kid.studentUserId !== '';
+    const snap = isReal ? snapshots[kid.studentUserId] : null;
+    const hw = snap?.homework ?? [];
+    const evs = snap?.events ?? [];
+    const school = snap?.school ?? kid.school;
+    const name = snap?.name ?? kid.name;
+    const hwDueToday = hw.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), today));
+    const hwDone = hwDueToday.filter((h) => h.done).length;
+    const eventsToday = evs.filter((e) => e.date && isSameDay(new Date(e.date), today));
+    const hwPct = hwDueToday.length > 0 ? (hwDone / hwDueToday.length) * 100 : 0;
+    const points = isReal ? hw.filter((h) => h.done).reduce((s, h) => s + (h.points ?? 10), 0) : kid.points;
+
+    return (
+      <View key={kid.id} style={[styles.kidCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+        <View style={styles.kidHeader}>
+          <LinearGradient colors={theme.accentGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.kidAvatar}>
+            <Text style={[styles.kidInitial, { fontFamily: theme.fDisplayItalic }]}>{name[0]}</Text>
+          </LinearGradient>
+          <View style={styles.kidInfo}>
+            <Text style={[styles.kidName, { fontFamily: theme.fBodySemiBold, color: theme.ink }]}>{name}</Text>
+            <Text style={[styles.kidSchool, { fontFamily: theme.fMono, color: theme.soft }]}>
+              {school || 'School not set'}
+            </Text>
+          </View>
+          {isReal && snap === undefined && (
+            <ActivityIndicator size="small" color={theme.soft} />
+          )}
+        </View>
+
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.accent }]}>{points.toLocaleString()}</Text>
+            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>pts</Text>
+          </View>
+          <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
+          <View style={styles.statBox}>
+            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.amber }]}>{kid.streak}🔥</Text>
+            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>streak</Text>
+          </View>
+          <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
+          <View style={styles.statBox}>
+            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: eventsToday.length > 0 ? theme.purple : theme.soft }]}>
+              {eventsToday.length}
+            </Text>
+            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>events today</Text>
+          </View>
+        </View>
+
+        <View style={styles.hwSection}>
+          <View style={styles.hwLabelRow}>
+            <Text style={[styles.hwLabel, { fontFamily: theme.fMono, color: theme.sub }]}>HOMEWORK TODAY</Text>
+            <Text style={[styles.hwCount, { fontFamily: theme.fMono, color: theme.soft }]}>{hwDone}/{hwDueToday.length} done</Text>
+          </View>
+          <View style={[styles.progressTrack, { backgroundColor: theme.surfaceHi }]}>
+            <LinearGradient colors={theme.accentGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${hwPct}%` as any }]} />
+          </View>
+          {hwDueToday.map((h) => (
+            <View key={h.id} style={[styles.hwItem, { borderLeftColor: h.classColor ?? theme.accent }]}>
+              <Text style={[styles.hwItemTitle, { fontFamily: theme.fBody, color: h.done ? theme.soft : theme.ink, textDecorationLine: h.done ? 'line-through' : 'none' }]}>
+                {h.title}
+              </Text>
+              <View style={styles.hwItemMeta}>
+                {h.subject && <Text style={[styles.hwItemSub, { fontFamily: theme.fMono, color: h.classColor ?? theme.accent }]}>{h.subject}</Text>}
+                {h.tag && <Text style={[styles.hwItemTag, { fontFamily: theme.fMono, color: theme.soft }]}>· {h.tag}</Text>}
+                <Text style={[styles.hwItemDone, { fontFamily: theme.fMono, color: h.done ? theme.mint : theme.soft }]}>{h.done ? '✓ done' : '○ pending'}</Text>
+              </View>
+            </View>
+          ))}
+          {hwDueToday.length === 0 && (
+            <Text style={[styles.noHw, { fontFamily: theme.fMono, color: theme.soft }]}>No homework due today</Text>
+          )}
+        </View>
+
+        {eventsToday.length > 0 && (
+          <View style={styles.hwSection}>
+            <Text style={[styles.hwLabel, { fontFamily: theme.fMono, color: theme.sub }]}>TODAY'S EVENTS</Text>
+            {eventsToday.map((ev) => (
+              <View key={ev.id} style={[styles.evItem, { borderLeftColor: theme.purple }]}>
+                <Text style={[styles.evTime, { fontFamily: theme.fMono, color: theme.purple }]}>{ev.time}</Text>
+                <Text style={[styles.evTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.title}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <TouchableOpacity style={[styles.activityBtn, { borderColor: theme.accent }]} onPress={() => navigation.navigate('ParentActivity')}>
+          <Text style={[styles.activityBtnText, { fontFamily: theme.fMono, color: theme.accent }]}>View all activity →</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
       <View style={styles.topBar}>
-        <View>
-              <Text style={[styles.headline, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Dashboard.</Text>
-        </View>
+        <Text style={[styles.headline, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Dashboard.</Text>
         <View style={styles.topRight}>
           {linkedKids.length > 0 && (
             <TouchableOpacity
@@ -119,109 +322,17 @@ export default function ParentDashboardScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {linkedKids.map((kid) => (
-          <View key={kid.id} style={[styles.kidCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
-            {/* Header */}
-            <View style={styles.kidHeader}>
-              <LinearGradient colors={theme.accentGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.kidAvatar}>
-                <Text style={[styles.kidInitial, { fontFamily: theme.fDisplayItalic }]}>{kid.name[0]}</Text>
-              </LinearGradient>
-              <View style={styles.kidInfo}>
-                <Text style={[styles.kidName, { fontFamily: theme.fBodySemiBold, color: theme.ink }]}>{kid.name}</Text>
-                <Text style={[styles.kidSchool, { fontFamily: theme.fMono, color: theme.soft }]}>
-                  {studentSchool.name}  ·  {studentClasses.length} classes
-                </Text>
-              </View>
-            </View>
-
-            {/* Live stats */}
-            <View style={styles.statsRow}>
-              <View style={styles.statBox}>
-                <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.accent }]}>{studentPoints.toLocaleString()}</Text>
-                <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>pts</Text>
-              </View>
-              <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
-              <View style={styles.statBox}>
-                <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.amber }]}>{studentStreak}🔥</Text>
-                <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>streak</Text>
-              </View>
-              <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
-              <View style={styles.statBox}>
-                <Text style={[styles.statNum, { fontFamily: theme.fMono, color: eventsToday.length > 0 ? theme.purple : theme.soft }]}>
-                  {eventsToday.length}
-                </Text>
-                <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>events today</Text>
-              </View>
-            </View>
-
-            {/* Homework progress */}
-            <View style={styles.hwSection}>
-              <View style={styles.hwLabelRow}>
-                <Text style={[styles.hwLabel, { fontFamily: theme.fMono, color: theme.sub }]}>HOMEWORK TODAY</Text>
-                <Text style={[styles.hwCount, { fontFamily: theme.fMono, color: theme.soft }]}>
-                  {hwDone}/{hwDueToday.length} done
-                </Text>
-              </View>
-              <View style={[styles.progressTrack, { backgroundColor: theme.surfaceHi }]}>
-                <LinearGradient
-                  colors={theme.accentGrad}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.progressFill, { width: `${hwPct}%` as any }]}
-                />
-              </View>
-              {/* List of today's homework */}
-              {hwDueToday.map((hw) => (
-                <View key={hw.id} style={[styles.hwItem, { borderLeftColor: hw.classColor ?? theme.accent }]}>
-                  <Text style={[styles.hwItemTitle, { fontFamily: theme.fBody, color: hw.done ? theme.soft : theme.ink, textDecorationLine: hw.done ? 'line-through' : 'none' }]}>
-                    {hw.title}
-                  </Text>
-                  <View style={styles.hwItemMeta}>
-                    {hw.subject && (
-                      <Text style={[styles.hwItemSub, { fontFamily: theme.fMono, color: hw.classColor ?? theme.accent }]}>
-                        {hw.subject}
-                      </Text>
-                    )}
-                    {hw.tag && (
-                      <Text style={[styles.hwItemTag, { fontFamily: theme.fMono, color: theme.soft }]}>· {hw.tag}</Text>
-                    )}
-                    <Text style={[styles.hwItemDone, { fontFamily: theme.fMono, color: hw.done ? theme.mint : theme.soft }]}>
-                      {hw.done ? '✓ done' : '○ pending'}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-              {hwDueToday.length === 0 && (
-                <Text style={[styles.noHw, { fontFamily: theme.fMono, color: theme.soft }]}>No homework due today</Text>
-              )}
-            </View>
-
-            {/* Today's events */}
-            {eventsToday.length > 0 && (
-              <View style={styles.hwSection}>
-                <Text style={[styles.hwLabel, { fontFamily: theme.fMono, color: theme.sub }]}>TODAY'S EVENTS</Text>
-                {eventsToday.map((ev) => (
-                  <View key={ev.id} style={[styles.evItem, { borderLeftColor: theme.purple }]}>
-                    <Text style={[styles.evTime, { fontFamily: theme.fMono, color: theme.purple }]}>{ev.time}</Text>
-                    <Text style={[styles.evTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.title}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[styles.activityBtn, { borderColor: theme.accent }]}
-              onPress={() => navigation.navigate('ParentActivity')}
-            >
-              <Text style={[styles.activityBtnText, { fontFamily: theme.fMono, color: theme.accent }]}>
-                View all activity →
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-
-        <PairKidCard theme={theme} hasLinked={linkedKids.length > 0} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
+      >
+        {linkedKids.map(renderKidCard)}
+        <PairKidCard
+          theme={theme}
+          hasLinked={linkedKids.length > 0}
+          parentUserId={parentUserId}
+          onLinked={() => setLinkVersion((v) => v + 1)}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -229,15 +340,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  topBar: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  appName: { fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' },
+  topBar: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   headline: { fontSize: 32, lineHeight: 38 },
   topRight: { alignItems: 'flex-end', gap: 8 },
   notifBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
@@ -281,7 +384,7 @@ const styles = StyleSheet.create({
   pairHint: { fontSize: 14, lineHeight: 20 },
   pairRow: { flexDirection: 'row', gap: 10 },
   pairInput: { flex: 1, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12, fontSize: 18, letterSpacing: 4, textAlign: 'center' },
-  pairBtn: { borderRadius: 12, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' },
+  pairBtn: { borderRadius: 12, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center', minWidth: 64 },
   pairBtnText: { color: '#fff', fontSize: 14, letterSpacing: 0.5 },
   pairError: { fontSize: 13, lineHeight: 18 },
 });
