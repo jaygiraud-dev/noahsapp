@@ -20,6 +20,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useStore } from './src/store/useStore';
 import { supabase } from './src/lib/supabase';
+import { upsertProfile } from './src/lib/db';
 
 export default function App() {
   const setPhase = useStore((s) => s.setPhase);
@@ -29,6 +30,8 @@ export default function App() {
   const resetForUser = useStore((s) => s.resetForUser);
   const setUserRole = useStore((s) => s.setUserRole);
   const loadDataFromSupabase = useStore((s) => s.loadDataFromSupabase);
+  const pairingCode = useStore((s) => s.pairingCode);
+  const school = useStore((s) => s.school);
   const [sessionReady, setSessionReady] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -63,6 +66,15 @@ export default function App() {
         // Same returning user — trust persisted role and go straight to app
         setUserRole(role);
         setPhase(storedUserRole === 'parent' ? 'parent' : 'main');
+        // Re-upsert profile on every load so pairing code is always in Supabase
+        const displayName = session.user.email?.split('@')[0] ?? '';
+        upsertProfile(
+          session.user.id,
+          storedUserRole,
+          storedUserRole === 'student' ? pairingCode : undefined,
+          storedUserRole === 'student' ? school.name : undefined,
+          displayName
+        ).catch(() => {});
         // Sync latest data from Supabase in background
         if (storedUserRole === 'student') {
           loadDataFromSupabase().catch(() => {});
