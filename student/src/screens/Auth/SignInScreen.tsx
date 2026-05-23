@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { supabase } from '../../lib/supabase';
+import { upsertProfile } from '../../lib/db';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import SerifTitle from '../../components/SerifTitle';
 import MicroLabel from '../../components/MicroLabel';
@@ -29,8 +30,12 @@ export default function SignInScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const [mode, setMode] = useState<Mode>('signin');
   const setPhase = useStore((s) => s.setPhase);
+  const setUserRole = useStore((s) => s.setUserRole);
   const storedUserId = useStore((s) => s.userId);
+  const pairingCode = useStore((s) => s.pairingCode);
+  const school = useStore((s) => s.school);
   const resetForUser = useStore((s) => s.resetForUser);
+  const loadDataFromSupabase = useStore((s) => s.loadDataFromSupabase);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -40,21 +45,23 @@ export default function SignInScreen({ navigation }: any) {
     setLoading(true);
 
     let authError: string | null = null;
-    let role: string = accountType;
+    // Always use the UI toggle the user selected — ignore metadata for role
+    const role: 'student' | 'parent' = accountType;
     let uid = '';
+    let emailAddr = email;
 
     if (mode === 'signup') {
       const { data, error: e } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { role: accountType } },
+        options: { data: { role } },
       });
       if (e) authError = e.message;
-      else { role = data.user?.user_metadata?.role ?? accountType; uid = data.user?.id ?? ''; }
+      else uid = data.user?.id ?? '';
     } else {
       const { data, error: e } = await supabase.auth.signInWithPassword({ email, password });
       if (e) authError = e.message;
-      else { role = data.user?.user_metadata?.role ?? accountType; uid = data.user?.id ?? ''; }
+      else { uid = data.user?.id ?? ''; emailAddr = data.user?.email ?? email; }
     }
 
     setLoading(false);
@@ -64,10 +71,18 @@ export default function SignInScreen({ navigation }: any) {
       return;
     }
 
-    if (uid && uid !== storedUserId) {
-      resetForUser(uid, role as 'student' | 'parent');
+    if (!uid) return;
+
+    // Create/update profile in Supabase so the parent can find this student by pairing code
+    const displayName = emailAddr.split('@')[0];
+    upsertProfile(uid, role, role === 'student' ? pairingCode : undefined, role === 'student' ? school.name : undefined, displayName).catch(() => {});
+
+    if (uid !== storedUserId) {
+      resetForUser(uid, role);
     } else {
-      setPhase(role === 'parent' ? 'parent' : 'onboarding');
+      setUserRole(role);
+      setPhase(role === 'parent' ? 'parent' : 'main');
+      if (role === 'student') loadDataFromSupabase().catch(() => {});
     }
   }
 

@@ -27,7 +27,7 @@ export interface Homework {
   reminder?: string | null;
   points: number;
   done: boolean;
-  attachedImage?: string;
+  attachedImages?: string[];
 }
 
 export interface CalEvent {
@@ -37,6 +37,7 @@ export interface CalEvent {
   type?: string;
   icon?: string;
   time?: string;
+  endTime?: string;
   date?: string;
   location?: string;
   reminder?: string;
