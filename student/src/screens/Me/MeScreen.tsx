@@ -6,10 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Switch,
-  Modal,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -40,6 +37,7 @@ export default function MeScreen({ navigation }: any) {
 
   const [email, setEmail] = useState('');
   const [editingSchool, setEditingSchool] = useState(false);
+  const [editingCity, setEditingCity] = useState(false);
   const [draftSchoolName, setDraftSchoolName] = useState(school.name);
   const [draftSchoolCity, setDraftSchoolCity] = useState(school.city);
 
@@ -49,15 +47,14 @@ export default function MeScreen({ navigation }: any) {
     });
   }, []);
 
-  function openEditSchool() {
-    setDraftSchoolName(school.name);
-    setDraftSchoolCity(school.city);
-    setEditingSchool(true);
+  function saveSchool() {
+    setSchool({ name: draftSchoolName.trim() || school.name, city: school.city });
+    setEditingSchool(false);
   }
 
-  function saveSchool() {
-    setSchool({ name: draftSchoolName.trim() || school.name, city: draftSchoolCity.trim() || school.city });
-    setEditingSchool(false);
+  function saveCity() {
+    setSchool({ name: school.name, city: draftSchoolCity.trim() || school.city });
+    setEditingCity(false);
   }
 
   async function handleSignOut() {
@@ -95,12 +92,7 @@ export default function MeScreen({ navigation }: any) {
 
         {/* Account info */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MicroLabel>Account</MicroLabel>
-            <TouchableOpacity onPress={openEditSchool}>
-              <Text style={[styles.editLink, { fontFamily: theme.fMono, color: theme.accent }]}>Edit school →</Text>
-            </TouchableOpacity>
-          </View>
+          <MicroLabel>Account</MicroLabel>
           <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
             {email !== '' && (
               <View style={[styles.infoRow, { borderBottomColor: theme.line }]}>
@@ -108,14 +100,52 @@ export default function MeScreen({ navigation }: any) {
                 <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]} numberOfLines={1}>{email}</Text>
               </View>
             )}
-            <View style={[styles.infoRow, { borderBottomColor: theme.line }]}>
+            <TouchableOpacity
+              style={[styles.infoRow, { borderBottomColor: theme.line }]}
+              onPress={() => setEditingSchool(true)}
+              activeOpacity={0.7}
+            >
               <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>SCHOOL</Text>
-              <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]}>{school.name}</Text>
-            </View>
-            <View style={[styles.infoRow, { borderBottomColor: theme.line }]}>
+              {editingSchool ? (
+                <TextInput
+                  style={[styles.infoValueInput, { fontFamily: theme.fBody, color: theme.ink, borderColor: theme.accent }]}
+                  value={draftSchoolName}
+                  onChangeText={setDraftSchoolName}
+                  onBlur={saveSchool}
+                  onSubmitEditing={saveSchool}
+                  autoFocus
+                  returnKeyType="done"
+                />
+              ) : (
+                <View style={styles.infoValueRow}>
+                  <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]}>{school.name}</Text>
+                  <Text style={[styles.editPencil, { color: theme.soft }]}>✎</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.infoRow, { borderBottomColor: theme.line }]}
+              onPress={() => setEditingCity(true)}
+              activeOpacity={0.7}
+            >
               <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>CITY</Text>
-              <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]}>{school.city}</Text>
-            </View>
+              {editingCity ? (
+                <TextInput
+                  style={[styles.infoValueInput, { fontFamily: theme.fBody, color: theme.ink, borderColor: theme.accent }]}
+                  value={draftSchoolCity}
+                  onChangeText={setDraftSchoolCity}
+                  onBlur={saveCity}
+                  onSubmitEditing={saveCity}
+                  autoFocus
+                  returnKeyType="done"
+                />
+              ) : (
+                <View style={styles.infoValueRow}>
+                  <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]}>{school.city}</Text>
+                  <Text style={[styles.editPencil, { color: theme.soft }]}>✎</Text>
+                </View>
+              )}
+            </TouchableOpacity>
             <View style={[styles.infoRow, { borderBottomColor: 'transparent' }]}>
               <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>PAIRING CODE</Text>
               <Text style={[styles.infoValue, { fontFamily: theme.fMono, color: theme.accent, letterSpacing: 3 }]}>{pairingCode}</Text>
@@ -203,47 +233,6 @@ export default function MeScreen({ navigation }: any) {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Edit school modal */}
-      <Modal visible={editingSchool} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setEditingSchool(false)}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={[styles.editModal, { backgroundColor: theme.bg }]}
-        >
-          <View style={[styles.modalHandle, { backgroundColor: theme.line }]} />
-          <View style={styles.editModalContent}>
-            <View style={styles.editModalHeader}>
-              <Text style={[styles.editModalTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Edit school.</Text>
-              <TouchableOpacity onPress={() => setEditingSchool(false)}>
-                <Text style={[styles.editModalClose, { color: theme.soft }]}>×</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.fieldGroup}>
-              <MicroLabel>School Name</MicroLabel>
-              <TextInput
-                style={[styles.editInput, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
-                value={draftSchoolName}
-                onChangeText={setDraftSchoolName}
-                placeholder="e.g. Sutherland Secondary"
-                placeholderTextColor={theme.soft}
-                autoFocus
-              />
-            </View>
-            <View style={styles.fieldGroup}>
-              <MicroLabel>City</MicroLabel>
-              <TextInput
-                style={[styles.editInput, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
-                value={draftSchoolCity}
-                onChangeText={setDraftSchoolCity}
-                placeholder="e.g. North Vancouver"
-                placeholderTextColor={theme.soft}
-              />
-            </View>
-            <TouchableOpacity style={[styles.saveBtn, { backgroundColor: theme.accent }]} onPress={saveSchool}>
-              <Text style={[styles.saveBtnText, { fontFamily: theme.fMono }]}>Save changes</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -334,20 +323,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   signOutText: { fontSize: 13, letterSpacing: 1.5 },
-  editModal: { flex: 1 },
-  modalHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 8 },
-  editModalContent: { padding: 20, gap: 20 },
-  editModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  editModalTitle: { fontSize: 26 },
-  editModalClose: { fontSize: 28, lineHeight: 32 },
-  fieldGroup: { gap: 8 },
-  editInput: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    fontSize: 15,
+  infoValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'flex-end' },
+  editPencil: { fontSize: 13 },
+  infoValueInput: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: 14,
+    borderBottomWidth: 1.5,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
   },
-  saveBtn: { borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
-  saveBtnText: { color: '#fff', fontSize: 14, letterSpacing: 0.5 },
 });

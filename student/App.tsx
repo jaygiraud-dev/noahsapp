@@ -22,13 +22,13 @@ import { useStore } from './src/store/useStore';
 import { supabase } from './src/lib/supabase';
 
 export default function App() {
-  const vibe = useStore((s) => s.vibe);
-  const darkMode = useStore((s) => s.darkMode);
   const setPhase = useStore((s) => s.setPhase);
   const storedUserId = useStore((s) => s.userId);
   const storedUserRole = useStore((s) => s.userRole);
   const hasHydrated = useStore((s) => s._hasHydrated);
   const resetForUser = useStore((s) => s.resetForUser);
+  const setUserRole = useStore((s) => s.setUserRole);
+  const loadDataFromSupabase = useStore((s) => s.loadDataFromSupabase);
   const [sessionReady, setSessionReady] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -42,20 +42,30 @@ export default function App() {
     JetBrainsMono_500Medium,
   });
 
+  // Wait for the Zustand store to rehydrate from AsyncStorage before checking the
+  // Supabase session — otherwise storedUserId is always '' and resetForUser fires.
   useEffect(() => {
     if (!hasHydrated) return;
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         setPhase('auth');
+        setSessionReady(true);
+        return;
+      }
+
+      const role = (session.user.user_metadata?.role ?? storedUserRole) as 'student' | 'parent';
+
+      if (session.user.id !== storedUserId) {
+        // New or different user — wipe previous data
+        resetForUser(session.user.id, role);
       } else {
-        if (session.user.id !== storedUserId) {
-          // Different (or new) user — determine role from metadata, fallback to student
-          const role = (session.user.user_metadata?.role ?? 'student') as 'student' | 'parent';
-          resetForUser(session.user.id, role);
-        } else {
-          // Same user returning — trust the persisted role, not metadata
-          setPhase(storedUserRole === 'parent' ? 'parent' : 'main');
+        // Same returning user — trust persisted role and go straight to app
+        setUserRole(role);
+        setPhase(storedUserRole === 'parent' ? 'parent' : 'main');
+        // Sync latest data from Supabase in background
+        if (storedUserRole === 'student') {
+          loadDataFromSupabase().catch(() => {});
         }
       }
       setSessionReady(true);

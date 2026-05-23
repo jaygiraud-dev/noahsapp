@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface LinkedKid {
   id: string;
+  studentUserId: string;   // Supabase auth UUID — empty string for demo/sample kid
   name: string;
   pairingCode: string;
   school: string;
@@ -30,14 +31,16 @@ interface ParentState {
   notifications: ParentNotif[];
 
   pairKid: (code: string) => boolean;
+  addLinkedKid: (kid: LinkedKid) => void;
   markNotifRead: (id: string) => void;
   markAllNotifsRead: () => void;
   clearAllNotifications: () => void;
 }
 
 const SAMPLE_KID: LinkedKid = {
-  id: 'kid-1',
-  name: 'Noah',
+  id: 'kid-demo',
+  studentUserId: '',
+  name: 'Noah (demo)',
   pairingCode: '7K4M2D',
   school: 'Kitsilano Secondary',
   grade: 'Grade 10',
@@ -49,27 +52,42 @@ const SAMPLE_KID: LinkedKid = {
   lastActive: '10 min ago',
 };
 
+const SAMPLE_NOTIFS: ParentNotif[] = [
+  { id: 'n1', kidId: 'kid-demo', type: 'hw_done',  text: 'Noah finished Math homework — Textbook p.45', time: '2h ago',  read: false },
+  { id: 'n2', kidId: 'kid-demo', type: 'streak',   text: 'Noah hit a 12-day streak! 🔥',                time: '1d ago',  read: false },
+  { id: 'n3', kidId: 'kid-demo', type: 'hw_due',   text: 'Science project due tomorrow',                time: '1d ago',  read: true  },
+  { id: 'n4', kidId: 'kid-demo', type: 'points',   text: 'Noah earned 50 points today',                 time: '2d ago',  read: true  },
+];
+
 export const useParentStore = create<ParentState>()(
   persist(
     (set, get) => ({
       linkedKids: [],
       notifications: [],
 
+      // Legacy fallback — handles demo sample kid for users not signed in
       pairKid: (code) => {
         if (code.toUpperCase() === SAMPLE_KID.pairingCode) {
           const alreadyLinked = get().linkedKids.some((k) => k.id === SAMPLE_KID.id);
           if (!alreadyLinked) {
-            const notifs: ParentNotif[] = [
-              { id: 'n1', kidId: 'kid-1', type: 'hw_done', text: 'Noah finished Math homework — Textbook p.45', time: '2h ago', read: false },
-              { id: 'n2', kidId: 'kid-1', type: 'streak', text: 'Noah hit a 12-day streak! 🔥', time: '1d ago', read: false },
-              { id: 'n3', kidId: 'kid-1', type: 'hw_due', text: 'Science project due tomorrow', time: '1d ago', read: true },
-              { id: 'n4', kidId: 'kid-1', type: 'points', text: 'Noah earned 50 points today', time: '2d ago', read: true },
-            ];
-            set((s) => ({ linkedKids: [...s.linkedKids, SAMPLE_KID], notifications: [...s.notifications, ...notifs] }));
+            set((s) => ({
+              linkedKids: [...s.linkedKids, SAMPLE_KID],
+              notifications: [...s.notifications, ...SAMPLE_NOTIFS],
+            }));
           }
           return true;
         }
         return false;
+      },
+
+      // Used by ParentDashboardScreen after a successful Supabase lookup
+      addLinkedKid: (kid) => {
+        const alreadyLinked = get().linkedKids.some(
+          (k) => kid.studentUserId !== '' && k.studentUserId === kid.studentUserId
+        );
+        if (!alreadyLinked) {
+          set((s) => ({ linkedKids: [...s.linkedKids, kid] }));
+        }
       },
 
       markNotifRead: (id) =>
