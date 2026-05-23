@@ -172,7 +172,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
   }, [parentUserId]);
 
   const loadSnapshots = useCallback(async () => {
-    const realKids = linkedKids.filter((k) => k.studentUserId !== '');
+    const realKids = linkedKids.filter((k) => k.studentUserId && k.studentUserId !== '');
     if (realKids.length === 0) return;
     const results = await Promise.all(
       realKids.map(async (kid) => {
@@ -206,7 +206,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
   const today = new Date();
 
   function renderKidCard(kid: typeof linkedKids[0]) {
-    const isReal = kid.studentUserId !== '';
+    const isReal = !!kid.studentUserId && kid.studentUserId !== '';
     const snap = isReal ? snapshots[kid.studentUserId] : null;
     const hw = snap?.homework ?? [];
     const evs = snap?.events ?? [];
