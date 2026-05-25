@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   form: { gap: 16 },
   fieldGroup: { gap: 6 },
   input: {
-    borderRadius: 12,
+    borderRadius: 32,
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 14,

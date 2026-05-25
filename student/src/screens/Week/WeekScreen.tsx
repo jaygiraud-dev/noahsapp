@@ -357,7 +357,7 @@ export default function WeekScreen() {
 
 const detailStyles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 },
-  card: { borderRadius: 20, borderWidth: 1, flexDirection: 'row', alignItems: 'stretch', overflow: 'hidden' },
+  card: { borderRadius: 32, borderWidth: 1, flexDirection: 'row', alignItems: 'stretch', overflow: 'hidden' },
   colorBar: { width: 5 },
   body: { flex: 1, padding: 16, gap: 6 },
   cardTitle: { fontSize: 22, lineHeight: 28 },
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   hourLine: { flex: 1, height: StyleSheet.hairlineWidth, marginTop: 7 },
   block: {
     position: 'absolute',
-    borderRadius: 10,
+    borderRadius: 28,
     borderLeftWidth: 3,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -426,6 +426,6 @@ const styles = StyleSheet.create({
   },
   closedLabel: { fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.5 },
   hwRow: { position: 'absolute', right: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  hwChip: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3 },
+  hwChip: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3 },
   hwChipText: { fontSize: 10, letterSpacing: 0.2 },
 });

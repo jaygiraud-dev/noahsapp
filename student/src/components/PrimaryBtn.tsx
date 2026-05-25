@@ -47,9 +47,9 @@ export default function PrimaryBtn({ label, onPress, loading, disabled, style }:
 }
 
 const styles = StyleSheet.create({
-  wrap: { borderRadius: 14 },
+  wrap: { borderRadius: 22 },
   gradient: {
-    borderRadius: 14,
+    borderRadius: 22,
     paddingVertical: 15,
     alignItems: 'center',
     justifyContent: 'center',
