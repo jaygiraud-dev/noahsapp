@@ -45,6 +45,7 @@ interface AppState {
   setParentPaired: (v: boolean) => void;
   toggleHomework: (id: string) => void;
   addHomework: (hw: Omit<Homework, 'id' | 'done'>) => void;
+  editHomework: (id: string, changes: Partial<Homework>) => void;
   toggleEvent: (id: string) => void;
   addEvent: (ev: Omit<CalEvent, 'id' | 'done'>) => void;
   setVibe: (vibe: Vibe) => void;
@@ -163,6 +164,13 @@ export const useStore = create<AppState>()(
       get().pushNotification({ type: 'done', who: 'Alex', what: hw.title, cls: cls?.name, when: 'just now', clr: cls?.color });
     }
     if (userId) upsertHomework(userId, updated).catch(() => {});
+  },
+
+  editHomework: (id, changes) => {
+    const { userId } = get();
+    set(s => ({ homework: s.homework.map(h => h.id === id ? { ...h, ...changes } : h) }));
+    const updated = get().homework.find(h => h.id === id);
+    if (userId && updated) upsertHomework(userId, updated).catch(() => {});
   },
 
   addHomework: (data) => {

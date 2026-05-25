@@ -15,7 +15,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
-import { Class } from '../../types';
+import { Class, Homework } from '../../types';
 import { HW_TAGS, DUE_OPTIONS } from '../../data/constants';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import MicroLabel from '../../components/MicroLabel';
@@ -29,15 +29,17 @@ interface Props {
   onClose: () => void;
   defaultDate?: Date;
   defaultClass?: Class | null;
+  editHw?: Homework | null;
 }
 
-export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaultClass }: Props) {
+export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaultClass, editHw }: Props) {
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState(defaultClass?.name ?? '');
   const [tag, setTag] = useState(HW_TAGS[0].label);
   const [due, setDue] = useState(DUE_OPTIONS[0].label);
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
   const addHomework = useStore((s) => s.addHomework);
+  const editHomework = useStore((s) => s.editHomework);
   const classes = useStore((s) => s.classes);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
@@ -45,13 +47,21 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
 
   useEffect(() => {
     if (visible) {
-      setSubject(defaultClass?.name ?? '');
-      setTitle('');
-      setTag(HW_TAGS[0].label);
-      setDue(DUE_OPTIONS[0].label);
-      setAttachedImages([]);
+      if (editHw) {
+        setTitle(editHw.title);
+        setSubject(editHw.subject ?? '');
+        setTag(editHw.tag ?? HW_TAGS[0].label);
+        setDue(editHw.due ?? DUE_OPTIONS[0].label);
+        setAttachedImages(editHw.attachedImages ?? []);
+      } else {
+        setSubject(defaultClass?.name ?? '');
+        setTitle('');
+        setTag(HW_TAGS[0].label);
+        setDue(DUE_OPTIONS[0].label);
+        setAttachedImages([]);
+      }
     }
-  }, [visible, defaultClass]);
+  }, [visible, defaultClass, editHw]);
 
   async function pickImage(fromCamera: boolean) {
     if (attachedImages.length >= MAX_PHOTOS) return;
@@ -105,24 +115,34 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
 
   function handleAdd() {
     if (!title.trim()) return;
-    const dueDate = defaultDate ? new Date(defaultDate) : new Date();
-    if (due === 'Tomorrow') dueDate.setDate(dueDate.getDate() + 1);
-    else if (due === 'In 3 days') dueDate.setDate(dueDate.getDate() + 3);
-    else if (due === 'Next week') dueDate.setDate(dueDate.getDate() + 7);
     const matchedClass = classes.find((c) => c.name === subject);
-    addHomework({
-      id: Date.now().toString(),
-      classId: matchedClass?.id,
-      subject: subject || 'General',
-      classColor: matchedClass?.color,
-      title: title.trim(),
-      tag,
-      due,
-      dueDate: dueDate.toISOString(),
-      done: false,
-      points: 10,
-      attachedImages: attachedImages.length > 0 ? attachedImages : undefined,
-    });
+    if (editHw) {
+      editHomework(editHw.id, {
+        title: title.trim(),
+        subject: subject || 'General',
+        classId: matchedClass?.id,
+        classColor: matchedClass?.color,
+        tag,
+        due,
+        attachedImages: attachedImages.length > 0 ? attachedImages : undefined,
+      });
+    } else {
+      const dueDate = defaultDate ? new Date(defaultDate) : new Date();
+      if (due === 'Tomorrow') dueDate.setDate(dueDate.getDate() + 1);
+      else if (due === 'In 3 days') dueDate.setDate(dueDate.getDate() + 3);
+      else if (due === 'Next week') dueDate.setDate(dueDate.getDate() + 7);
+      addHomework({
+        classId: matchedClass?.id,
+        subject: subject || 'General',
+        classColor: matchedClass?.color,
+        title: title.trim(),
+        tag,
+        due,
+        dueDate: dueDate.toISOString(),
+        points: 10,
+        attachedImages: attachedImages.length > 0 ? attachedImages : undefined,
+      });
+    }
     onClose();
   }
 
@@ -139,7 +159,7 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
           <View style={[styles.handle, { backgroundColor: theme.line }]} />
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.titleRow}>
-              <SerifTitle size={24}>Add homework.</SerifTitle>
+              <SerifTitle size={24}>{editHw ? 'Edit homework.' : 'Add homework.'}</SerifTitle>
               <TouchableOpacity onPress={onClose}>
                 <Text style={[styles.close, { color: theme.soft }]}>×</Text>
               </TouchableOpacity>
@@ -227,7 +247,7 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
               </View>
             </View>
 
-            <PrimaryBtn label="Add homework +" onPress={handleAdd} disabled={!title.trim()} style={styles.addBtn} />
+            <PrimaryBtn label={editHw ? 'Save changes' : 'Add homework +'} onPress={handleAdd} disabled={!title.trim()} style={styles.addBtn} />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>

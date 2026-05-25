@@ -11,6 +11,7 @@ import {
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { Homework } from '../../types';
+import AddHomeworkSheet from './AddHomeworkSheet';
 
 interface Props {
   hw: Homework | null;
@@ -34,6 +35,7 @@ function ImagePreviewModal({ uri, onClose }: { uri: string; onClose: () => void 
 
 export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle }: Props) {
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -48,6 +50,7 @@ export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle }: 
   return (
     <>
       {previewUri && <ImagePreviewModal uri={previewUri} onClose={() => setPreviewUri(null)} />}
+      <AddHomeworkSheet visible={editOpen} onClose={() => setEditOpen(false)} editHw={hw} />
       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <View style={styles.backdrop}>
           <TouchableOpacity style={styles.backdropDismiss} activeOpacity={1} onPress={onClose} />
@@ -111,7 +114,16 @@ export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle }: 
                 </View>
               )}
 
-              {/* Toggle done */}
+              {/* Actions */}
+              <TouchableOpacity
+                style={[styles.editBtn, { backgroundColor: theme.surface, borderColor: theme.line }]}
+                onPress={() => { onClose(); setTimeout(() => setEditOpen(true), 300); }}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.toggleBtnText, { fontFamily: theme.fMono, color: theme.ink }]}>
+                  ✎  Edit
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.toggleBtn, { backgroundColor: hw.done ? theme.surface : color, borderColor: hw.done ? theme.line : color }]}
                 onPress={() => { onToggle(); onClose(); }}
@@ -151,6 +163,7 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 10, letterSpacing: 1 },
   photosRow: { gap: 10 },
   photoThumb: { width: 120, height: 120, borderRadius: 12 },
+  editBtn: { borderRadius: 14, borderWidth: 1, paddingVertical: 16, alignItems: 'center' },
   toggleBtn: { borderRadius: 14, borderWidth: 1, paddingVertical: 16, alignItems: 'center' },
   toggleBtnText: { fontSize: 15, letterSpacing: 0.5 },
   imgBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
