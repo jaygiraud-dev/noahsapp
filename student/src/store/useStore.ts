@@ -203,7 +203,7 @@ export const useStore = create<AppState>()(
     if (userId) upsertEvent(userId, newEv).catch(() => {});
   },
 
-  setVibe: (vibe) => set({ vibe }),
+  setVibe: (vibe) => set({ vibe, ...(vibe === 'clay' ? { darkMode: false } : {}) }),
   setDarkMode: (darkMode) => set({ darkMode }),
   clearReward: () => set({ reward: null }),
 

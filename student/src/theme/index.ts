@@ -1,4 +1,4 @@
-export type Vibe = 'twilight' | 'paper' | 'mono';
+export type Vibe = 'twilight' | 'paper' | 'mono' | 'clay';
 
 export interface Theme {
   bg: string;
@@ -22,6 +22,7 @@ export interface Theme {
   isTwilight: boolean;
   isPaper: boolean;
   isMono: boolean;
+  isClay: boolean;
   vibe: Vibe;
   dark: boolean;
   fDisplay: string;
@@ -68,7 +69,7 @@ export function makeTheme(vibe: Vibe = 'twilight', dark: boolean = true): Theme 
       accentDk: '#db2777',
       accentGrad: ['#a78bfa', '#ec4899'],
       overlay: 'rgba(8,4,20,0.7)',
-      isTwilight: true, isPaper: false, isMono: false,
+      isTwilight: true, isPaper: false, isMono: false, isClay: false,
     };
   }
 
@@ -90,7 +91,34 @@ export function makeTheme(vibe: Vibe = 'twilight', dark: boolean = true): Theme 
       accent: '#d97706', accentDk: '#b45309',
       accentGrad: ['#b45309', '#d97706'],
       overlay: 'rgba(0,0,0,0.45)',
-      isTwilight: false, isPaper: true, isMono: false,
+      isTwilight: false, isPaper: true, isMono: false, isClay: false,
+    };
+  }
+
+  // clay — always light, pastel 3D feel
+  if (vibe === 'clay') {
+    return {
+      ...fonts,
+      vibe, dark: false,
+      bg: '#f0ebff',
+      surface: 'rgba(255,255,255,0.75)',
+      surfaceHi: 'rgba(255,255,255,0.95)',
+      surfaceEdge: 'rgba(167,139,250,0.15)',
+      ink: '#2d1b69',
+      sub: 'rgba(45,27,105,0.60)',
+      soft: 'rgba(45,27,105,0.38)',
+      line: 'rgba(167,139,250,0.20)',
+      magenta: '#ec4899',
+      purple: '#a78bfa',
+      cyan: '#06d6e0',
+      mint: '#34d399',
+      amber: '#fbbf24',
+      red: '#f87171',
+      accent: '#a78bfa',
+      accentDk: '#7c3aed',
+      accentGrad: ['#a78bfa', '#ec4899'],
+      overlay: 'rgba(45,27,105,0.35)',
+      isTwilight: false, isPaper: false, isMono: false, isClay: true,
     };
   }
 
@@ -112,7 +140,7 @@ export function makeTheme(vibe: Vibe = 'twilight', dark: boolean = true): Theme 
     accent: '#22c55e', accentDk: '#16a34a',
     accentGrad: ['#22c55e', '#06b6d4'],
     overlay: 'rgba(0,0,0,0.45)',
-    isTwilight: false, isPaper: false, isMono: true,
+    isTwilight: false, isPaper: false, isMono: true, isClay: false,
   };
 }
 

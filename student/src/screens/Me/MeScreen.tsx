@@ -15,10 +15,25 @@ import { makeTheme, Vibe } from '../../theme';
 import MicroLabel from '../../components/MicroLabel';
 import { supabase } from '../../lib/supabase';
 
-const VIBES: { id: Vibe; label: string; accent: string }[] = [
-  { id: 'twilight', label: 'Twilight', accent: '#a78bfa' },
-  { id: 'paper', label: 'Paper', accent: '#d97706' },
-  { id: 'mono', label: 'Mono', accent: '#22c55e' },
+const VIBES: { id: Vibe; label: string; emoji: string; bg: string; card: string; dot1: string; dot2: string; dot3: string; textColor: string }[] = [
+  {
+    id: 'twilight', label: 'Space', emoji: '🌌',
+    bg: '#0c0820', card: 'rgba(255,255,255,0.07)',
+    dot1: '#ec4899', dot2: '#a78bfa', dot3: '#06d6e0',
+    textColor: '#f4ecff',
+  },
+  {
+    id: 'clay', label: 'Clay', emoji: '🧱',
+    bg: '#e8d5ff', card: 'rgba(255,255,255,0.85)',
+    dot1: '#ec4899', dot2: '#a78bfa', dot3: '#06d6e0',
+    textColor: '#2d1b69',
+  },
+  {
+    id: 'paper', label: 'Paper', emoji: '📄',
+    bg: '#f3eee3', card: 'rgba(255,255,255,0.7)',
+    dot1: '#ec4899', dot2: '#d97706', dot3: '#3d6b41',
+    textColor: '#1c1917',
+  },
 ];
 
 export default function MeScreen({ navigation }: any) {
@@ -195,36 +210,47 @@ export default function MeScreen({ navigation }: any) {
 
         {/* Appearance */}
         <View style={styles.section}>
-          <MicroLabel>Appearance</MicroLabel>
+          <MicroLabel>Theme</MicroLabel>
           <View style={styles.vibeRow}>
-            {VIBES.map((v) => (
-              <TouchableOpacity
-                key={v.id}
-                style={[
-                  styles.vibeOption,
-                  {
-                    borderColor: vibe === v.id ? v.accent : theme.line,
-                    backgroundColor: vibe === v.id ? v.accent + '22' : theme.surface,
-                  },
-                ]}
-                onPress={() => setVibe(v.id)}
-              >
-                <View style={[styles.vibeDot, { backgroundColor: v.accent }]} />
-                <Text style={[styles.vibeLabel, { fontFamily: theme.fMono, color: vibe === v.id ? v.accent : theme.sub }]}>
-                  {v.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {VIBES.map((v) => {
+              const active = vibe === v.id;
+              return (
+                <TouchableOpacity
+                  key={v.id}
+                  style={[styles.vibeCard, { backgroundColor: v.bg, borderColor: active ? theme.accent : 'transparent', borderWidth: active ? 2.5 : 1.5 }]}
+                  onPress={() => setVibe(v.id)}
+                  activeOpacity={0.8}
+                >
+                  {/* Mini screen preview */}
+                  <View style={[styles.vibePreview, { backgroundColor: v.card, borderColor: 'rgba(255,255,255,0.2)' }]}>
+                    <View style={[styles.vibeBar, { backgroundColor: v.dot1 + 'cc' }]} />
+                    <View style={[styles.vibeBar, { backgroundColor: v.dot2 + 'cc', width: '70%' }]} />
+                    <View style={[styles.vibeBar, { backgroundColor: v.dot3 + 'cc', width: '50%' }]} />
+                  </View>
+                  <View style={styles.vibeMeta}>
+                    <Text style={styles.vibeEmoji}>{v.emoji}</Text>
+                    <Text style={[styles.vibeLabel, { fontFamily: theme.fMono, color: v.textColor }]}>{v.label}</Text>
+                  </View>
+                  {active && (
+                    <View style={[styles.vibeCheck, { backgroundColor: theme.accent }]}>
+                      <Text style={styles.vibeCheckText}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          <View style={[styles.settingRow, { borderColor: theme.line, backgroundColor: theme.surface }]}>
-            <Text style={[styles.settingLabel, { fontFamily: theme.fBody, color: theme.ink }]}>Dark mode</Text>
-            <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
-              trackColor={{ false: theme.line, true: theme.accent + '88' }}
-              thumbColor={darkMode ? theme.accent : theme.soft}
-            />
-          </View>
+          {!theme.isClay && (
+            <View style={[styles.settingRow, { borderColor: theme.line, backgroundColor: theme.surface }]}>
+              <Text style={[styles.settingLabel, { fontFamily: theme.fBody, color: theme.ink }]}>Dark mode</Text>
+              <Switch
+                value={darkMode}
+                onValueChange={setDarkMode}
+                trackColor={{ false: theme.line, true: theme.accent + '88' }}
+                thumbColor={darkMode ? theme.accent : theme.soft}
+              />
+            </View>
+          )}
         </View>
 
         {/* Sign out */}
@@ -296,6 +322,29 @@ const styles = StyleSheet.create({
   emptyClassesText: { fontSize: 14 },
   editHint: { fontSize: 11, letterSpacing: 0.3, paddingHorizontal: 4 },
   vibeRow: { flexDirection: 'row', gap: 10 },
+  vibeCard: {
+    flex: 1,
+    borderRadius: 18,
+    padding: 12,
+    gap: 10,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  vibePreview: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 8,
+    gap: 5,
+  },
+  vibeBar: { height: 8, borderRadius: 4, width: '100%' },
+  vibeMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  vibeEmoji: { fontSize: 14 },
+  vibeCheck: {
+    position: 'absolute', top: 8, right: 8,
+    width: 18, height: 18, borderRadius: 9,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  vibeCheckText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   vibeOption: {
     flex: 1,
     borderRadius: 12,
@@ -305,7 +354,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   vibeDot: { width: 10, height: 10, borderRadius: 5 },
-  vibeLabel: { fontSize: 10, letterSpacing: 0.5 },
+  vibeLabel: { fontSize: 10, letterSpacing: 0.5, fontWeight: '700' },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
