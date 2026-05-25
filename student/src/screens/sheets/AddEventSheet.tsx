@@ -35,8 +35,8 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
   const [selectedDate, setSelectedDate] = useState<Date>(defaultDate ?? new Date());
   const [time, setTime] = useState(defaultTime ?? '3:30 PM');
   const [endTime, setEndTime] = useState('');
-  const [type, setType] = useState(EVENT_TYPES[0].label);
-  const [reminder, setReminder] = useState(REMINDER_OPTIONS[0].label);
+  const [type, setType] = useState<string>(EVENT_TYPES[0].label);
+  const [reminder, setReminder] = useState<string>(REMINDER_OPTIONS[0].label);
   const addEvent = useStore((s) => s.addEvent);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
@@ -65,7 +65,6 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
   function handleAdd() {
     if (!title.trim()) return;
     addEvent({
-      id: Date.now().toString(),
       title: title.trim(),
       location: location.trim() || undefined,
       time,
@@ -73,7 +72,6 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
       type,
       reminder,
       date: selectedDate.toISOString(),
-      done: false,
     });
     onClose();
   }

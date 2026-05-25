@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
+import { supabase } from '../../lib/supabase';
 import { quoteOfDay } from '../../data/quotes';
 import { POSITIVE_NEWS } from '../../data/news';
 import { Class, Homework, CalEvent } from '../../types';
@@ -254,6 +255,7 @@ export default function TodayScreen() {
   const [hwDetail, setHwDetail] = useState<Homework | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
+  const [nudgeBanner, setNudgeBanner] = useState<string | null>(null);
 
   const homework = useStore((s) => s.homework);
   const events = useStore((s) => s.events);
@@ -264,7 +266,38 @@ export default function TodayScreen() {
   const toggleEvent = useStore((s) => s.toggleEvent);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
+  const userId = useStore((s) => s.userId);
   const theme = makeTheme(vibe, darkMode);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`nudges:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'nudges',
+          filter: `student_id=eq.${userId}`,
+        },
+        (payload: any) => {
+          const nudge = payload.new;
+          if (nudge.seen) return;
+          setNudgeBanner(nudge.message);
+          setTimeout(() => {
+            setNudgeBanner(null);
+            supabase.from('nudges').update({ seen: true }).eq('id', nudge.id);
+          }, 4000);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -300,6 +333,11 @@ export default function TodayScreen() {
           theme={theme}
           onDismiss={() => setShowReminder(false)}
         />
+      )}
+      {nudgeBanner !== null && (
+        <View style={[styles.nudgeBanner, { backgroundColor: theme.accent }]}>
+          <Text style={[styles.nudgeBannerText, { fontFamily: theme.fMono }]}>👋 {nudgeBanner}</Text>
+        </View>
       )}
       {/* News ticker pinned at top */}
       <NewsTicker theme={theme} />
@@ -605,6 +643,19 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabIcon: { color: '#fff', fontSize: 28, lineHeight: 32, marginTop: -2 },
+  nudgeBanner: {
+    marginHorizontal: 20,
+    marginBottom: 4,
+    borderRadius: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  nudgeBannerText: {
+    color: '#fff',
+    fontSize: 14,
+    letterSpacing: 0.3,
+  },
   reminderBanner: {
     position: 'absolute',
     top: 0,

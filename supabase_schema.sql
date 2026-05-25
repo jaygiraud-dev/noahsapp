@@ -119,3 +119,23 @@ create policy "Parents manage own links" on public.parent_student_links for all
 drop policy if exists "Students read own links" on public.parent_student_links;
 create policy "Students read own links" on public.parent_student_links for select
   using (auth.uid() = student_id);
+
+-- ─── NUDGES ──────────────────────────────────────────────────────────────────
+create table if not exists public.nudges (
+  id           uuid default gen_random_uuid() primary key,
+  parent_id    uuid references auth.users(id) on delete cascade not null,
+  student_id   uuid references auth.users(id) on delete cascade not null,
+  message      text not null default 'How''s the homework going? 👋',
+  sent_at      timestamptz default now(),
+  seen         boolean default false
+);
+alter table public.nudges enable row level security;
+drop policy if exists "Parents insert nudges" on public.nudges;
+create policy "Parents insert nudges" on public.nudges for insert
+  with check (auth.uid() = parent_id);
+drop policy if exists "Students read own nudges" on public.nudges;
+create policy "Students read own nudges" on public.nudges for select
+  using (auth.uid() = student_id);
+drop policy if exists "Students mark nudge seen" on public.nudges;
+create policy "Students mark nudge seen" on public.nudges for update
+  using (auth.uid() = student_id);

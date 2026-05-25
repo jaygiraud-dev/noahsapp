@@ -20,7 +20,8 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useStore } from './src/store/useStore';
 import { supabase } from './src/lib/supabase';
-import { upsertProfile } from './src/lib/db';
+import { upsertProfile, savePushToken } from './src/lib/db';
+import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
 
 export default function App() {
   const setPhase = useStore((s) => s.setPhase);
@@ -80,6 +81,13 @@ export default function App() {
           loadDataFromSupabase().catch(() => {});
         }
       }
+      // Register push token for students (fire-and-forget)
+      if (role === 'student') {
+        registerForPushNotificationsAsync().then((token) => {
+          if (token) savePushToken(session.user.id, token).catch(() => {});
+        }).catch(() => {});
+      }
+
       setSessionReady(true);
     });
   }, [hasHydrated]);

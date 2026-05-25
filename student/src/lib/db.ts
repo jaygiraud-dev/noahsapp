@@ -148,6 +148,58 @@ export async function fetchStudentData(studentId: string): Promise<{
   };
 }
 
+export async function savePushToken(userId: string, token: string): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ push_token: token, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+  if (error) console.warn('[db] savePushToken:', error.message);
+}
+
+export async function getParentPushToken(studentId: string): Promise<string | null> {
+  const { data: link, error: linkError } = await supabase
+    .from('parent_student_links')
+    .select('parent_id')
+    .eq('student_id', studentId)
+    .maybeSingle();
+  if (linkError || !link) return null;
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('push_token')
+    .eq('id', link.parent_id)
+    .maybeSingle();
+  if (profileError || !profile) return null;
+
+  return (profile as any).push_token ?? null;
+}
+
+export async function sendExpoPush(
+  token: string,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>
+): Promise<void> {
+  await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to: token, title, body, data, sound: 'default' }),
+  });
+}
+
+export async function sendNudge(
+  parentId: string,
+  studentId: string,
+  message: string
+): Promise<void> {
+  const { error } = await supabase.from('nudges').insert({
+    parent_id: parentId,
+    student_id: studentId,
+    message,
+  });
+  if (error) console.warn('[db] sendNudge:', error.message);
+}
+
 function rowToHomework(row: any): Homework {
   return {
     id: row.id,

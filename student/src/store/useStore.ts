@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Homework, CalEvent, Class, School, Friend, FriendRequest, ActivityNotif } from '../types';
 import { Vibe } from '../theme';
-import { upsertHomework, upsertEvent, fetchHomework, fetchEvents } from '../lib/db';
+import { upsertHomework, upsertEvent, fetchHomework, fetchEvents, getParentPushToken, sendExpoPush } from '../lib/db';
 
 function generatePairingCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -164,6 +164,15 @@ export const useStore = create<AppState>()(
       get().pushNotification({ type: 'done', who: 'Alex', what: hw.title, cls: cls?.name, when: 'just now', clr: cls?.color });
     }
     if (userId) upsertHomework(userId, updated).catch(() => {});
+    // Fire-and-forget parent push notification when homework is marked done
+    if (newDone && userId) {
+      getParentPushToken(userId).then((token) => {
+        if (token) {
+          const notifBody = `${hw.subject ? hw.subject + ': ' : ''}${hw.title}`;
+          sendExpoPush(token, '✓ Homework done', notifBody).catch(() => {});
+        }
+      }).catch(() => {});
+    }
   },
 
   editHomework: (id, changes) => {

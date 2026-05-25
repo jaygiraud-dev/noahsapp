@@ -15,7 +15,7 @@ import { useParentStore } from '../../store/useParentStore';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { supabase } from '../../lib/supabase';
-import { lookupStudentByCode, createParentLink, fetchLinkedStudents, fetchStudentData } from '../../lib/db';
+import { lookupStudentByCode, createParentLink, fetchLinkedStudents, fetchStudentData, sendNudge } from '../../lib/db';
 import { Homework, CalEvent } from '../../types';
 
 function isSameDay(a: Date, b: Date) {
@@ -144,6 +144,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
   const [snapshots, setSnapshots] = useState<Record<string, StudentSnapshot>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [linkVersion, setLinkVersion] = useState(0);
+  const [nudgeSent, setNudgeSent] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -346,6 +347,23 @@ export default function ParentDashboardScreen({ navigation }: any) {
           </View>
         )}
 
+        {isReal && (
+          <TouchableOpacity
+            style={[styles.nudgeBtn, { borderColor: theme.accent }]}
+            onPress={() => {
+              if (nudgeSent[kid.studentUserId]) return;
+              sendNudge(parentUserId, kid.studentUserId, "How's the homework going? 👋");
+              setNudgeSent((prev) => ({ ...prev, [kid.studentUserId]: true }));
+              setTimeout(() => setNudgeSent((prev) => ({ ...prev, [kid.studentUserId]: false })), 2000);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.nudgeBtnText, { fontFamily: theme.fMono, color: nudgeSent[kid.studentUserId] ? theme.mint : theme.accent }]}>
+              {nudgeSent[kid.studentUserId] ? 'Nudge sent! 👋' : 'Nudge 👋'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity style={[styles.activityBtn, { borderColor: theme.accent }]} onPress={() => navigation.navigate('ParentActivity')}>
           <Text style={[styles.activityBtnText, { fontFamily: theme.fMono, color: theme.accent }]}>View all activity →</Text>
         </TouchableOpacity>
@@ -436,6 +454,8 @@ const styles = StyleSheet.create({
   evTitle: { fontSize: 14, flex: 1 },
   activityBtn: { borderRadius: 28, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
   activityBtnText: { fontSize: 13, letterSpacing: 0.5 },
+  nudgeBtn: { borderRadius: 28, borderWidth: 1, paddingVertical: 8, paddingHorizontal: 20, alignSelf: 'flex-start' },
+  nudgeBtnText: { fontSize: 12, letterSpacing: 0.5 },
   pairCard: { borderRadius: 32, borderWidth: 1, padding: 20, gap: 12 },
   pairTitle: { fontSize: 22 },
   pairHint: { fontSize: 14, lineHeight: 20 },

@@ -35,8 +35,8 @@ interface Props {
 export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaultClass, editHw }: Props) {
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState(defaultClass?.name ?? '');
-  const [tag, setTag] = useState(HW_TAGS[0].label);
-  const [due, setDue] = useState(DUE_OPTIONS[0].label);
+  const [tag, setTag] = useState<string>(HW_TAGS[0].label);
+  const [due, setDue] = useState<string>(DUE_OPTIONS[0].label);
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
   const addHomework = useStore((s) => s.addHomework);
   const editHomework = useStore((s) => s.editHomework);
