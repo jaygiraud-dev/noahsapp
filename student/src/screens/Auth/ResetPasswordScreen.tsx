@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
+import { supabase } from '../../lib/supabase';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import SerifTitle from '../../components/SerifTitle';
 import MicroLabel from '../../components/MicroLabel';
@@ -17,18 +18,117 @@ export default function ResetPasswordScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Recovery flow — shown when user clicks the link in their email
+  const [isRecovery, setIsRecovery] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordUpdated, setPasswordUpdated] = useState(false);
+
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
 
-  async function handleReset() {
+  useEffect(() => {
+    // Supabase parses the URL hash on load and fires PASSWORD_RECOVERY when
+    // the user arrives via the reset-password email link.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecovery(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleSendLink() {
+    const trimmed = email.trim();
+    if (!trimmed) return;
     setLoading(true);
-    // TODO: supabase.auth.resetPasswordForEmail(email)
-    await new Promise((r) => setTimeout(r, 800));
+    setError('');
+    const { error: err } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: 'https://xaziss.netlify.app',
+    });
     setLoading(false);
-    setSent(true);
+    if (err) {
+      setError(err.message);
+    } else {
+      setSent(true);
+    }
   }
 
+  async function handleSetPassword() {
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    const { error: err } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+    } else {
+      setPasswordUpdated(true);
+      setTimeout(() => navigation.navigate('SignIn'), 2500);
+    }
+  }
+
+  // ─── Recovery view (user arrived via email link) ────────────────────────────
+  if (isRecovery) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+        <View style={styles.container}>
+          <SerifTitle size={32} style={styles.title}>
+            {passwordUpdated ? 'Password updated.' : 'Set new password.'}
+          </SerifTitle>
+
+          {passwordUpdated ? (
+            <Text style={[styles.body, { fontFamily: theme.fBody, color: theme.sub }]}>
+              All done! Taking you back to sign in…
+            </Text>
+          ) : (
+            <View style={styles.form}>
+              <View style={styles.fieldGroup}>
+                <MicroLabel>New password</MicroLabel>
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  placeholder="min 6 characters"
+                  placeholderTextColor={theme.soft}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+              </View>
+              <View style={styles.fieldGroup}>
+                <MicroLabel>Confirm password</MicroLabel>
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="repeat password"
+                  placeholderTextColor={theme.soft}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+              </View>
+              {!!error && (
+                <Text style={[styles.errorText, { fontFamily: theme.fBody }]}>{error}</Text>
+              )}
+              <PrimaryBtn label="Update password" onPress={handleSetPassword} loading={loading} />
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Request-link view ───────────────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
       <View style={styles.container}>
@@ -44,25 +144,17 @@ export default function ResetPasswordScreen({ navigation }: any) {
 
         {sent ? (
           <Text style={[styles.body, { fontFamily: theme.fBody, color: theme.sub }]}>
-            We sent a reset link to {email}. Check your email and follow the link.
+            We sent a reset link to {email}. Tap the link in your email — it'll bring you back here to set a new password.
           </Text>
         ) : (
           <View style={styles.form}>
             <Text style={[styles.body, { fontFamily: theme.fBody, color: theme.sub }]}>
-              Enter your school email and we'll send a link to reset your password.
+              Enter your email and we'll send a link to reset your password.
             </Text>
             <View style={styles.fieldGroup}>
               <MicroLabel>Email</MicroLabel>
               <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.line,
-                    color: theme.ink,
-                    fontFamily: theme.fBody,
-                  },
-                ]}
+                style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
                 value={email}
                 onChangeText={setEmail}
                 placeholder="you@school.ca"
@@ -71,7 +163,10 @@ export default function ResetPasswordScreen({ navigation }: any) {
                 keyboardType="email-address"
               />
             </View>
-            <PrimaryBtn label="Send reset link" onPress={handleReset} loading={loading} />
+            {!!error && (
+              <Text style={[styles.errorText, { fontFamily: theme.fBody }]}>{error}</Text>
+            )}
+            <PrimaryBtn label="Send reset link" onPress={handleSendLink} loading={loading} />
           </View>
         )}
       </View>
@@ -95,4 +190,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 16,
   },
+  errorText: { fontSize: 13, color: '#f87171' },
 });
