@@ -181,7 +181,7 @@ export default function WeekScreen() {
               activeOpacity={canAdd ? 0.4 : 1}
             >
               <Text style={[styles.timeLabel, { fontFamily: theme.fMono, color: theme.soft, width: GUTTER }]}>
-                {hour}:00
+                {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
               </Text>
               <View style={[styles.hourLine, { backgroundColor: theme.line }]} />
             </TouchableOpacity>
