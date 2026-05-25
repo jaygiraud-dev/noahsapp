@@ -5,6 +5,13 @@ import { Homework, CalEvent, Class, School, Friend, FriendRequest, ActivityNotif
 import { Vibe } from '../theme';
 import { upsertHomework, upsertEvent, fetchHomework, fetchEvents } from '../lib/db';
 
+function generatePairingCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 export type AppPhase = 'auth' | 'onboarding' | 'main' | 'parent';
 
 interface AppState {
@@ -122,6 +129,7 @@ export const useStore = create<AppState>()(
   resetForUser: (uid, role) => set({
     userId: uid,
     userRole: role,
+    pairingCode: generatePairingCode(),
     classes: [],
     homework: [],
     events: [],
