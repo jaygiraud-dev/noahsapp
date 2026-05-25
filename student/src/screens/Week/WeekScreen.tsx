@@ -44,6 +44,13 @@ function timeToMinutes(t: string) {
   return h * 60 + m;
 }
 
+function fmt12h(t: string) {
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
 function parseTimeToMinutes(t: string): number | null {
   const match = t.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
   if (!match) return null;
@@ -201,7 +208,7 @@ export default function WeekScreen() {
             const startMin = timeToMinutes(cls.start!);
             const endMin = timeToMinutes(cls.end!);
             const top = (startMin - START_HOUR * 60) / 60 * ROW_H;
-            const blockH = Math.max((endMin - startMin) / 60 * ROW_H - 3, 24);
+            const blockH = Math.max((endMin - startMin) / 60 * ROW_H - 3, 36);
             return (
               <TouchableOpacity
                 key={cls.id}
@@ -214,16 +221,17 @@ export default function WeekScreen() {
                     height: blockH,
                     backgroundColor: cls.color + '22',
                     borderLeftColor: cls.color,
+                    zIndex: startMin,
                   },
                 ]}
                 onPress={() => setSelectedClass(cls)}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: cls.color }]} numberOfLines={1}>
-                  {cls.emoji ? `${cls.emoji} ` : ''}{cls.name}
+                <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: cls.color }]} numberOfLines={2}>
+                  {cls.emoji ? `${cls.emoji} ` : ''}{cls.name || 'Class'}
                 </Text>
-                <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: cls.color + 'aa' }]}>
-                  {cls.start} – {cls.end}
+                <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: cls.color + 'bb' }]}>
+                  {fmt12h(cls.start!)} – {fmt12h(cls.end!)}
                 </Text>
               </TouchableOpacity>
             );
@@ -253,12 +261,12 @@ export default function WeekScreen() {
                 onPress={() => setSelectedEvent(ev)}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: theme.accent }]} numberOfLines={1}>
+                <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: theme.accent }]} numberOfLines={2}>
                   {ev.icon ? `${ev.icon} ` : ''}{ev.title}
                 </Text>
                 {ev.time && (
-                  <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: theme.accent + 'aa' }]}>
-                    {ev.time}{ev.endTime ? ` – ${ev.endTime}` : ''}
+                  <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: theme.accent + 'bb' }]}>
+                    {fmt12h(ev.time)}{ev.endTime ? ` – ${fmt12h(ev.endTime)}` : ''}
                   </Text>
                 )}
               </TouchableOpacity>
