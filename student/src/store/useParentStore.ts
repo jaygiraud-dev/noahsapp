@@ -33,6 +33,7 @@ interface ParentState {
   pairKid: (code: string) => boolean;
   addLinkedKid: (kid: LinkedKid) => void;
   removeLinkedKid: (id: string) => void;
+  addNotifications: (notifs: ParentNotif[]) => void;
   markNotifRead: (id: string) => void;
   markAllNotifsRead: () => void;
   clearAllNotifications: () => void;
@@ -93,6 +94,15 @@ export const useParentStore = create<ParentState>()(
 
       removeLinkedKid: (id) =>
         set((s) => ({ linkedKids: s.linkedKids.filter((k) => k.id !== id) })),
+
+      // Only adds notifs whose IDs don't already exist — safe to call on every refresh
+      addNotifications: (notifs) =>
+        set((s) => {
+          const existingIds = new Set(s.notifications.map((n) => n.id));
+          const fresh = notifs.filter((n) => !existingIds.has(n.id));
+          if (fresh.length === 0) return s;
+          return { notifications: [...fresh, ...s.notifications] };
+        }),
 
       markNotifRead: (id) =>
         set((s) => ({

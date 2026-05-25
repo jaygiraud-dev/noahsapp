@@ -132,6 +132,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
   const linkedKids = useParentStore((s) => s.linkedKids);
   const addLinkedKid = useParentStore((s) => s.addLinkedKid);
   const removeLinkedKid = useParentStore((s) => s.removeLinkedKid);
+  const addNotifications = useParentStore((s) => s.addNotifications);
   const notifications = useParentStore((s) => s.notifications);
   const setPhase = useStore((s) => s.setPhase);
   const vibe = useStore((s) => s.vibe);
@@ -182,17 +183,67 @@ export default function ParentDashboardScreen({ navigation }: any) {
       })
     );
     const next: Record<string, StudentSnapshot> = {};
+    const newNotifs: import('../../store/useParentStore').ParentNotif[] = [];
+    const now = new Date();
+
     results.forEach(({ kid, data }) => {
+      const name = data.profile?.display_name ?? kid.name;
       next[kid.studentUserId] = {
         studentUserId: kid.studentUserId,
-        name: data.profile?.display_name ?? kid.name,
+        name,
         school: data.profile?.school_name ?? kid.school,
         homework: data.homework,
         events: data.events,
       };
+
+      // Generate notifications from student's homework
+      data.homework.forEach((hw) => {
+        if (hw.done) {
+          newNotifs.push({
+            id: `done-${hw.id}`,
+            kidId: kid.studentUserId,
+            type: 'hw_done',
+            text: `${name} finished ${hw.subject ? hw.subject + ' — ' : ''}${hw.title}`,
+            time: hw.dueDate ? new Date(hw.dueDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : 'recently',
+            read: false,
+          });
+        } else if (hw.dueDate) {
+          const due = new Date(hw.dueDate);
+          const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays <= 1 && diffDays >= -1) {
+            newNotifs.push({
+              id: `due-${hw.id}`,
+              kidId: kid.studentUserId,
+              type: 'hw_due',
+              text: `${hw.subject ? hw.subject + ': ' : ''}${hw.title} due ${diffDays <= 0 ? 'today' : 'tomorrow'}`,
+              time: diffDays <= 0 ? 'today' : 'tomorrow',
+              read: false,
+            });
+          }
+        }
+      });
+
+      // Generate notifications from upcoming events
+      data.events.forEach((ev) => {
+        if (!ev.date) return;
+        const evDate = new Date(ev.date);
+        const diffDays = Math.ceil((evDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 2) {
+          newNotifs.push({
+            id: `event-${ev.id}`,
+            kidId: kid.studentUserId,
+            type: 'event',
+            text: `${name} has ${ev.title} ${diffDays === 0 ? 'today' : diffDays === 1 ? 'tomorrow' : 'in 2 days'}`,
+            time: diffDays === 0 ? 'today' : diffDays === 1 ? 'tomorrow' : 'in 2 days',
+            read: false,
+          });
+        }
+      });
     });
+
     setSnapshots(next);
-  }, [linkedKids]);
+    if (newNotifs.length > 0) addNotifications(newNotifs);
+  }, [linkedKids, addNotifications]);
 
   useEffect(() => {
     loadSnapshots();
