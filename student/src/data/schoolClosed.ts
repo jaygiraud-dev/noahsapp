@@ -34,6 +34,7 @@ export const SCHOOL_CLOSED: ClosedDay[] = [
   { date: '2026-01-02', label: 'Winter Break' },
 
   // February 2026
+  { date: '2026-02-13', label: 'Pro-D Day' },
   { date: '2026-02-16', label: 'Family Day' },
 
   // March 2026 – Spring Break (Mar 16–27, students return Mar 30)
@@ -51,8 +52,10 @@ export const SCHOOL_CLOSED: ClosedDay[] = [
   // April 2026
   { date: '2026-04-03', label: 'Good Friday' },
   { date: '2026-04-06', label: 'Easter Monday' },
+  { date: '2026-04-24', label: 'Pro-D Day' },
 
   // May 2026
+  { date: '2026-05-15', label: 'Pro-D Day' },
   { date: '2026-05-18', label: 'Victoria Day' },
 ];
 

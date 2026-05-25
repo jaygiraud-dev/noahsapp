@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
-import { getClosedReason } from '../../data/schoolClosed';
+import { getClosedReason, SCHOOL_CLOSED } from '../../data/schoolClosed';
 import { Class, CalEvent } from '../../types';
 import AddEventSheet from '../sheets/AddEventSheet';
 
@@ -29,6 +29,18 @@ function getWeekDays(anchor: Date): Date[] {
     d.setDate(monday.getDate() + i);
     return d;
   });
+}
+
+function dateKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+const CLOSED_SET = new Set(SCHOOL_CLOSED.map((d) => d.date));
+
+function closedDotColor(label: string): string {
+  if (label.includes('Break')) return '#06d6e0';
+  if (label.includes('Pro-D')) return '#f59e0b';
+  return '#f87171';
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -138,6 +150,8 @@ export default function WeekScreen() {
           const isToday = isSameDay(day, today);
           const isSelected = isSameDay(day, selectedDay);
           const isOff = day.getDay() === 0 || day.getDay() === 6;
+          const key = dateKey(day);
+          const closedEntry = !isOff ? SCHOOL_CLOSED.find((d) => d.date === key) : undefined;
           return (
             <TouchableOpacity
               key={day.toISOString()}
@@ -166,6 +180,9 @@ export default function WeekScreen() {
                   {day.getDate()}
                 </Text>
               </View>
+              {closedEntry && (
+                <View style={[styles.closedDot, { backgroundColor: closedDotColor(closedEntry.label) }]} />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -197,8 +214,13 @@ export default function WeekScreen() {
           {/* Closed banner */}
           {closedReason && (
             <View style={[styles.closedBanner, { backgroundColor: theme.surface + 'ee', left: GUTTER }]}>
-              <Text style={[styles.closedLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
-                {closedReason.toUpperCase()}
+              <View style={[styles.closedPill, { backgroundColor: closedDotColor(closedReason) + '22', borderColor: closedDotColor(closedReason) + '55' }]}>
+                <Text style={[styles.closedLabel, { fontFamily: theme.fMono, color: closedDotColor(closedReason) }]}>
+                  {closedReason.toUpperCase()}
+                </Text>
+              </View>
+              <Text style={[styles.closedSub, { fontFamily: theme.fMono, color: theme.soft }]}>
+                SD44 · No school
               </Text>
             </View>
           )}
@@ -431,8 +453,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 8,
   },
-  closedLabel: { fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.5 },
+  closedPill: {
+    borderRadius: 32,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  closedLabel: { fontSize: 12, letterSpacing: 2 },
+  closedSub: { fontSize: 10, letterSpacing: 1 },
+  closedDot: { width: 5, height: 5, borderRadius: 3 },
   hwRow: { position: 'absolute', right: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   hwChip: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3 },
   hwChipText: { fontSize: 10, letterSpacing: 0.2 },
