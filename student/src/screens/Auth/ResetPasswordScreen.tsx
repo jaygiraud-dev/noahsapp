@@ -46,9 +46,7 @@ export default function ResetPasswordScreen({ navigation }: any) {
     if (!trimmed) return;
     setLoading(true);
     setError('');
-    const { error: err } = await supabase.auth.resetPasswordForEmail(trimmed, {
-      redirectTo: 'https://xaziss.netlify.app',
-    });
+    const { error: err } = await supabase.auth.resetPasswordForEmail(trimmed);
     setLoading(false);
     if (err) {
       setError(err.message);
