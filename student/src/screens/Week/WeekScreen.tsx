@@ -46,7 +46,7 @@ function dateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-const CLOSED_MAP = new Map(SCHOOL_CLOSED.map((d) => [d.date, d.label]));
+const CLOSED_MAP = new Map<string, string>(SCHOOL_CLOSED.map((d) => [d.date, d.label]));
 
 function closedDotColor(label: string): string {
   if (label.includes('Break')) return '#06d6e0';
@@ -365,7 +365,7 @@ export default function WeekScreen() {
                 const startMin = timeToMinutes(cls.start!);
                 const endMin = timeToMinutes(cls.end!);
                 const top = (startMin - START_HOUR * 60) / 60 * ROW_H;
-                const blockH = Math.max((endMin - startMin) / 60 * ROW_H - 3, 36);
+                const blockH = Math.max((endMin - startMin) / 60 * ROW_H - 3, 48);
                 return (
                   <TouchableOpacity key={cls.id} style={[styles.block, { top, left: GUTTER + 6, right: 6, height: blockH, backgroundColor: cls.color + '22', borderLeftColor: cls.color, zIndex: startMin }]} onPress={() => setSelectedClass(cls)} activeOpacity={0.8}>
                     <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: cls.color }]} numberOfLines={2}>
@@ -497,16 +497,16 @@ const styles = StyleSheet.create({
   toggleViewText: { fontSize: 16 },
   dayStrip: { flexDirection: 'row', paddingHorizontal: 8, paddingBottom: 10, paddingTop: 4, borderBottomWidth: StyleSheet.hairlineWidth },
   dayPill: { flex: 1, alignItems: 'center', gap: 4 },
-  dayAbbr: { fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase' },
+  dayAbbr: { fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '600' },
   dayNumWrap: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
   dayNum: { fontSize: 15 },
   gridScroll: { flex: 1 },
   hourRow: { position: 'absolute', left: 0, right: 0, height: ROW_H, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'flex-start', paddingTop: 4 },
-  timeLabel: { fontSize: 10, letterSpacing: 0.3, textAlign: 'right', paddingRight: 10 },
+  timeLabel: { fontSize: 10, letterSpacing: 0.3, textAlign: 'right', paddingRight: 10, fontWeight: '600' },
   hourLine: { flex: 1, height: StyleSheet.hairlineWidth, marginTop: 7 },
-  block: { position: 'absolute', borderRadius: 28, borderLeftWidth: 3, paddingHorizontal: 10, paddingVertical: 6, overflow: 'hidden', gap: 2 },
-  blockTitle: { fontSize: 12, letterSpacing: 0.2 },
-  blockTime: { fontSize: 10, letterSpacing: 0.2 },
+  block: { position: 'absolute', borderRadius: 12, borderLeftWidth: 3, paddingHorizontal: 10, paddingVertical: 7, gap: 2 },
+  blockTitle: { fontSize: 12, letterSpacing: 0.2, fontWeight: '700' },
+  blockTime: { fontSize: 10, letterSpacing: 0.2, fontWeight: '600' },
   closedBanner: { position: 'absolute', top: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', gap: 8 },
   closedPill: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 8 },
   closedLabel: { fontSize: 12, letterSpacing: 2 },

@@ -78,7 +78,7 @@ export default function SignInScreen({ navigation }: any) {
     upsertProfile(uid, role, role === 'student' ? pairingCode : undefined, role === 'student' ? school.name : undefined, displayName).catch(() => {});
 
     if (uid !== storedUserId) {
-      resetForUser(uid, role);
+      resetForUser(uid, role, displayName);
     } else {
       setUserRole(role);
       setPhase(role === 'parent' ? 'parent' : 'main');

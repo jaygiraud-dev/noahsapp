@@ -32,13 +32,14 @@ interface AppState {
   darkMode: boolean;
   reward: { points: number; streak: number } | null;
   userId: string;
+  displayName: string;
   userRole: 'student' | 'parent';
   _hasHydrated: boolean;
 
   setPhase: (phase: AppPhase) => void;
   setHasHydrated: (v: boolean) => void;
   setUserRole: (role: 'student' | 'parent') => void;
-  resetForUser: (uid: string, role: 'student' | 'parent') => void;
+  resetForUser: (uid: string, role: 'student' | 'parent', name?: string) => void;
   setSchool: (school: School) => void;
   setClasses: (classes: Class[]) => void;
   setUseClassTimes: (v: boolean) => void;
@@ -97,19 +98,8 @@ export const useStore = create<AppState>()(
   streak: 12,
   homework: STARTING_HW,
   events: STARTING_EVENTS,
-  friends: [
-    { id: 'u1', name: 'You',      school: 'Eric Hamber', pts: 1840, streak: 12, avatar: 'Y', color: '#ec4899' },
-    { id: 'u2', name: 'Maya R.',  school: 'Eric Hamber', pts: 2210, streak: 18, avatar: 'M', color: '#a78bfa' },
-    { id: 'u3', name: 'Jordan K.',school: 'Eric Hamber', pts: 1995, streak: 7,  avatar: 'J', color: '#06d6e0' },
-    { id: 'u4', name: 'Priya S.', school: 'Eric Hamber', pts: 1610, streak: 4,  avatar: 'P', color: '#34d399' },
-    { id: 'u5', name: 'Alex T.',  school: 'Eric Hamber', pts: 1420, streak: 9,  avatar: 'A', color: '#fbbf24' },
-    { id: 'u6', name: 'Sam W.',   school: 'Eric Hamber', pts: 1180, streak: 2,  avatar: 'S', color: '#f472b6' },
-  ],
-  friendRequests: [
-    { id: 'fr1', name: 'Ben K.',   school: 'Eric Hamber', mutual: 4, color: '#06d6e0', avatar: 'B', when: '2h' },
-    { id: 'fr2', name: 'Ines M.',  school: 'Lord Byng',   mutual: 1, color: '#a78bfa', avatar: 'I', when: 'Yesterday' },
-    { id: 'fr3', name: 'Tariq S.', school: 'Eric Hamber', mutual: 7, color: '#fbbf24', avatar: 'T', when: 'Mon' },
-  ],
+  friends: [],
+  friendRequests: [],
   notifications: [
     { type: 'streak', who: 'Alex', what: 'Hit a 12-day streak 🔥', when: 'Yesterday 7:30 pm' },
     { type: 'done',   who: 'Alex', what: 'Read pages 88–102', cls: 'Socials 11', when: 'Yesterday 8:14 pm', clr: '#fbbf24' },
@@ -120,6 +110,7 @@ export const useStore = create<AppState>()(
   darkMode: true,
   reward: null,
   userId: '',
+  displayName: 'Student',
   userRole: 'student',
   _hasHydrated: false,
 
@@ -127,9 +118,10 @@ export const useStore = create<AppState>()(
   setHasHydrated: (v) => set({ _hasHydrated: v }),
   setUserRole: (role) => set({ userRole: role }),
 
-  resetForUser: (uid, role) => set({
+  resetForUser: (uid, role, name) => set({
     userId: uid,
     userRole: role,
+    displayName: name ?? 'Student',
     pairingCode: generatePairingCode(),
     classes: [],
     homework: [],
@@ -161,7 +153,7 @@ export const useStore = create<AppState>()(
     });
     if (newDone) {
       const cls = classes.find(c => c.id === hw.classId);
-      get().pushNotification({ type: 'done', who: 'Alex', what: hw.title, cls: cls?.name, when: 'just now', clr: cls?.color });
+      get().pushNotification({ type: 'done', who: get().displayName, what: hw.title, cls: cls?.name, when: 'just now', clr: cls?.color });
     }
     if (userId) upsertHomework(userId, updated).catch(() => {});
     // Fire-and-forget parent push notification when homework is marked done
@@ -192,7 +184,7 @@ export const useStore = create<AppState>()(
       reward: { points: 5, streak: s.streak },
     }));
     const cls = classes.find(c => c.id === data.classId);
-    get().pushNotification({ type: 'add', who: 'Alex', what: data.title, cls: cls?.name, when: 'just now', clr: cls?.color });
+    get().pushNotification({ type: 'add', who: get().displayName, what: data.title, cls: cls?.name, when: 'just now', clr: cls?.color });
     if (userId) upsertHomework(userId, newHw).catch(() => {});
   },
 

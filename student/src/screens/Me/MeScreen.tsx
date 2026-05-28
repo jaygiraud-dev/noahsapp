@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Switch,
   TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -51,6 +52,8 @@ export default function MeScreen({ navigation }: any) {
   const theme = makeTheme(vibe, darkMode);
 
   const [email, setEmail] = useState('');
+  const displayName = email ? email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Student';
+  const initial = displayName.charAt(0).toUpperCase();
   const [editingSchool, setEditingSchool] = useState(false);
   const [editingCity, setEditingCity] = useState(false);
   const [draftSchoolName, setDraftSchoolName] = useState(school.name);
@@ -89,9 +92,9 @@ export default function MeScreen({ navigation }: any) {
           style={styles.profileCard}
         >
           <View style={styles.profileAvatar}>
-            <Text style={[styles.profileInitial, { fontFamily: theme.fDisplayItalic }]}>N</Text>
+            <Text style={[styles.profileInitial, { fontFamily: theme.fDisplayItalic }]}>{initial}</Text>
           </View>
-          <Text style={[styles.profileName, { fontFamily: theme.fBodySemiBold, color: '#fff' }]}>Noah</Text>
+          <Text style={[styles.profileName, { fontFamily: theme.fBodySemiBold, color: '#fff' }]}>{displayName}</Text>
           <View style={styles.profileStats}>
             <View style={styles.statItem}>
               <Text style={[styles.statNum, { fontFamily: theme.fMono, color: '#fff' }]}>{points.toLocaleString()}</Text>

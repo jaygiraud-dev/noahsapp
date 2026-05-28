@@ -270,6 +270,7 @@ export default function TodayScreen() {
   const [showEvSheet, setShowEvSheet] = useState(false);
   const [hwDetail, setHwDetail] = useState<Homework | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
+  const fabRotate = useRef(new Animated.Value(0)).current;
   const [showReminder, setShowReminder] = useState(false);
   const [nudgeBanner, setNudgeBanner] = useState<string | null>(null);
 
@@ -445,10 +446,14 @@ export default function TodayScreen() {
         )}
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: theme.accent }]}
-          onPress={() => setFabOpen((v) => !v)}
+          onPress={() => {
+            const toVal = fabOpen ? 0 : 1;
+            setFabOpen((v) => !v);
+            Animated.spring(fabRotate, { toValue: toVal, useNativeDriver: true, tension: 120, friction: 8 }).start();
+          }}
           activeOpacity={0.85}
         >
-          <Text style={[styles.fabIcon, { transform: [{ rotate: fabOpen ? '45deg' : '0deg' }] }]}>+</Text>
+          <Animated.Text style={[styles.fabIcon, { transform: [{ rotate: fabRotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '45deg'] }) }] }]}>+</Animated.Text>
         </TouchableOpacity>
       </View>
 
