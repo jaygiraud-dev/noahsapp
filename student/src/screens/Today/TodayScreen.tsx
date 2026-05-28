@@ -16,6 +16,7 @@ import { makeTheme } from '../../theme';
 import { supabase } from '../../lib/supabase';
 import { quoteOfDay } from '../../data/quotes';
 import { POSITIVE_NEWS } from '../../data/news';
+import { fetchGoodNews, NewsItem } from '../../lib/goodNews';
 import { Class, Homework, CalEvent } from '../../types';
 import DayPicker from '../../components/DayPicker';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
@@ -53,9 +54,23 @@ function PointsChip({ points, streak, theme }: any) {
 
 function NewsTicker({ theme }: any) {
   const scrollX = useRef(new Animated.Value(0)).current;
-  const totalWidth = POSITIVE_NEWS.reduce((a, n) => a + n.text.length * 7.2 + 48, 0);
+  const animRef = useRef<Animated.CompositeAnimation | null>(null);
+  const [news, setNews] = useState<NewsItem[]>(POSITIVE_NEWS);
+  const [live, setLive] = useState(false);
 
   useEffect(() => {
+    fetchGoodNews().then((items) => {
+      setNews(items);
+      setLive(true);
+    }).catch(() => {});
+  }, []);
+
+  const doubled = [...news, ...news];
+  const totalWidth = news.reduce((a, n) => a + n.text.length * 7.2 + 48, 0);
+
+  useEffect(() => {
+    scrollX.setValue(0);
+    animRef.current?.stop();
     const loop = Animated.loop(
       Animated.timing(scrollX, {
         toValue: -totalWidth,
@@ -63,21 +78,22 @@ function NewsTicker({ theme }: any) {
         useNativeDriver: false,
       })
     );
+    animRef.current = loop;
     loop.start();
     return () => loop.stop();
-  }, []);
+  }, [news]);
 
   return (
     <View style={[styles.tickerContainer, { backgroundColor: theme.surface, borderBottomColor: theme.line }]}>
       <View style={styles.tickerLabelRow}>
-        <View style={[styles.tickerDot, { backgroundColor: theme.mint }]} />
-        <Text style={[styles.tickerLabel, { fontFamily: theme.fMono, color: theme.mint }]}>
-          GOOD THINGS HAPPENING · LIVE
+        <View style={[styles.tickerDot, { backgroundColor: live ? theme.mint : theme.soft }]} />
+        <Text style={[styles.tickerLabel, { fontFamily: theme.fMono, color: live ? theme.mint : theme.soft }]}>
+          {live ? 'GOOD THINGS HAPPENING · LIVE' : 'GOOD THINGS HAPPENING'}
         </Text>
       </View>
       <View style={styles.tickerWrap}>
         <Animated.View style={[styles.tickerScroll, { transform: [{ translateX: scrollX }] }]}>
-          {[...POSITIVE_NEWS, ...POSITIVE_NEWS].map((n, i) => (
+          {doubled.map((n, i) => (
             <View key={i} style={styles.tickerItemWrap}>
               <Text style={[styles.tickerSrc, { fontFamily: theme.fMono, color: theme.accent }]}>{n.src}</Text>
               <Text style={[styles.tickerText, { fontFamily: theme.fMono, color: theme.sub }]}>{'  '}{n.text}{'   ·   '}</Text>
