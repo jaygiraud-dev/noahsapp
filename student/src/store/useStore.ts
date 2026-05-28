@@ -23,6 +23,7 @@ interface AppState {
   parentPaired: boolean;
   points: number;
   streak: number;
+  lastActivityDate: string; // YYYY-MM-DD
   homework: Homework[];
   events: CalEvent[];
   friends: Friend[];
@@ -66,6 +67,20 @@ const SAMPLE_CLASSES: Class[] = [
   { id: 'c5', name: 'PE / Athletics', teacher: 'Coach Patel', start: '14:25', end: '15:25', color: '#34d399', emoji: '🏐' },
 ];
 
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function calcStreak(lastActivityDate: string, currentStreak: number): { streak: number; lastActivityDate: string } {
+  const today = todayStr();
+  if (lastActivityDate === today) return { streak: currentStreak, lastActivityDate };
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+  const newStreak = lastActivityDate === yStr ? currentStreak + 1 : 1;
+  return { streak: newStreak, lastActivityDate: today };
+}
+
 function daysFromNow(n: number) {
   const d = new Date();
   d.setDate(d.getDate() + n);
@@ -96,6 +111,7 @@ export const useStore = create<AppState>()(
   parentPaired: false,
   points: 1840,
   streak: 12,
+  lastActivityDate: '',
   homework: STARTING_HW,
   events: STARTING_EVENTS,
   friends: [],
@@ -128,6 +144,7 @@ export const useStore = create<AppState>()(
     events: [],
     points: 0,
     streak: 0,
+    lastActivityDate: '',
     friends: [],
     friendRequests: [],
     notifications: [],
@@ -175,14 +192,19 @@ export const useStore = create<AppState>()(
   },
 
   addHomework: (data) => {
-    const { streak, classes, userId } = get();
+    const { classes, userId } = get();
     const id = 'h' + Date.now();
     const newHw: Homework = { ...data, id, done: false };
-    set(s => ({
-      homework: [...s.homework, newHw],
-      points: s.points + 5,
-      reward: { points: 5, streak: s.streak },
-    }));
+    set(s => {
+      const { streak, lastActivityDate } = calcStreak(s.lastActivityDate, s.streak);
+      return {
+        homework: [...s.homework, newHw],
+        points: s.points + 5,
+        streak,
+        lastActivityDate,
+        reward: { points: 5, streak },
+      };
+    });
     const cls = classes.find(c => c.id === data.classId);
     get().pushNotification({ type: 'add', who: get().displayName, what: data.title, cls: cls?.name, when: 'just now', clr: cls?.color });
     if (userId) upsertHomework(userId, newHw).catch(() => {});
@@ -199,7 +221,10 @@ export const useStore = create<AppState>()(
     const { userId } = get();
     const id = 'e' + Date.now();
     const newEv: CalEvent = { ...data, id, done: false };
-    set(s => ({ events: [...s.events, newEv] }));
+    set(s => {
+      const { streak, lastActivityDate } = calcStreak(s.lastActivityDate, s.streak);
+      return { events: [...s.events, newEv], streak, lastActivityDate };
+    });
     get().pushNotification({ type: 'event', who: 'Alex', what: `${data.title} · ${data.time}`, when: 'just now' });
     if (userId) upsertEvent(userId, newEv).catch(() => {});
   },
