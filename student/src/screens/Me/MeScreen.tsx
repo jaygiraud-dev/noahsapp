@@ -49,6 +49,9 @@ export default function MeScreen({ navigation }: any) {
   const setSchool = useStore((s) => s.setSchool);
   const classes = useStore((s) => s.classes);
   const pairingCode = useStore((s) => s.pairingCode);
+  const parentPaired = useStore((s) => s.parentPaired);
+  const setParentPaired = useStore((s) => s.setParentPaired);
+  const userId = useStore((s) => s.userId);
   const theme = makeTheme(vibe, darkMode);
 
   const [email, setEmail] = useState('');
@@ -58,6 +61,17 @@ export default function MeScreen({ navigation }: any) {
   const [editingCity, setEditingCity] = useState(false);
   const [draftSchoolName, setDraftSchoolName] = useState(school.name);
   const [draftSchoolCity, setDraftSchoolCity] = useState(school.city);
+
+  // Security & Privacy state
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  // Disconnect parent state
+  const [disconnected, setDisconnected] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -78,6 +92,57 @@ export default function MeScreen({ navigation }: any) {
   async function handleSignOut() {
     await supabase.auth.signOut();
     setPhase('auth');
+  }
+
+  async function handleSavePassword() {
+    setPasswordError('');
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
+    setSavingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setSavingPassword(false);
+    if (error) {
+      setPasswordError(error.message);
+      return;
+    }
+    setPasswordSuccess(true);
+    setNewPassword('');
+    setConfirmPassword('');
+    setTimeout(() => {
+      setPasswordSuccess(false);
+      setShowPasswordForm(false);
+    }, 2000);
+  }
+
+  function handleDisconnectParent() {
+    Alert.alert(
+      'Disconnect parent',
+      'Are you sure? Your parent will no longer be able to see your activity.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            setParentPaired(false);
+            if (userId) {
+              await supabase
+                .from('parent_student_links')
+                .delete()
+                .eq('student_id', userId);
+            }
+            setDisconnected(true);
+            setTimeout(() => setDisconnected(false), 2000);
+          },
+        },
+      ]
+    );
   }
 
   return (
@@ -170,6 +235,99 @@ export default function MeScreen({ navigation }: any) {
             </View>
           </View>
         </View>
+
+        {/* Security & Privacy */}
+        <View style={styles.section}>
+          <MicroLabel>Security &amp; Privacy</MicroLabel>
+          <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+            {/* Change password row */}
+            <TouchableOpacity
+              style={[styles.infoRow, { borderBottomColor: theme.line, flexDirection: 'column', alignItems: 'stretch' }]}
+              onPress={() => { if (!showPasswordForm) { setShowPasswordForm(true); setPasswordError(''); setPasswordSuccess(false); } }}
+              activeOpacity={showPasswordForm ? 1 : 0.7}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>CHANGE PASSWORD</Text>
+                {!showPasswordForm && (
+                  <Text style={[styles.editPencil, { color: theme.soft }]}>›</Text>
+                )}
+                {passwordSuccess && (
+                  <Text style={[{ fontFamily: theme.fMono, fontSize: 11, color: '#34d399' }]}>Password updated ✓</Text>
+                )}
+              </View>
+              {showPasswordForm && !passwordSuccess && (
+                <View style={{ marginTop: 12, gap: 10 }}>
+                  <TextInput
+                    style={[styles.secureInput, { fontFamily: theme.fBody, color: theme.ink, borderColor: theme.line, backgroundColor: theme.bg }]}
+                    placeholder="New password"
+                    placeholderTextColor={theme.soft}
+                    secureTextEntry
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    autoFocus
+                  />
+                  <TextInput
+                    style={[styles.secureInput, { fontFamily: theme.fBody, color: theme.ink, borderColor: theme.line, backgroundColor: theme.bg }]}
+                    placeholder="Confirm password"
+                    placeholderTextColor={theme.soft}
+                    secureTextEntry
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                  />
+                  {passwordError !== '' && (
+                    <Text style={[{ fontFamily: theme.fMono, fontSize: 11, color: theme.red }]}>{passwordError}</Text>
+                  )}
+                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                    <TouchableOpacity
+                      style={[styles.pwBtn, { backgroundColor: theme.accent, flex: 1 }]}
+                      onPress={handleSavePassword}
+                      disabled={savingPassword}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.pwBtnText, { fontFamily: theme.fMono, color: '#fff' }]}>
+                        {savingPassword ? 'Saving…' : 'Save'}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.pwBtn, { borderWidth: 1, borderColor: theme.line, flex: 1 }]}
+                      onPress={() => { setShowPasswordForm(false); setNewPassword(''); setConfirmPassword(''); setPasswordError(''); }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.pwBtnText, { fontFamily: theme.fMono, color: theme.soft }]}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Email row */}
+            <View style={[styles.infoRow, { borderBottomColor: 'transparent' }]}>
+              <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>EMAIL</Text>
+              <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]} numberOfLines={1}>{email}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Disconnect parent */}
+        {parentPaired && (
+          <View style={styles.section}>
+            <MicroLabel>Parent Connection</MicroLabel>
+            <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+              <TouchableOpacity
+                style={[styles.infoRow, { borderBottomColor: 'transparent' }]}
+                onPress={handleDisconnectParent}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.red }]}>DISCONNECT PARENT</Text>
+                {disconnected ? (
+                  <Text style={[{ fontFamily: theme.fMono, fontSize: 11, color: '#34d399' }]}>Disconnected</Text>
+                ) : (
+                  <Text style={[styles.editPencil, { color: theme.red }]}>›</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Classes */}
         <View style={styles.section}>
@@ -384,5 +542,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1.5,
     paddingVertical: 2,
     paddingHorizontal: 4,
+  },
+  secureInput: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  pwBtn: {
+    borderRadius: 32,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  pwBtnText: {
+    fontSize: 13,
+    letterSpacing: 0.5,
   },
 });
