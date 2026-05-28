@@ -58,7 +58,6 @@ function PairKidCard({
   parentUserId: string;
   onLinked: () => void;
 }) {
-  const pairKid = useParentStore((s) => s.pairKid);
   const addLinkedKid = useParentStore((s) => s.addLinkedKid);
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
@@ -67,43 +66,37 @@ function PairKidCard({
   async function handlePair() {
     const trimmed = code.trim().toUpperCase();
     if (!trimmed) return;
+    if (!parentUserId) {
+      setError('You must be signed in to link a student.');
+      return;
+    }
     setLoading(true);
     setError('');
 
-    if (parentUserId) {
-      const student = await lookupStudentByCode(trimmed);
-      if (student) {
-        const displayName = student.display_name ?? 'Student';
-        await createParentLink(parentUserId, student.id, trimmed, displayName);
-        addLinkedKid({
-          id: student.id,
-          studentUserId: student.id,
-          name: displayName,
-          pairingCode: trimmed,
-          school: student.school_name ?? '',
-          grade: '',
-          points: 0,
-          streak: 0,
-          homeworkDue: 0,
-          homeworkDone: 0,
-          eventsToday: 0,
-          lastActive: 'just now',
-        });
-        setCode('');
-        setLoading(false);
-        onLinked();
-        return;
-      }
-    }
-
-    const success = pairKid(trimmed);
+    const student = await lookupStudentByCode(trimmed);
     setLoading(false);
-    if (!success) {
-      setError('Code not found. Ask your child to check their pairing code in the app under Me → Pair with Parent.');
-    } else {
-      setCode('');
-      onLinked();
+    if (!student) {
+      setError('Code not found. Ask your child to check their pairing code in Me → Pair with Parent.');
+      return;
     }
+    const displayName = student.display_name ?? 'Student';
+    await createParentLink(parentUserId, student.id, trimmed, displayName);
+    addLinkedKid({
+      id: student.id,
+      studentUserId: student.id,
+      name: displayName,
+      pairingCode: trimmed,
+      school: student.school_name ?? '',
+      grade: '',
+      points: 0,
+      streak: 0,
+      homeworkDue: 0,
+      homeworkDone: 0,
+      eventsToday: 0,
+      lastActive: 'just now',
+    });
+    setCode('');
+    onLinked();
   }
 
   return (
@@ -167,11 +160,10 @@ export default function ParentDashboardScreen({ navigation }: any) {
     });
   }, []);
 
-  // Fetch linked students from Supabase and REPLACE local state (fixes stale data)
+  // Fetch linked students from Supabase and REPLACE local state — always, even if empty
   useEffect(() => {
     if (!parentUserId) return;
     fetchLinkedStudents(parentUserId).then((links) => {
-      if (links.length === 0) return;
       const freshKids = links.map((link) => ({
         id: link.student_id,
         studentUserId: link.student_id,
@@ -186,7 +178,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
         eventsToday: 0,
         lastActive: 'recently',
       }));
-      // Replace any stale persisted kids with the authoritative Supabase list
+      // Always replace — wipes demo kids and stale accounts even if Supabase returns []
       setLinkedKids(freshKids);
     });
   }, [parentUserId]);

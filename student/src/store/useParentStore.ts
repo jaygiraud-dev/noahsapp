@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface LinkedKid {
   id: string;
-  studentUserId: string;   // Supabase auth UUID — empty string for demo/sample kid
+  studentUserId: string;   // Supabase auth UUID — always a real UUID, never empty
   name: string;
   pairingCode: string;
   school: string;
@@ -30,9 +30,8 @@ interface ParentState {
   linkedKids: LinkedKid[];
   notifications: ParentNotif[];
 
-  pairKid: (code: string) => boolean;
-  addLinkedKid: (kid: LinkedKid) => void;
   setLinkedKids: (kids: LinkedKid[]) => void;
+  addLinkedKid: (kid: LinkedKid) => void;
   removeLinkedKid: (id: string) => void;
   addNotifications: (notifs: ParentNotif[]) => void;
   markNotifRead: (id: string) => void;
@@ -40,61 +39,32 @@ interface ParentState {
   clearAllNotifications: () => void;
 }
 
-const SAMPLE_KID: LinkedKid = {
-  id: 'kid-demo',
-  studentUserId: '',
-  name: 'Noah (demo)',
-  pairingCode: '7K4M2D',
-  school: 'Kitsilano Secondary',
-  grade: 'Grade 10',
-  points: 1840,
-  streak: 12,
-  homeworkDue: 3,
-  homeworkDone: 2,
-  eventsToday: 1,
-  lastActive: '10 min ago',
-};
-
-const SAMPLE_NOTIFS: ParentNotif[] = [
-  { id: 'n1', kidId: 'kid-demo', type: 'hw_done',  text: 'Noah finished Math homework — Textbook p.45', time: '2h ago',  read: false },
-  { id: 'n2', kidId: 'kid-demo', type: 'streak',   text: 'Noah hit a 12-day streak! 🔥',                time: '1d ago',  read: false },
-  { id: 'n3', kidId: 'kid-demo', type: 'hw_due',   text: 'Science project due tomorrow',                time: '1d ago',  read: true  },
-  { id: 'n4', kidId: 'kid-demo', type: 'points',   text: 'Noah earned 50 points today',                 time: '2d ago',  read: true  },
-];
-
 export const useParentStore = create<ParentState>()(
   persist(
     (set, get) => ({
       linkedKids: [],
       notifications: [],
 
-      // Legacy fallback — handles demo sample kid for users not signed in
-      pairKid: (code) => {
-        if (code.toUpperCase() === SAMPLE_KID.pairingCode) {
-          const alreadyLinked = get().linkedKids.some((k) => k.id === SAMPLE_KID.id);
-          if (!alreadyLinked) {
-            set((s) => ({
-              linkedKids: [...s.linkedKids, SAMPLE_KID],
-              notifications: [...s.notifications, ...SAMPLE_NOTIFS],
-            }));
-          }
-          return true;
-        }
-        return false;
+      // Replace the entire linked-kids list with authoritative Supabase data
+      setLinkedKids: (kids) => {
+        // Strip any demo/sample notifications that don't belong to a real kid
+        const realIds = new Set(kids.map((k) => k.studentUserId));
+        set((s) => ({
+          linkedKids: kids,
+          notifications: s.notifications.filter(
+            (n) => realIds.has(n.kidId) && !n.id.startsWith('n1') && !n.id.startsWith('n2') && !n.id.startsWith('n3') && !n.id.startsWith('n4')
+          ),
+        }));
       },
 
-      // Used by ParentDashboardScreen after a successful Supabase lookup
+      // Used after a successful single Supabase lookup (linking a new kid)
       addLinkedKid: (kid) => {
-        const alreadyLinked = get().linkedKids.some(
-          (k) => kid.studentUserId !== '' && k.studentUserId === kid.studentUserId
-        );
+        if (!kid.studentUserId) return;
+        const alreadyLinked = get().linkedKids.some((k) => k.studentUserId === kid.studentUserId);
         if (!alreadyLinked) {
           set((s) => ({ linkedKids: [...s.linkedKids, kid] }));
         }
       },
-
-      // Replace the entire linked-kids list — used on fresh fetch to clear stale data
-      setLinkedKids: (kids) => set({ linkedKids: kids }),
 
       removeLinkedKid: (id) =>
         set((s) => ({ linkedKids: s.linkedKids.filter((k) => k.id !== id) })),
@@ -123,6 +93,20 @@ export const useParentStore = create<ParentState>()(
     {
       name: 'my-agenda-parent-store',
       storage: createJSONStorage(() => AsyncStorage),
+      // Migration: strip any demo kids and fake notifications from persisted state
+      migrate: (persisted: any) => {
+        const state = persisted as ParentState;
+        return {
+          ...state,
+          linkedKids: (state.linkedKids ?? []).filter(
+            (k) => k.studentUserId && k.studentUserId !== '' && k.id !== 'kid-demo'
+          ),
+          notifications: (state.notifications ?? []).filter(
+            (n) => n.kidId !== 'kid-demo' && !['n1', 'n2', 'n3', 'n4'].includes(n.id)
+          ),
+        };
+      },
+      version: 2,
     }
   )
 );
