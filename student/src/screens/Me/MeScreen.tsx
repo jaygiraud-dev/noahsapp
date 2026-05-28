@@ -8,6 +8,7 @@ import {
   Switch,
   TextInput,
   Alert,
+  Clipboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,6 +16,7 @@ import { useStore } from '../../store/useStore';
 import { makeTheme, Vibe } from '../../theme';
 import MicroLabel from '../../components/MicroLabel';
 import { supabase } from '../../lib/supabase';
+import { upsertProfile } from '../../lib/db';
 
 const VIBES: { id: Vibe; label: string; emoji: string; bg: string; card: string; dot1: string; dot2: string; dot3: string; textColor: string }[] = [
   {
@@ -72,10 +74,21 @@ export default function MeScreen({ navigation }: any) {
 
   // Disconnect parent state
   const [disconnected, setDisconnected] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  function handleCopyCode() {
+    Clipboard.setString(pairingCode);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.email) setEmail(data.user.email);
+      if (!data.user) return;
+      if (data.user.email) setEmail(data.user.email);
+      // Always sync current pairing code to Supabase so the parent lookup works
+      const name = data.user.email?.split('@')[0] ?? 'Student';
+      upsertProfile(data.user.id, 'student', pairingCode, school.name, name).catch(() => {});
     });
   }, []);
 
@@ -229,10 +242,22 @@ export default function MeScreen({ navigation }: any) {
                 </View>
               )}
             </TouchableOpacity>
-            <View style={[styles.infoRow, { borderBottomColor: 'transparent' }]}>
-              <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>PAIRING CODE</Text>
-              <Text style={[styles.infoValue, { fontFamily: theme.fMono, color: theme.accent, letterSpacing: 3 }]}>{pairingCode}</Text>
-            </View>
+          </View>
+        </View>
+
+        {/* Pair with Parent */}
+        <View style={styles.section}>
+          <MicroLabel>Pair with Parent</MicroLabel>
+          <View style={[styles.pairCard, { backgroundColor: theme.surface, borderColor: theme.accent + '55' }]}>
+            <Text style={[styles.pairHint, { fontFamily: theme.fBody, color: theme.sub }]}>
+              Give this code to your parent. They enter it in the parent app under Dashboard → Link a student.
+            </Text>
+            <TouchableOpacity style={[styles.codeBox, { backgroundColor: theme.accent + '15', borderColor: theme.accent + '55' }]} onPress={handleCopyCode} activeOpacity={0.7}>
+              <Text style={[styles.codeText, { fontFamily: theme.fMono, color: theme.accent }]}>{pairingCode}</Text>
+              <Text style={[styles.copyBtn, { fontFamily: theme.fMono, color: codeCopied ? theme.mint : theme.accent }]}>
+                {codeCopied ? '✓ copied' : 'tap to copy'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -559,4 +584,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 0.5,
   },
+  pairCard: { borderRadius: 28, borderWidth: 1.5, padding: 18, gap: 14 },
+  pairHint: { fontSize: 14, lineHeight: 20 },
+  codeBox: { borderRadius: 20, borderWidth: 1, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', gap: 6 },
+  codeText: { fontSize: 32, letterSpacing: 8, fontWeight: '700' },
+  copyBtn: { fontSize: 11, letterSpacing: 1 },
 });

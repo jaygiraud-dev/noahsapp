@@ -73,17 +73,22 @@ export default function SignInScreen({ navigation }: any) {
 
     if (!uid) return;
 
-    // Create/update profile in Supabase so the parent can find this student by pairing code
     const displayName = emailAddr.split('@')[0];
-    upsertProfile(uid, role, role === 'student' ? pairingCode : undefined, role === 'student' ? school.name : undefined, displayName).catch(() => {});
 
     if (uid !== storedUserId) {
+      // resetForUser generates a brand-new pairing code — call upsertProfile AFTER
+      // so we save the freshly generated code, not the stale one in the hook closure
       resetForUser(uid, role, displayName);
     } else {
       setUserRole(role);
       setPhase(role === 'parent' ? 'parent' : 'main');
       if (role === 'student') loadDataFromSupabase().catch(() => {});
     }
+
+    // Read pairing code from the store NOW — resetForUser may have just regenerated it,
+    // so the hook-captured `pairingCode` variable would be stale
+    const currentCode = useStore.getState().pairingCode;
+    upsertProfile(uid, role, role === 'student' ? currentCode : undefined, role === 'student' ? school.name : undefined, displayName).catch(() => {});
   }
 
   const isStudent = accountType === 'student';
