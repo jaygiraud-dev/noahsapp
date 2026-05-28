@@ -32,6 +32,7 @@ interface ParentState {
 
   pairKid: (code: string) => boolean;
   addLinkedKid: (kid: LinkedKid) => void;
+  setLinkedKids: (kids: LinkedKid[]) => void;
   removeLinkedKid: (id: string) => void;
   addNotifications: (notifs: ParentNotif[]) => void;
   markNotifRead: (id: string) => void;
@@ -91,6 +92,9 @@ export const useParentStore = create<ParentState>()(
           set((s) => ({ linkedKids: [...s.linkedKids, kid] }));
         }
       },
+
+      // Replace the entire linked-kids list — used on fresh fetch to clear stale data
+      setLinkedKids: (kids) => set({ linkedKids: kids }),
 
       removeLinkedKid: (id) =>
         set((s) => ({ linkedKids: s.linkedKids.filter((k) => k.id !== id) })),

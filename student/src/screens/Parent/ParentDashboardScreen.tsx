@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,15 +15,27 @@ import { useParentStore } from '../../store/useParentStore';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { supabase } from '../../lib/supabase';
-import { lookupStudentByCode, createParentLink, fetchLinkedStudents, fetchStudentData, sendNudge } from '../../lib/db';
+import { lookupStudentByCode, createParentLink, fetchLinkedStudents, fetchStudentData, sendNudge, WeekStats } from '../../lib/db';
 import { Homework, CalEvent } from '../../types';
 
 function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function dayLabel(dateStr: string, today: Date): string {
+  const d = new Date(dateStr);
+  if (isSameDay(d, today)) return 'Today';
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  if (isSameDay(d, tomorrow)) return 'Tomorrow';
+  return d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatDueDate(dateStr: string, today: Date): string {
+  const d = new Date(dateStr);
+  const diff = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff <= 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  return `in ${diff} days`;
 }
 
 interface StudentSnapshot {
@@ -32,6 +44,7 @@ interface StudentSnapshot {
   school: string;
   homework: Homework[];
   events: CalEvent[];
+  weekStats: WeekStats;
 }
 
 function PairKidCard({
@@ -130,6 +143,7 @@ function PairKidCard({
 
 export default function ParentDashboardScreen({ navigation }: any) {
   const linkedKids = useParentStore((s) => s.linkedKids);
+  const setLinkedKids = useParentStore((s) => s.setLinkedKids);
   const addLinkedKid = useParentStore((s) => s.addLinkedKid);
   const removeLinkedKid = useParentStore((s) => s.removeLinkedKid);
   const addNotifications = useParentStore((s) => s.addNotifications);
@@ -145,6 +159,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [linkVersion, setLinkVersion] = useState(0);
   const [nudgeSent, setNudgeSent] = useState<Record<string, boolean>>({});
+  const realtimeRef = useRef<any>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -152,25 +167,27 @@ export default function ParentDashboardScreen({ navigation }: any) {
     });
   }, []);
 
+  // Fetch linked students from Supabase and REPLACE local state (fixes stale data)
   useEffect(() => {
     if (!parentUserId) return;
     fetchLinkedStudents(parentUserId).then((links) => {
-      links.forEach((link) => {
-        addLinkedKid({
-          id: link.student_id,
-          studentUserId: link.student_id,
-          name: link.student_name ?? 'Student',
-          pairingCode: link.pairing_code,
-          school: '',
-          grade: '',
-          points: 0,
-          streak: 0,
-          homeworkDue: 0,
-          homeworkDone: 0,
-          eventsToday: 0,
-          lastActive: 'recently',
-        });
-      });
+      if (links.length === 0) return;
+      const freshKids = links.map((link) => ({
+        id: link.student_id,
+        studentUserId: link.student_id,
+        name: link.student_name ?? 'Student',
+        pairingCode: link.pairing_code,
+        school: '',
+        grade: '',
+        points: 0,
+        streak: 0,
+        homeworkDue: 0,
+        homeworkDone: 0,
+        eventsToday: 0,
+        lastActive: 'recently',
+      }));
+      // Replace any stale persisted kids with the authoritative Supabase list
+      setLinkedKids(freshKids);
     });
   }, [parentUserId]);
 
@@ -195,9 +212,9 @@ export default function ParentDashboardScreen({ navigation }: any) {
         school: data.profile?.school_name ?? kid.school,
         homework: data.homework,
         events: data.events,
+        weekStats: data.weekStats,
       };
 
-      // Generate notifications from student's homework
       data.homework.forEach((hw) => {
         if (hw.done) {
           newNotifs.push({
@@ -224,7 +241,6 @@ export default function ParentDashboardScreen({ navigation }: any) {
         }
       });
 
-      // Generate notifications from upcoming events
       data.events.forEach((ev) => {
         if (!ev.date) return;
         const evDate = new Date(ev.date);
@@ -250,6 +266,23 @@ export default function ParentDashboardScreen({ navigation }: any) {
     loadSnapshots();
   }, [linkVersion, linkedKids.length]);
 
+  // Real-time: re-load when student's homework changes
+  useEffect(() => {
+    const realKids = linkedKids.filter((k) => k.studentUserId && k.studentUserId !== '');
+    if (realKids.length === 0) return;
+
+    realtimeRef.current?.unsubscribe();
+    const channel = supabase
+      .channel('parent-hw-watch')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'homework' }, () => {
+        loadSnapshots();
+      })
+      .subscribe();
+    realtimeRef.current = channel;
+
+    return () => { channel.unsubscribe(); };
+  }, [linkedKids.length]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadSnapshots();
@@ -265,14 +298,32 @@ export default function ParentDashboardScreen({ navigation }: any) {
     const evs = snap?.events ?? [];
     const school = snap?.school ?? kid.school;
     const name = snap?.name ?? kid.name;
-    const hwDueToday = hw.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), today));
-    const hwDone = hwDueToday.filter((h) => h.done).length;
+    const weekStats = snap?.weekStats;
+
+    // Upcoming homework: next 7 days, sorted by due date
+    const sevenDaysOut = new Date(today); sevenDaysOut.setDate(today.getDate() + 7);
+    const upcomingHw = hw
+      .filter((h) => h.dueDate && new Date(h.dueDate) >= today && new Date(h.dueDate) <= sevenDaysOut)
+      .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+
+    // Group by day label
+    const hwByDay: Record<string, Homework[]> = {};
+    upcomingHw.forEach((h) => {
+      const label = dayLabel(h.dueDate!, today);
+      if (!hwByDay[label]) hwByDay[label] = [];
+      hwByDay[label].push(h);
+    });
+    const dayOrder = Object.keys(hwByDay);
+
     const eventsToday = evs.filter((e) => e.date && isSameDay(new Date(e.date), today));
-    const hwPct = hwDueToday.length > 0 ? (hwDone / hwDueToday.length) * 100 : 0;
-    const points = isReal ? hw.filter((h) => h.done).reduce((s, h) => s + (h.points ?? 10), 0) : kid.points;
+    const totalPoints = isReal ? hw.filter((h) => h.done).reduce((s, h) => s + (h.points ?? 10), 0) : kid.points;
+    const completionPct = weekStats && weekStats.totalThisWeek > 0
+      ? Math.round((weekStats.completedThisWeek / weekStats.totalThisWeek) * 100)
+      : null;
 
     return (
       <View key={kid.id} style={[styles.kidCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+        {/* Header */}
         <View style={styles.kidHeader}>
           <LinearGradient colors={theme.accentGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.kidAvatar}>
             <Text style={[styles.kidInitial, { fontFamily: theme.fDisplayItalic }]}>{name[0]}</Text>
@@ -283,23 +334,24 @@ export default function ParentDashboardScreen({ navigation }: any) {
               {school || 'School not set'}
             </Text>
           </View>
-          {isReal && snap === undefined && (
-            <ActivityIndicator size="small" color={theme.soft} />
-          )}
+          {isReal && snap === undefined && <ActivityIndicator size="small" color={theme.soft} />}
           <TouchableOpacity onPress={() => removeLinkedKid(kid.id)} style={styles.unlinkBtn}>
             <Text style={[styles.unlinkText, { color: theme.soft }]}>×</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Stats Row */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.accent }]}>{points.toLocaleString()}</Text>
-            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>pts</Text>
+            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.accent }]}>{totalPoints.toLocaleString()}</Text>
+            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>total pts</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
           <View style={styles.statBox}>
-            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.amber }]}>{kid.streak}🔥</Text>
-            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>streak</Text>
+            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.mint }]}>
+              {completionPct !== null ? `${completionPct}%` : '—'}
+            </Text>
+            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>this week</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
           <View style={styles.statBox}>
@@ -310,31 +362,77 @@ export default function ParentDashboardScreen({ navigation }: any) {
           </View>
         </View>
 
+        {/* Weekly Report Card */}
+        {weekStats && (weekStats.totalThisWeek > 0 || weekStats.upcomingTests.length > 0) && (
+          <View style={[styles.reportCard, { backgroundColor: theme.surfaceHi, borderColor: theme.line }]}>
+            <Text style={[styles.reportTitle, { fontFamily: theme.fMono, color: theme.sub }]}>📋 WEEKLY SNAPSHOT</Text>
+            <View style={styles.reportRow}>
+              <View style={[styles.reportProgressTrack, { backgroundColor: theme.line }]}>
+                <LinearGradient
+                  colors={theme.accentGrad}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.reportProgressFill, { width: `${completionPct ?? 0}%` as any }]}
+                />
+              </View>
+              <Text style={[styles.reportStat, { fontFamily: theme.fMono, color: theme.ink }]}>
+                {weekStats.completedThisWeek}/{weekStats.totalThisWeek} done · {weekStats.pointsThisWeek} pts earned
+              </Text>
+            </View>
+            {weekStats.upcomingTests.length > 0 && (
+              <View style={styles.testsWrap}>
+                <Text style={[styles.testsLabel, { fontFamily: theme.fMono, color: theme.amber }]}>⚠️ COMING UP</Text>
+                {weekStats.upcomingTests.map((t, i) => (
+                  <View key={i} style={styles.testItem}>
+                    <View style={[styles.testDot, { backgroundColor: t.classColor ?? theme.amber }]} />
+                    <Text style={[styles.testText, { fontFamily: theme.fBody, color: theme.ink }]}>
+                      {t.title}
+                      {t.dueDate ? ` · ${formatDueDate(t.dueDate, today)}` : ''}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Upcoming Homework — next 7 days */}
         <View style={styles.hwSection}>
           <View style={styles.hwLabelRow}>
-            <Text style={[styles.hwLabel, { fontFamily: theme.fMono, color: theme.sub }]}>HOMEWORK TODAY</Text>
-            <Text style={[styles.hwCount, { fontFamily: theme.fMono, color: theme.soft }]}>{hwDone}/{hwDueToday.length} done</Text>
+            <Text style={[styles.hwLabel, { fontFamily: theme.fMono, color: theme.sub }]}>UPCOMING HOMEWORK</Text>
+            <Text style={[styles.hwCount, { fontFamily: theme.fMono, color: theme.soft }]}>next 7 days</Text>
           </View>
-          <View style={[styles.progressTrack, { backgroundColor: theme.surfaceHi }]}>
-            <LinearGradient colors={theme.accentGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${hwPct}%` as any }]} />
-          </View>
-          {hwDueToday.map((h) => (
-            <View key={h.id} style={[styles.hwItem, { borderLeftColor: h.classColor ?? theme.accent }]}>
-              <Text style={[styles.hwItemTitle, { fontFamily: theme.fBody, color: h.done ? theme.soft : theme.ink, textDecorationLine: h.done ? 'line-through' : 'none' }]}>
-                {h.title}
-              </Text>
-              <View style={styles.hwItemMeta}>
-                {h.subject && <Text style={[styles.hwItemSub, { fontFamily: theme.fMono, color: h.classColor ?? theme.accent }]}>{h.subject}</Text>}
-                {h.tag && <Text style={[styles.hwItemTag, { fontFamily: theme.fMono, color: theme.soft }]}>· {h.tag}</Text>}
-                <Text style={[styles.hwItemDone, { fontFamily: theme.fMono, color: h.done ? theme.mint : theme.soft }]}>{h.done ? '✓ done' : '○ pending'}</Text>
+
+          {dayOrder.length === 0 ? (
+            <Text style={[styles.noHw, { fontFamily: theme.fMono, color: theme.soft }]}>
+              {isReal && snap === undefined ? 'Loading...' : 'Nothing due in the next 7 days 🎉'}
+            </Text>
+          ) : (
+            dayOrder.map((label) => (
+              <View key={label} style={styles.dayGroup}>
+                <Text style={[styles.dayGroupLabel, { fontFamily: theme.fMono, color: theme.accent }]}>{label}</Text>
+                {hwByDay[label].map((h) => (
+                  <View key={h.id} style={[styles.hwItem, { borderLeftColor: h.classColor ?? theme.accent }]}>
+                    <View style={styles.hwItemTop}>
+                      <Text style={[styles.hwItemTitle, { fontFamily: theme.fBody, color: h.done ? theme.soft : theme.ink, textDecorationLine: h.done ? 'line-through' : 'none' }]}>
+                        {h.title}
+                      </Text>
+                      <Text style={[styles.hwItemStatus, { fontFamily: theme.fMono, color: h.done ? theme.mint : theme.soft }]}>
+                        {h.done ? '✓' : '○'}
+                      </Text>
+                    </View>
+                    <View style={styles.hwItemMeta}>
+                      {h.subject && <Text style={[styles.hwItemSub, { fontFamily: theme.fMono, color: h.classColor ?? theme.accent }]}>{h.subject}</Text>}
+                      {h.tag && <Text style={[styles.hwItemTag, { fontFamily: theme.fMono, color: theme.soft }]}>· {h.tag}</Text>}
+                    </View>
+                  </View>
+                ))}
               </View>
-            </View>
-          ))}
-          {hwDueToday.length === 0 && (
-            <Text style={[styles.noHw, { fontFamily: theme.fMono, color: theme.soft }]}>No homework due today</Text>
+            ))
           )}
         </View>
 
+        {/* Today's Events */}
         {eventsToday.length > 0 && (
           <View style={styles.hwSection}>
             <Text style={[styles.hwLabel, { fontFamily: theme.fMono, color: theme.sub }]}>TODAY'S EVENTS</Text>
@@ -347,26 +445,28 @@ export default function ParentDashboardScreen({ navigation }: any) {
           </View>
         )}
 
+        {/* Actions */}
         {isReal && (
-          <TouchableOpacity
-            style={[styles.nudgeBtn, { borderColor: theme.accent }]}
-            onPress={() => {
-              if (nudgeSent[kid.studentUserId]) return;
-              sendNudge(parentUserId, kid.studentUserId, "How's the homework going? 👋");
-              setNudgeSent((prev) => ({ ...prev, [kid.studentUserId]: true }));
-              setTimeout(() => setNudgeSent((prev) => ({ ...prev, [kid.studentUserId]: false })), 2000);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.nudgeBtnText, { fontFamily: theme.fMono, color: nudgeSent[kid.studentUserId] ? theme.mint : theme.accent }]}>
-              {nudgeSent[kid.studentUserId] ? 'Nudge sent! 👋' : 'Nudge 👋'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={[styles.nudgeBtn, { borderColor: theme.accent }]}
+              onPress={() => {
+                if (nudgeSent[kid.studentUserId]) return;
+                sendNudge(parentUserId, kid.studentUserId, "How's the homework going? 👋");
+                setNudgeSent((prev) => ({ ...prev, [kid.studentUserId]: true }));
+                setTimeout(() => setNudgeSent((prev) => ({ ...prev, [kid.studentUserId]: false })), 2000);
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.nudgeBtnText, { fontFamily: theme.fMono, color: nudgeSent[kid.studentUserId] ? theme.mint : theme.accent }]}>
+                {nudgeSent[kid.studentUserId] ? '✓ Nudge sent!' : 'Nudge 👋'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.activityBtn, { borderColor: theme.line }]} onPress={() => navigation.navigate('ParentActivity')}>
+              <Text style={[styles.activityBtnText, { fontFamily: theme.fMono, color: theme.soft }]}>Activity →</Text>
+            </TouchableOpacity>
+          </View>
         )}
-
-        <TouchableOpacity style={[styles.activityBtn, { borderColor: theme.accent }]} onPress={() => navigation.navigate('ParentActivity')}>
-          <Text style={[styles.activityBtnText, { fontFamily: theme.fMono, color: theme.accent }]}>View all activity →</Text>
-        </TouchableOpacity>
       </View>
     );
   }
@@ -399,6 +499,15 @@ export default function ParentDashboardScreen({ navigation }: any) {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
       >
+        {linkedKids.length === 0 && (
+          <View style={styles.emptyWrap}>
+            <Text style={[styles.emptyIcon]}>👨‍👩‍👧</Text>
+            <Text style={[styles.emptyTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Link your first student</Text>
+            <Text style={[styles.emptySub, { fontFamily: theme.fBody, color: theme.soft }]}>
+              Enter your child's pairing code below to see their homework, events, and weekly progress.
+            </Text>
+          </View>
+        )}
         {linkedKids.map(renderKidCard)}
         <PairKidCard
           theme={theme}
@@ -422,6 +531,10 @@ const styles = StyleSheet.create({
   notifBadgeText: { color: '#fff', fontSize: 10 },
   signOut: { fontSize: 11, letterSpacing: 1 },
   content: { padding: 16, gap: 16 },
+  emptyWrap: { alignItems: 'center', paddingVertical: 32, gap: 10 },
+  emptyIcon: { fontSize: 48 },
+  emptyTitle: { fontSize: 22 },
+  emptySub: { fontSize: 14, textAlign: 'center', lineHeight: 20, paddingHorizontal: 24 },
   kidCard: { borderRadius: 32, borderWidth: 1, padding: 16, gap: 16 },
   kidHeader: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   kidAvatar: { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' },
@@ -436,26 +549,39 @@ const styles = StyleSheet.create({
   statNum: { fontSize: 20, letterSpacing: 0.5 },
   statLabel: { fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' },
   statDivider: { width: 1, height: 32 },
+  reportCard: { borderRadius: 20, borderWidth: 1, padding: 14, gap: 10 },
+  reportTitle: { fontSize: 10, letterSpacing: 1 },
+  reportRow: { gap: 6 },
+  reportProgressTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  reportProgressFill: { height: 6, borderRadius: 3 },
+  reportStat: { fontSize: 13, letterSpacing: 0.3 },
+  testsWrap: { gap: 6, paddingTop: 4 },
+  testsLabel: { fontSize: 10, letterSpacing: 1 },
+  testItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  testDot: { width: 8, height: 8, borderRadius: 4 },
+  testText: { fontSize: 13, flex: 1, lineHeight: 18 },
   hwSection: { gap: 8 },
   hwLabelRow: { flexDirection: 'row', justifyContent: 'space-between' },
   hwLabel: { fontSize: 10, letterSpacing: 1 },
   hwCount: { fontSize: 10, letterSpacing: 0.5 },
-  progressTrack: { height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 4 },
-  progressFill: { height: 6, borderRadius: 3 },
+  dayGroup: { gap: 6, marginBottom: 4 },
+  dayGroupLabel: { fontSize: 11, letterSpacing: 0.5, fontWeight: '600', marginTop: 4 },
   hwItem: { borderLeftWidth: 3, paddingLeft: 10, paddingVertical: 6, gap: 3 },
-  hwItemTitle: { fontSize: 14, lineHeight: 18 },
+  hwItemTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  hwItemTitle: { fontSize: 14, lineHeight: 18, flex: 1 },
+  hwItemStatus: { fontSize: 14, lineHeight: 18 },
   hwItemMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   hwItemSub: { fontSize: 10, letterSpacing: 0.3 },
   hwItemTag: { fontSize: 10 },
-  hwItemDone: { fontSize: 10, letterSpacing: 0.3 },
-  noHw: { fontSize: 12, letterSpacing: 0.5, textAlign: 'center', paddingVertical: 8 },
+  noHw: { fontSize: 12, letterSpacing: 0.5, textAlign: 'center', paddingVertical: 12 },
   evItem: { borderLeftWidth: 3, paddingLeft: 10, paddingVertical: 6, flexDirection: 'row', gap: 10, alignItems: 'center' },
   evTime: { fontSize: 12, letterSpacing: 0.3, minWidth: 56 },
   evTitle: { fontSize: 14, flex: 1 },
-  activityBtn: { borderRadius: 28, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
+  actionsRow: { flexDirection: 'row', gap: 10 },
+  nudgeBtn: { flex: 1, borderRadius: 28, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
+  nudgeBtnText: { fontSize: 13, letterSpacing: 0.5 },
+  activityBtn: { flex: 1, borderRadius: 28, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
   activityBtnText: { fontSize: 13, letterSpacing: 0.5 },
-  nudgeBtn: { borderRadius: 28, borderWidth: 1, paddingVertical: 8, paddingHorizontal: 20, alignSelf: 'flex-start' },
-  nudgeBtnText: { fontSize: 12, letterSpacing: 0.5 },
   pairCard: { borderRadius: 32, borderWidth: 1, padding: 20, gap: 12 },
   pairTitle: { fontSize: 22 },
   pairHint: { fontSize: 14, lineHeight: 20 },

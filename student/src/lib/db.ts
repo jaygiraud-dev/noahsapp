@@ -130,10 +130,18 @@ export async function fetchLinkedStudents(
   return data ?? [];
 }
 
+export interface WeekStats {
+  completedThisWeek: number;
+  totalThisWeek: number;
+  pointsThisWeek: number;
+  upcomingTests: Array<{ title: string; subject?: string; dueDate?: string; classColor?: string; tag?: string }>;
+}
+
 export async function fetchStudentData(studentId: string): Promise<{
   homework: Homework[];
   events: CalEvent[];
   profile: { school_name: string | null; display_name: string | null } | null;
+  weekStats: WeekStats;
 }> {
   const [hwRes, evRes, profileRes] = await Promise.all([
     supabase.from('homework').select('*').eq('user_id', studentId).order('created_at', { ascending: true }),
@@ -141,10 +149,34 @@ export async function fetchStudentData(studentId: string): Promise<{
     supabase.from('profiles').select('school_name, display_name').eq('id', studentId).maybeSingle(),
   ]);
 
+  const homework = (hwRes.data ?? []).map(rowToHomework);
+  const now = new Date();
+  const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+  const twoWeeksOut = new Date(now); twoWeeksOut.setDate(twoWeeksOut.getDate() + 14);
+
+  const thisWeekHw = homework.filter((h) => {
+    if (!h.dueDate) return false;
+    const d = new Date(h.dueDate);
+    return d >= weekAgo && d <= twoWeeksOut;
+  });
+  const completedThisWeek = thisWeekHw.filter((h) => h.done && new Date(h.dueDate!) <= now).length;
+  const totalThisWeek = thisWeekHw.filter((h) => new Date(h.dueDate!) <= now).length;
+  const pointsThisWeek = thisWeekHw.filter((h) => h.done && new Date(h.dueDate!) <= now)
+    .reduce((s, h) => s + (h.points ?? 10), 0);
+
+  const testKeywords = /test|quiz|exam|project|presentation/i;
+  const upcomingTests = homework.filter((h) => {
+    if (!h.dueDate) return false;
+    const d = new Date(h.dueDate);
+    if (d < now || d > twoWeeksOut) return false;
+    return testKeywords.test(h.title) || testKeywords.test(h.tag ?? '') || testKeywords.test(h.subject ?? '');
+  }).map((h) => ({ title: h.title, subject: h.subject, dueDate: h.dueDate, classColor: h.classColor, tag: h.tag }));
+
   return {
-    homework: (hwRes.data ?? []).map(rowToHomework),
+    homework,
     events: (evRes.data ?? []).map(rowToEvent),
     profile: profileRes.data ?? null,
+    weekStats: { completedThisWeek, totalThisWeek, pointsThisWeek, upcomingTests },
   };
 }
 
