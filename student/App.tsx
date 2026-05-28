@@ -22,6 +22,7 @@ import { useStore } from './src/store/useStore';
 import { supabase } from './src/lib/supabase';
 import { upsertProfile, savePushToken } from './src/lib/db';
 import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
+import { scheduleClassNotifications } from './src/lib/classNotifications';
 
 export default function App() {
   const setPhase = useStore((s) => s.setPhase);
@@ -86,11 +87,25 @@ export default function App() {
         registerForPushNotificationsAsync().then((token) => {
           if (token) savePushToken(session.user.id, token).catch(() => {});
         }).catch(() => {});
+
+        // Schedule class bell notifications for the current classes
+        const classes = useStore.getState().classes;
+        scheduleClassNotifications(classes).catch(() => {});
       }
 
       setSessionReady(true);
     });
   }, [hasHydrated]);
+
+  // Re-schedule notifications whenever classes change in the store
+  useEffect(() => {
+    const unsub = useStore.subscribe((state, prevState) => {
+      if (state.classes !== prevState.classes && state.userRole === 'student') {
+        scheduleClassNotifications(state.classes).catch(() => {});
+      }
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
