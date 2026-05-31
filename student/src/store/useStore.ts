@@ -3,7 +3,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Homework, CalEvent, Class, School, Friend, FriendRequest, ActivityNotif } from '../types';
 import { Vibe } from '../theme';
-import { upsertHomework, upsertEvent, fetchHomework, fetchEvents, getParentPushToken, sendExpoPush } from '../lib/db';
+import {
+  upsertHomework, upsertEvent, fetchHomework, fetchEvents, getParentPushToken, sendExpoPush,
+  lookupStudentByCode, saveProfileState, fetchProfileState, fetchStudentParentLinks,
+} from '../lib/db';
 
 function generatePairingCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -57,6 +60,7 @@ interface AppState {
   clearReward: () => void;
   acceptFriendRequest: (id: string) => void;
   declineFriendRequest: (id: string) => void;
+  addFriendByCode: (code: string) => Promise<'added' | 'already' | 'not_found' | 'self'>;
   pushNotification: (n: ActivityNotif) => void;
   loadDataFromSupabase: () => Promise<void>;
 }
@@ -259,6 +263,27 @@ export const useStore = create<AppState>()(
   },
 
   declineFriendRequest: (id) => set(s => ({ friendRequests: s.friendRequests.filter(r => r.id !== id) })),
+
+  addFriendByCode: async (code) => {
+    const { userId, friends } = get();
+    const profile = await lookupStudentByCode(code);
+    if (!profile) return 'not_found';
+    if (profile.id === userId) return 'self';
+    if (friends.some(f => f.id === profile.id)) return 'already';
+    const COLORS = ['#ec4899','#a78bfa','#06d6e0','#fbbf24','#34d399','#f5a623','#e8453a'];
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    const newFriend = {
+      id: profile.id,
+      name: profile.display_name ?? 'Friend',
+      school: profile.school_name ?? '',
+      pts: 0,
+      streak: 0,
+      avatar: '',
+      color,
+    };
+    set(s => ({ friends: [...s.friends, newFriend] }));
+    return 'added';
+  },
 
   pushNotification: (n) => set(s => ({ notifications: [n, ...s.notifications] })),
 
