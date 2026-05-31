@@ -341,6 +341,16 @@ export default function TodayScreen() {
 
   const todayEvents = events.filter((e) => e.date && isSameDay(new Date(e.date), selectedDate));
 
+  const sevenDaysOut = new Date(selectedDate); sevenDaysOut.setDate(selectedDate.getDate() + 7);
+  const startOfSelected = new Date(selectedDate); startOfSelected.setHours(23, 59, 59, 999);
+  const upcomingHw = homework
+    .filter((h) => {
+      if (h.done || !h.dueDate) return false;
+      const d = new Date(h.dueDate);
+      return d > startOfSelected && d <= sevenDaysOut;
+    })
+    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
       {showReminder && (
@@ -412,7 +422,31 @@ export default function TodayScreen() {
           <EventBlock key={ev.id} ev={ev} theme={theme} onToggle={() => toggleEvent(ev.id)} />
         ))}
 
-        {showClasses && classes.length === 0 && todayEvents.length === 0 && (
+        {/* Coming up this week */}
+        {upcomingHw.length > 0 && (
+          <View style={[styles.upcomingSection, { borderTopColor: theme.line }]}>
+            <Text style={[styles.upcomingLabel, { fontFamily: theme.fMono, color: theme.soft }]}>COMING UP THIS WEEK</Text>
+            {upcomingHw.map((hw) => {
+              const color = hw.classColor ?? theme.accent;
+              const due = new Date(hw.dueDate!);
+              const tomorrow = new Date(selectedDate); tomorrow.setDate(selectedDate.getDate() + 1);
+              const dueLabel = isSameDay(due, tomorrow)
+                ? 'Tomorrow'
+                : due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+              return (
+                <View key={hw.id} style={[styles.upcomingItem, { backgroundColor: theme.surface, borderLeftColor: color }]}>
+                  <View style={styles.upcomingItemTop}>
+                    <Text style={[styles.upcomingTitle, { fontFamily: theme.fBody, color: theme.ink }]} numberOfLines={1}>{hw.title}</Text>
+                    <Text style={[styles.upcomingDue, { fontFamily: theme.fMono, color, backgroundColor: color + '18' }]}>{dueLabel}</Text>
+                  </View>
+                  {hw.subject && <Text style={[styles.upcomingSub, { fontFamily: theme.fMono, color: theme.soft }]}>{hw.subject}</Text>}
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {showClasses && classes.length === 0 && todayEvents.length === 0 && upcomingHw.length === 0 && (
           <View style={styles.empty}>
             <Text style={[styles.emptyText, { fontFamily: theme.fDisplayItalic, color: theme.sub }]}>
               Nothing due. Enjoy the day.
@@ -625,6 +659,13 @@ const styles = StyleSheet.create({
   },
   noSchoolIcon: { fontSize: 36 },
   noSchoolText: { fontSize: 22 },
+  upcomingSection: { marginTop: 8, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, gap: 8 },
+  upcomingLabel: { fontSize: 10, letterSpacing: 1.2, marginBottom: 2 },
+  upcomingItem: { borderLeftWidth: 3, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, gap: 4 },
+  upcomingItemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  upcomingTitle: { fontSize: 14, flex: 1 },
+  upcomingDue: { fontSize: 10, letterSpacing: 0.3, borderRadius: 32, paddingHorizontal: 8, paddingVertical: 3, overflow: 'hidden' },
+  upcomingSub: { fontSize: 11, letterSpacing: 0.3 },
   empty: { alignItems: 'center', paddingTop: 40 },
   emptyText: { fontSize: 22, textAlign: 'center' },
   fabBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
