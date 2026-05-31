@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import ShineCard from '../../components/ShineCard';
 import { useStore } from '../../store/useStore';
 import { makeTheme, Vibe } from '../../theme';
 import MicroLabel from '../../components/MicroLabel';
@@ -205,7 +206,7 @@ export default function MeScreen({ navigation }: any) {
         {/* Account info */}
         <View style={styles.section}>
           <MicroLabel>Account</MicroLabel>
-          <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+          <ShineCard style={[styles.infoCard, { backgroundColor: theme.surface }]}>
             {email !== '' && (
               <View style={[styles.infoRow, { borderBottomColor: theme.line }]}>
                 <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>EMAIL</Text>
@@ -258,13 +259,13 @@ export default function MeScreen({ navigation }: any) {
                 </View>
               )}
             </TouchableOpacity>
-          </View>
+          </ShineCard>
         </View>
 
         {/* Pair with Parent */}
         <View style={styles.section}>
           <MicroLabel>Pair with Parent</MicroLabel>
-          <View style={[styles.pairCard, { backgroundColor: theme.surface, borderColor: theme.accent + '55' }]}>
+          <ShineCard style={[styles.pairCard, { backgroundColor: theme.surface }]}>
             <Text style={[styles.pairHint, { fontFamily: theme.fBody, color: theme.sub }]}>
               Give this code to your parent. They enter it in the parent app under Dashboard → Link a student.
             </Text>
@@ -274,13 +275,13 @@ export default function MeScreen({ navigation }: any) {
                 {codeCopied ? '✓ copied' : 'tap to copy'}
               </Text>
             </TouchableOpacity>
-          </View>
+          </ShineCard>
         </View>
 
         {/* Security & Privacy */}
         <View style={styles.section}>
           <MicroLabel>Security &amp; Privacy</MicroLabel>
-          <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+          <ShineCard style={[styles.infoCard, { backgroundColor: theme.surface }]}>
             {/* Change password row */}
             <TouchableOpacity
               style={[styles.infoRow, { borderBottomColor: theme.line, flexDirection: 'column', alignItems: 'stretch' }]}
@@ -346,14 +347,14 @@ export default function MeScreen({ navigation }: any) {
               <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>EMAIL</Text>
               <Text style={[styles.infoValue, { fontFamily: theme.fBody, color: theme.ink }]} numberOfLines={1}>{email}</Text>
             </View>
-          </View>
+          </ShineCard>
         </View>
 
         {/* Disconnect parent */}
         {parentPaired && (
           <View style={styles.section}>
             <MicroLabel>Parent Connection</MicroLabel>
-            <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+            <ShineCard style={[styles.infoCard, { backgroundColor: theme.surface }]}>
               <TouchableOpacity
                 style={[styles.infoRow, { borderBottomColor: 'transparent' }]}
                 onPress={handleDisconnectParent}
@@ -366,7 +367,7 @@ export default function MeScreen({ navigation }: any) {
                   <Text style={[styles.editPencil, { color: theme.red }]}>›</Text>
                 )}
               </TouchableOpacity>
-            </View>
+            </ShineCard>
           </View>
         )}
 
@@ -378,7 +379,7 @@ export default function MeScreen({ navigation }: any) {
               <Text style={[styles.editLink, { fontFamily: theme.fMono, color: theme.accent }]}>Edit schedule →</Text>
             </TouchableOpacity>
           </View>
-          <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+          <ShineCard style={[styles.infoCard, { backgroundColor: theme.surface }]}>
             {classes.length === 0 ? (
               <View style={styles.emptyClasses}>
                 <Text style={[styles.emptyClassesText, { fontFamily: theme.fBody, color: theme.soft }]}>
@@ -404,7 +405,7 @@ export default function MeScreen({ navigation }: any) {
                 </View>
               ))
             )}
-          </View>
+          </ShineCard>
           <Text style={[styles.editHint, { fontFamily: theme.fMono, color: theme.soft }]}>
             Tap "Edit schedule" at the start of a new semester to update your classes.
           </Text>
@@ -629,7 +630,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 0.5,
   },
-  pairCard: { borderRadius: 28, borderWidth: 1.5, padding: 18, gap: 14 },
+  pairCard: { borderRadius: 28, borderWidth: 0, padding: 18, gap: 14 },
   pairHint: { fontSize: 14, lineHeight: 20 },
   codeBox: { borderRadius: 20, borderWidth: 1, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', gap: 6 },
   codeText: { fontSize: 32, letterSpacing: 8, fontWeight: '700' },

@@ -20,6 +20,7 @@ import { POSITIVE_NEWS } from '../../data/news';
 import { fetchGoodNews, NewsItem } from '../../lib/goodNews';
 import { Class, Homework, CalEvent } from '../../types';
 import DayPicker from '../../components/DayPicker';
+import ShineCard from '../../components/ShineCard';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
 import AddEventSheet from '../sheets/AddEventSheet';
 import HomeworkDetailSheet from '../sheets/HomeworkDetailSheet';
@@ -111,11 +112,11 @@ function QuoteCard({ theme, cardSurface }: any) {
   const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const q = quoteOfDay(dateStr);
   return (
-    <View style={[styles.quoteCard, { backgroundColor: cardSurface ?? theme.surface, borderColor: theme.line }]}>
+    <ShineCard style={[styles.quoteCard, { backgroundColor: cardSurface ?? theme.surface }]}>
       <Text style={[styles.quoteFuel, { fontFamily: theme.fMono, color: theme.accent }]}>✦ DAILY FUEL</Text>
       <Text style={[styles.quoteText, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>"{q.t}"</Text>
       <Text style={[styles.quoteAuthor, { fontFamily: theme.fMono, color: theme.soft }]}>— {q.a}</Text>
-    </View>
+    </ShineCard>
   );
 }
 
@@ -180,7 +181,7 @@ function ClassBlock({ cls, homework, isNow, theme, cardSurface, onAddHw, onToggl
   theme: any; cardSurface?: string; onAddHw: () => void; onToggleHw: (id: string) => void; onDetailHw: (hw: Homework) => void;
 }) {
   return (
-    <View style={[styles.classBlock, { backgroundColor: cardSurface ?? theme.surface, borderColor: isNow ? cls.color : theme.line }, isNow && { borderWidth: 1.5 }]}>
+    <ShineCard style={[styles.classBlock, { backgroundColor: cardSurface ?? theme.surface, borderColor: isNow ? cls.color : theme.line, borderWidth: isNow ? 1.5 : 0 }]}>
       <View style={styles.classHeader}>
         <View style={[styles.classIcon, { backgroundColor: cls.color + '33' }]}>
           <Text style={styles.classEmoji}>{cls.emoji ?? '📚'}</Text>
@@ -208,7 +209,7 @@ function ClassBlock({ cls, homework, isNow, theme, cardSurface, onAddHw, onToggl
           ))}
         </View>
       )}
-    </View>
+    </ShineCard>
   );
 }
 
@@ -248,19 +249,21 @@ function DueReminderBanner({ count, titles, theme, onDismiss }: {
 
 function EventBlock({ ev, theme, cardSurface, onToggle }: { ev: CalEvent; theme: any; cardSurface?: string; onToggle: () => void }) {
   return (
-    <TouchableOpacity
-      style={[styles.eventBlock, { backgroundColor: cardSurface ?? theme.surface, borderColor: theme.line, borderLeftColor: theme.cyan }]}
-      onPress={onToggle}
-      activeOpacity={0.8}
-    >
-      <Text style={[styles.eventTime, { fontFamily: theme.fMono, color: theme.cyan }]}>{ev.time}</Text>
-      <View style={styles.eventInfo}>
-        <Text style={[styles.eventTitle, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{ev.title}</Text>
-        {ev.location && (
-          <Text style={[styles.eventLoc, { fontFamily: theme.fMono, color: theme.soft }]}>{ev.location}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
+    <ShineCard style={[styles.eventBlock, { backgroundColor: cardSurface ?? theme.surface, borderLeftColor: theme.cyan }]}>
+      <TouchableOpacity
+        style={styles.eventBlockInner}
+        onPress={onToggle}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.eventTime, { fontFamily: theme.fMono, color: theme.cyan }]}>{ev.time}</Text>
+        <View style={styles.eventInfo}>
+          <Text style={[styles.eventTitle, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{ev.title}</Text>
+          {ev.location && (
+            <Text style={[styles.eventLoc, { fontFamily: theme.fMono, color: theme.soft }]}>{ev.location}</Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    </ShineCard>
   );
 }
 
@@ -404,14 +407,14 @@ export default function TodayScreen() {
 
         {/* No-school banner */}
         {(isWeekend || closedReason) && (
-          <View style={[styles.noSchoolBanner, { backgroundColor: cardSurface, borderColor: theme.line }]}>
+          <ShineCard style={[styles.noSchoolBanner, { backgroundColor: cardSurface }]}>
             <Text style={[styles.noSchoolIcon, { color: theme.soft }]}>
               {isWeekend ? '🛋️' : '🏫'}
             </Text>
             <Text style={[styles.noSchoolText, { fontFamily: theme.fDisplayItalic, color: theme.sub }]}>
               {isWeekend ? 'Weekend' : closedReason}
             </Text>
-          </View>
+          </ShineCard>
         )}
 
         {/* Class blocks */}
@@ -449,13 +452,13 @@ export default function TodayScreen() {
                 ? 'Tomorrow'
                 : due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
               return (
-                <View key={hw.id} style={[styles.upcomingItem, { backgroundColor: theme.surface, borderLeftColor: color }]}>
+                <ShineCard key={hw.id} style={[styles.upcomingItem, { backgroundColor: theme.surface, borderLeftColor: color }]}>
                   <View style={styles.upcomingItemTop}>
                     <Text style={[styles.upcomingTitle, { fontFamily: theme.fBody, color: theme.ink }]} numberOfLines={1}>{hw.title}</Text>
                     <Text style={[styles.upcomingDue, { fontFamily: theme.fMono, color, backgroundColor: color + '18' }]}>{dueLabel}</Text>
                   </View>
                   {hw.subject && <Text style={[styles.upcomingSub, { fontFamily: theme.fMono, color: theme.soft }]}>{hw.subject}</Text>}
-                </View>
+                </ShineCard>
               );
             })}
           </View>
@@ -652,11 +655,13 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     borderWidth: 0,
     borderLeftWidth: 4,
+    marginBottom: 12,
+  },
+  eventBlockInner: {
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 12,
   },
   eventTime: { fontSize: 13, letterSpacing: 0.5, minWidth: 52 },
   eventInfo: { flex: 1 },

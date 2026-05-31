@@ -12,13 +12,14 @@ import { makeTheme } from '../../theme';
 import SerifTitle from '../../components/SerifTitle';
 import MicroLabel from '../../components/MicroLabel';
 import Pill from '../../components/Pill';
+import ShineCard from '../../components/ShineCard';
 import AddFriendSheet from '../sheets/AddFriendSheet';
 
 type SquadTab = 'friends' | 'groups';
 
 function FriendRow({ friend, theme, onChat }: any) {
   return (
-    <View style={[styles.friendRow, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+    <ShineCard style={[styles.friendRow, { backgroundColor: theme.surface }]}>
       <View style={[styles.avatar, { backgroundColor: friend.color + '33' }]}>
         <Text style={[styles.avatarText, { fontFamily: theme.fDisplayItalic, color: friend.color }]}>
           {friend.name[0]}
@@ -39,13 +40,13 @@ function FriendRow({ friend, theme, onChat }: any) {
       >
         <Text style={[styles.chatBtnText, { fontFamily: theme.fMono, color: theme.accent }]}>💬</Text>
       </TouchableOpacity>
-    </View>
+    </ShineCard>
   );
 }
 
 function FriendRequestRow({ req, theme, onAccept, onDecline }: any) {
   return (
-    <View style={[styles.friendRow, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+    <ShineCard style={[styles.friendRow, { backgroundColor: theme.surface }]}>
       <View style={[styles.avatar, { backgroundColor: theme.accent + '22' }]}>
         <Text style={[styles.avatarText, { fontFamily: theme.fDisplayItalic, color: theme.accent }]}>
           {req.name[0]}
@@ -63,7 +64,7 @@ function FriendRequestRow({ req, theme, onAccept, onDecline }: any) {
           <Text style={[styles.actionText, { fontFamily: theme.fMono, color: theme.soft }]}>×</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ShineCard>
   );
 }
 
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   badgeText: { color: '#fff', fontSize: 11 },
   listContent: { paddingHorizontal: 16, paddingBottom: 32, gap: 10 },
   section: { gap: 8, marginBottom: 8 },
-  friendRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 0, padding: 12, gap: 12 },
+  friendRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, borderWidth: 0, padding: 12, gap: 12 },
   avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 20 },
   friendInfo: { flex: 1 },

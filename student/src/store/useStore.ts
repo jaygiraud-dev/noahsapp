@@ -161,15 +161,22 @@ export const useStore = create<AppState>()(
   setParentPaired: (v) => set({ parentPaired: v }),
 
   toggleHomework: (id) => {
-    const { homework, streak, classes, userId } = get();
+    const { homework, classes, userId } = get();
     const hw = homework.find(h => h.id === id);
     if (!hw) return;
     const newDone = !hw.done;
     const updated = { ...hw, done: newDone };
-    set({
-      homework: homework.map(h => h.id === id ? updated : h),
-      points: newDone ? get().points + (hw.points || 10) : get().points - (hw.points || 10),
-      reward: newDone ? { points: hw.points || 10, streak } : null,
+    set(s => {
+      const { streak, lastActivityDate } = newDone
+        ? calcStreak(s.lastActivityDate, s.streak)
+        : { streak: s.streak, lastActivityDate: s.lastActivityDate };
+      return {
+        homework: s.homework.map(h => h.id === id ? updated : h),
+        points: newDone ? s.points + (hw.points || 10) : s.points - (hw.points || 10),
+        streak,
+        lastActivityDate,
+        reward: newDone ? { points: hw.points || 10, streak } : null,
+      };
     });
     if (newDone) {
       const cls = classes.find(c => c.id === hw.classId);

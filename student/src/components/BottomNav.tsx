@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store/useStore';
 import { makeTheme } from '../theme';
@@ -31,6 +32,13 @@ export default function BottomNav({ activeTab, onTabPress }: Props) {
   return (
     <View style={[styles.wrapper, { paddingBottom: insets.bottom + 8 }]}>
       <View style={[styles.pill, { backgroundColor: theme.isClay ? 'rgba(255,255,255,0.85)' : '#1c1c1c', shadowColor: '#000' }]}>
+        <LinearGradient
+          colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.pillShine}
+          pointerEvents="none"
+        />
         {TABS.map((tab) => {
           const isActive = tab.id === activeTab;
           return (
@@ -90,5 +98,14 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
+  },
+  pillShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 28,
+    borderRadius: 40,
+    zIndex: 0,
   },
 });
