@@ -390,17 +390,16 @@ export default function WeekScreen() {
                 <View style={styles.wkSection}>
                   <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.red }]}>⚠ OVERDUE</Text>
                   {overdueHw.map((hw) => {
-                    const color = hw.classColor ?? theme.accent;
                     const daysAgo = Math.ceil((startOfSelectedDay.getTime() - new Date(hw.dueDate!).setHours(0,0,0,0)) / 86400000);
                     return (
-                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: color, backgroundColor: cardSurface }]}>
+                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: theme.red, backgroundColor: cardSurface }]}>
                         <View style={styles.wkItemTop}>
-                          <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{hw.title}</Text>
-                          <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color: theme.red, backgroundColor: theme.red + '18' }]}>
+                          <Text style={[styles.wkItemTitle, { fontFamily: theme.fBodyMedium, color: theme.red }]}>⚠ {hw.title}</Text>
+                          <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color: theme.red, backgroundColor: theme.red + '20' }]}>
                             {daysAgo === 1 ? 'yesterday' : `${daysAgo}d ago`}
                           </Text>
                         </View>
-                        {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color }]}>{hw.subject}</Text>}
+                        {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.red + 'aa' }]}>{hw.subject}</Text>}
                       </View>
                     );
                   })}
@@ -411,18 +410,24 @@ export default function WeekScreen() {
                 <View style={styles.wkSection}>
                   <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.accent }]}>COMING UP THIS WEEK</Text>
                   {upcomingHw.map((hw) => {
-                    const color = hw.classColor ?? theme.accent;
                     const due = new Date(hw.dueDate!);
-                    const dueLabel = due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+                    const sot = new Date(); sot.setHours(0,0,0,0);
+                    const tom = new Date(sot); tom.setDate(sot.getDate() + 1);
+                    const dat = new Date(sot); dat.setDate(sot.getDate() + 2);
+                    const isTom = due >= tom && due < dat;
+                    const itemColor = isTom ? theme.amber : hw.classColor ?? theme.accent;
+                    const dueLabel = isTom
+                      ? 'Tomorrow'
+                      : due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
                     return (
-                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: color, backgroundColor: cardSurface }]}>
+                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: itemColor, backgroundColor: cardSurface }]}>
                         <View style={styles.wkItemTop}>
-                          <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{hw.title}</Text>
-                          <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color, backgroundColor: color + '18' }]}>
+                          <Text style={[styles.wkItemTitle, { fontFamily: isTom ? theme.fBodyMedium : theme.fBody, color: isTom ? theme.amber : theme.ink }]}>{hw.title}</Text>
+                          <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color: itemColor, backgroundColor: itemColor + '20' }]}>
                             {dueLabel}
                           </Text>
                         </View>
-                        {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color }]}>{hw.subject}</Text>}
+                        {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: itemColor }]}>{hw.subject}</Text>}
                       </View>
                     );
                   })}

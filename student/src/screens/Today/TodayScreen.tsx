@@ -136,6 +136,17 @@ function ImagePreviewModal({ uri, onClose }: { uri: string; onClose: () => void 
 
 function HwRow({ hw, theme, onToggle, onDetail }: { hw: Homework; theme: any; onToggle: () => void; onDetail: () => void }) {
   const color = hw.classColor ?? theme.accent;
+
+  // Compute urgency dynamically against today's actual date
+  const now = new Date();
+  const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(startOfToday); tomorrow.setDate(startOfToday.getDate() + 1);
+  const dayAfter = new Date(startOfToday); dayAfter.setDate(startOfToday.getDate() + 2);
+  const dueDate = hw.dueDate ? new Date(hw.dueDate) : null;
+  const isOverdue = !hw.done && dueDate !== null && dueDate < startOfToday;
+  const isDueTomorrow = !hw.done && dueDate !== null && dueDate >= tomorrow && dueDate < dayAfter;
+  const urgentColor = isOverdue ? theme.red : isDueTomorrow ? theme.amber : null;
+
   return (
     <TouchableOpacity style={[styles.hwRow, hw.done && styles.hwRowDone]} onPress={onDetail} activeOpacity={0.7}>
       <TouchableOpacity
@@ -143,13 +154,18 @@ function HwRow({ hw, theme, onToggle, onDetail }: { hw: Homework; theme: any; on
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         activeOpacity={0.7}
       >
-        <View style={[styles.hwCheck, { borderColor: color, backgroundColor: hw.done ? color : 'transparent' }]}>
+        <View style={[styles.hwCheck, { borderColor: urgentColor ?? color, backgroundColor: hw.done ? color : 'transparent' }]}>
           {hw.done && <Text style={styles.hwCheckMark}>✓</Text>}
         </View>
       </TouchableOpacity>
       <View style={styles.hwInfo}>
-        <Text style={[styles.hwTitle, { fontFamily: hw.dueUrgent && !hw.done ? theme.fBodyMedium : theme.fBody, color: hw.done ? theme.soft : hw.dueUrgent ? theme.red : theme.ink }, hw.done && { textDecorationLine: 'line-through' }]}>
-          {hw.title}
+        <Text style={[
+          styles.hwTitle,
+          { fontFamily: urgentColor && !hw.done ? theme.fBodyMedium : theme.fBody,
+            color: hw.done ? theme.soft : urgentColor ?? theme.ink },
+          hw.done && { textDecorationLine: 'line-through' },
+        ]}>
+          {isOverdue && !hw.done ? '⚠ ' : ''}{hw.title}
         </Text>
         <View style={styles.hwMeta}>
           {hw.tag && (
@@ -160,8 +176,8 @@ function HwRow({ hw, theme, onToggle, onDetail }: { hw: Homework; theme: any; on
             </View>
           )}
           {hw.due && (
-            <Text style={[styles.hwDue, { fontFamily: theme.fMono, color: hw.dueUrgent ? theme.amber : theme.soft }]}>
-              {hw.dueUrgent && '△ '}{hw.due}
+            <Text style={[styles.hwDue, { fontFamily: theme.fMono, color: urgentColor ?? theme.soft }]}>
+              {isOverdue ? '⬤ OVERDUE' : isDueTomorrow ? '⬤ Tomorrow' : hw.due}
             </Text>
           )}
         </View>
@@ -458,19 +474,24 @@ export default function TodayScreen() {
           <View style={[styles.upcomingSection, { borderTopColor: theme.line }]}>
             <Text style={[styles.upcomingLabel, { fontFamily: theme.fMono, color: theme.soft }]}>COMING UP THIS WEEK</Text>
             {upcomingHw.map((hw) => {
-              const color = hw.classColor ?? theme.accent;
               const due = new Date(hw.dueDate!);
-              const tomorrow = new Date(selectedDate); tomorrow.setDate(selectedDate.getDate() + 1);
-              const daysUntil = Math.ceil((due.getTime() - selectedDate.getTime()) / 86400000);
-              const severityColor = isSameDay(due, tomorrow) ? theme.red : daysUntil <= 3 ? theme.amber : theme.soft;
-              const dueLabel = isSameDay(due, tomorrow)
-                ? 'Tomorrow'
+              const now2 = new Date();
+              const sot = new Date(now2); sot.setHours(0, 0, 0, 0);
+              const tom = new Date(sot); tom.setDate(sot.getDate() + 1);
+              const dat = new Date(sot); dat.setDate(sot.getDate() + 2);
+              const isOver = due < sot;
+              const isTom = due >= tom && due < dat;
+              const daysUntil = Math.ceil((due.getTime() - sot.getTime()) / 86400000);
+              const severityColor = isOver ? theme.red : isTom ? theme.amber : daysUntil <= 3 ? theme.amber : theme.soft;
+              const dueLabel = isOver
+                ? 'OVERDUE'
+                : isTom ? 'Tomorrow'
                 : due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
               return (
-                <ShineCard key={hw.id} style={[styles.upcomingItem, { backgroundColor: theme.surface, borderLeftColor: color }]}>
+                <ShineCard key={hw.id} style={[styles.upcomingItem, { backgroundColor: theme.surface, borderLeftColor: severityColor }]}>
                   <View style={styles.upcomingItemTop}>
-                    <Text style={[styles.upcomingTitle, { fontFamily: theme.fBody, color: theme.ink }]} numberOfLines={1}>{hw.title}</Text>
-                    <Text style={[styles.upcomingDue, { fontFamily: theme.fMono, color: severityColor, backgroundColor: severityColor + '18' }]}>{dueLabel}</Text>
+                    <Text style={[styles.upcomingTitle, { fontFamily: isOver || isTom ? theme.fBodyMedium : theme.fBody, color: isOver ? theme.red : isTom ? theme.amber : theme.ink }]} numberOfLines={1}>{hw.title}</Text>
+                    <Text style={[styles.upcomingDue, { fontFamily: theme.fMono, color: severityColor, backgroundColor: severityColor + '20' }]}>{dueLabel}</Text>
                   </View>
                   {hw.subject && <Text style={[styles.upcomingSub, { fontFamily: theme.fMono, color: theme.soft }]}>{hw.subject}</Text>}
                 </ShineCard>
