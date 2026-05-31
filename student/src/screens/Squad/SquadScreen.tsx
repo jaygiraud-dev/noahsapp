@@ -8,7 +8,9 @@ import {
   ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
+import FloatingParticles from '../../components/FloatingParticles';
 import { makeTheme } from '../../theme';
 import SerifTitle from '../../components/SerifTitle';
 import MicroLabel from '../../components/MicroLabel';
@@ -99,6 +101,18 @@ export default function SquadScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
+      {/* Ambient glow — only when no photo bg */}
+      {!hasBg && (
+        <LinearGradient
+          colors={[theme.accent + '1A', 'transparent']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 0.45 }}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+      )}
+      {/* Floating particles */}
+      <FloatingParticles color={theme.accent} />
       {hasBg && (
         <ImageBackground
           source={{ uri: bgImageUri }}

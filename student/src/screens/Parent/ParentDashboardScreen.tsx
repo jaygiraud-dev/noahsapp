@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useParentStore } from '../../store/useParentStore';
+import FloatingParticles from '../../components/FloatingParticles';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { supabase } from '../../lib/supabase';
@@ -471,6 +472,18 @@ export default function ParentDashboardScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
+      {/* Ambient glow — only when no photo bg */}
+      {!hasBg && (
+        <LinearGradient
+          colors={[theme.accent + '1A', 'transparent']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 0.45 }}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+      )}
+      {/* Floating particles */}
+      <FloatingParticles color={theme.accent} />
       {hasBg && (
         <ImageBackground
           source={{ uri: bgImageUri }}

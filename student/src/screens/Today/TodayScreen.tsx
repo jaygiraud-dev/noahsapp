@@ -21,6 +21,7 @@ import { fetchGoodNews, NewsItem } from '../../lib/goodNews';
 import { Class, Homework, CalEvent } from '../../types';
 import DayPicker from '../../components/DayPicker';
 import ShineCard from '../../components/ShineCard';
+import FloatingParticles from '../../components/FloatingParticles';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
 import AddEventSheet from '../sheets/AddEventSheet';
 import HomeworkDetailSheet from '../sheets/HomeworkDetailSheet';
@@ -147,7 +148,7 @@ function HwRow({ hw, theme, onToggle, onDetail }: { hw: Homework; theme: any; on
         </View>
       </TouchableOpacity>
       <View style={styles.hwInfo}>
-        <Text style={[styles.hwTitle, { fontFamily: theme.fBody, color: hw.done ? theme.soft : theme.ink }, hw.done && { textDecorationLine: 'line-through' }]}>
+        <Text style={[styles.hwTitle, { fontFamily: hw.dueUrgent && !hw.done ? theme.fBodyMedium : theme.fBody, color: hw.done ? theme.soft : hw.dueUrgent ? theme.red : theme.ink }, hw.done && { textDecorationLine: 'line-through' }]}>
           {hw.title}
         </Text>
         <View style={styles.hwMeta}>
@@ -249,13 +250,13 @@ function DueReminderBanner({ count, titles, theme, onDismiss }: {
 
 function EventBlock({ ev, theme, cardSurface, onToggle }: { ev: CalEvent; theme: any; cardSurface?: string; onToggle: () => void }) {
   return (
-    <ShineCard style={[styles.eventBlock, { backgroundColor: cardSurface ?? theme.surface, borderLeftColor: theme.cyan }]}>
+    <ShineCard style={[styles.eventBlock, { backgroundColor: cardSurface ?? theme.surface, borderLeftColor: theme.accent }]}>
       <TouchableOpacity
         style={styles.eventBlockInner}
         onPress={onToggle}
         activeOpacity={0.8}
       >
-        <Text style={[styles.eventTime, { fontFamily: theme.fMono, color: theme.cyan }]}>{ev.time}</Text>
+        <Text style={[styles.eventTime, { fontFamily: theme.fMono, color: theme.accent }]}>{ev.time}</Text>
         <View style={styles.eventInfo}>
           <Text style={[styles.eventTitle, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{ev.title}</Text>
           {ev.location && (
@@ -361,6 +362,18 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+      {/* Ambient glow — only when no photo bg */}
+      {!hasBg && (
+        <LinearGradient
+          colors={[theme.accent + '1A', 'transparent']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 0.45 }}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+      )}
+      {/* Floating particles */}
+      <FloatingParticles color={theme.accent} />
       {hasBg && (
         <ImageBackground
           source={{ uri: bgImageUri }}
@@ -448,6 +461,8 @@ export default function TodayScreen() {
               const color = hw.classColor ?? theme.accent;
               const due = new Date(hw.dueDate!);
               const tomorrow = new Date(selectedDate); tomorrow.setDate(selectedDate.getDate() + 1);
+              const daysUntil = Math.ceil((due.getTime() - selectedDate.getTime()) / 86400000);
+              const severityColor = isSameDay(due, tomorrow) ? theme.red : daysUntil <= 3 ? theme.amber : theme.soft;
               const dueLabel = isSameDay(due, tomorrow)
                 ? 'Tomorrow'
                 : due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -455,7 +470,7 @@ export default function TodayScreen() {
                 <ShineCard key={hw.id} style={[styles.upcomingItem, { backgroundColor: theme.surface, borderLeftColor: color }]}>
                   <View style={styles.upcomingItemTop}>
                     <Text style={[styles.upcomingTitle, { fontFamily: theme.fBody, color: theme.ink }]} numberOfLines={1}>{hw.title}</Text>
-                    <Text style={[styles.upcomingDue, { fontFamily: theme.fMono, color, backgroundColor: color + '18' }]}>{dueLabel}</Text>
+                    <Text style={[styles.upcomingDue, { fontFamily: theme.fMono, color: severityColor, backgroundColor: severityColor + '18' }]}>{dueLabel}</Text>
                   </View>
                   {hw.subject && <Text style={[styles.upcomingSub, { fontFamily: theme.fMono, color: theme.soft }]}>{hw.subject}</Text>}
                 </ShineCard>

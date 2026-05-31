@@ -9,7 +9,9 @@ import {
   ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
+import FloatingParticles from '../../components/FloatingParticles';
 import { makeTheme } from '../../theme';
 import { getClosedReason, SCHOOL_CLOSED } from '../../data/schoolClosed';
 import { Class, CalEvent } from '../../types';
@@ -261,6 +263,18 @@ export default function WeekScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
+      {/* Ambient glow — only when no photo bg */}
+      {!hasBg && (
+        <LinearGradient
+          colors={[theme.accent + '1A', 'transparent']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 0.45 }}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+      )}
+      {/* Floating particles */}
+      <FloatingParticles color={theme.accent} />
       {hasBg && (
         <ImageBackground
           source={{ uri: bgImageUri }}
@@ -426,11 +440,11 @@ export default function WeekScreen() {
 
               {dayEvents.length > 0 && (
                 <View style={styles.wkSection}>
-                  <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.purple }]}>TODAY'S EVENTS</Text>
+                  <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.accent }]}>TODAY'S EVENTS</Text>
                   {dayEvents.map((ev) => (
-                    <View key={ev.id} style={[styles.wkItem, { borderLeftColor: theme.purple, backgroundColor: cardSurface }]}>
+                    <View key={ev.id} style={[styles.wkItem, { borderLeftColor: theme.accent, backgroundColor: cardSurface }]}>
                       <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.title}</Text>
-                      {ev.time && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.purple }]}>{ev.time}</Text>}
+                      {ev.time && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.accent }]}>{ev.time}</Text>}
                     </View>
                   ))}
                 </View>
