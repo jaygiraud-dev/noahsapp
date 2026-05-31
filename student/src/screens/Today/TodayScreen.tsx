@@ -248,11 +248,11 @@ function DueReminderBanner({ count, titles, theme, onDismiss }: {
 function EventBlock({ ev, theme, onToggle }: { ev: CalEvent; theme: any; onToggle: () => void }) {
   return (
     <TouchableOpacity
-      style={[styles.eventBlock, { backgroundColor: theme.surface, borderColor: theme.line, borderLeftColor: theme.purple }]}
+      style={[styles.eventBlock, { backgroundColor: theme.surface, borderColor: theme.line, borderLeftColor: theme.cyan }]}
       onPress={onToggle}
       activeOpacity={0.8}
     >
-      <Text style={[styles.eventTime, { fontFamily: theme.fMono, color: theme.purple }]}>{ev.time}</Text>
+      <Text style={[styles.eventTime, { fontFamily: theme.fMono, color: theme.cyan }]}>{ev.time}</Text>
       <View style={styles.eventInfo}>
         <Text style={[styles.eventTitle, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{ev.title}</Text>
         {ev.location && (
@@ -526,38 +526,38 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   quoteCard: {
-    borderRadius: 26,
-    borderWidth: 1,
-    padding: 16,
-    gap: 6,
-    marginBottom: 12,
+    borderRadius: 28,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 20,
+    gap: 8,
+    marginBottom: 14,
   },
   quoteFuel: { fontSize: 10, letterSpacing: 1.5 },
-  quoteText: { fontSize: 18, lineHeight: 26 },
+  quoteText: { fontSize: 19, lineHeight: 28 },
   quoteAuthor: { fontSize: 12, letterSpacing: 0.3 },
   classBlock: {
-    borderRadius: 26,
-    borderWidth: 1,
+    borderRadius: 28,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   classHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    gap: 12,
+    padding: 18,
+    gap: 14,
   },
   classIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 32,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     justifyContent: 'center',
     alignItems: 'center',
   },
   classEmoji: { fontSize: 22 },
   classInfo: { flex: 1 },
-  className: { fontSize: 20, lineHeight: 24 },
-  classMeta: { fontSize: 11, letterSpacing: 0.3, marginTop: 2 },
+  className: { fontSize: 20, lineHeight: 25 },
+  classMeta: { fontSize: 11, letterSpacing: 0.3, marginTop: 3 },
   nowBadge: {
     flexDirection: 'row',
     alignItems: 'center',

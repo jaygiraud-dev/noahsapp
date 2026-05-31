@@ -4,18 +4,17 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store/useStore';
 import { makeTheme } from '../theme';
 import type { Tab } from '../navigation/MainTabNavigator';
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'today', label: 'today', icon: '◈' },
-  { id: 'week', label: 'week', icon: '▦' },
-  { id: 'squad', label: 'squad', icon: '⬡' },
-  { id: 'me', label: 'me', icon: '◉' },
+const TABS: { id: Tab; icon: string; label: string }[] = [
+  { id: 'today',  icon: '◈', label: 'Today'  },
+  { id: 'week',   icon: '▦', label: 'Week'   },
+  { id: 'squad',  icon: '⬡', label: 'Squad'  },
+  { id: 'me',     icon: '◉', label: 'Me'     },
 ];
 
 interface Props {
@@ -30,86 +29,66 @@ export default function BottomNav({ activeTab, onTabPress }: Props) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: theme.surface,
-          borderTopColor: theme.line,
-          paddingBottom: insets.bottom + 4,
-        },
-      ]}
-    >
-      {TABS.map((tab) => {
-        const isActive = tab.id === activeTab;
-        return (
-          <TouchableOpacity
-            key={tab.id}
-            style={styles.tab}
-            onPress={() => onTabPress(tab.id)}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[
-                styles.iconWrap,
-                isActive && {
-                  shadowColor: theme.magenta,
-                  shadowOpacity: 0.6,
-                  shadowRadius: 8,
-                  shadowOffset: { width: 0, height: 0 },
-                },
-              ]}
+    <View style={[styles.wrapper, { paddingBottom: insets.bottom + 8 }]}>
+      <View style={[styles.pill, { backgroundColor: theme.isClay ? 'rgba(255,255,255,0.85)' : '#1c1c1c', shadowColor: '#000' }]}>
+        {TABS.map((tab) => {
+          const isActive = tab.id === activeTab;
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              style={styles.tab}
+              onPress={() => onTabPress(tab.id)}
+              activeOpacity={0.65}
             >
-              <Text
-                style={[
-                  styles.icon,
-                  { color: isActive ? theme.magenta : theme.soft },
-                ]}
-              >
-                {tab.icon}
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.label,
-                {
-                  fontFamily: theme.fMono,
-                  color: isActive ? theme.magenta : theme.soft,
-                },
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+              <View style={[styles.iconWrap, isActive && { backgroundColor: theme.accent + '22' }]}>
+                <Text style={[styles.icon, { color: isActive ? theme.accent : theme.soft }]}>
+                  {tab.icon}
+                </Text>
+              </View>
+              {isActive && (
+                <View style={[styles.activeDot, { backgroundColor: theme.accent }]} />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
+  wrapper: {
+    paddingHorizontal: 32,
     paddingTop: 8,
+  },
+  pill: {
+    flexDirection: 'row',
+    borderRadius: 40,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    gap: 2,
+    gap: 3,
   },
   iconWrap: {
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 38,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   icon: {
     fontSize: 20,
   },
-  label: {
-    fontSize: 9,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
 });

@@ -20,10 +20,10 @@ import { upsertProfile } from '../../lib/db';
 
 const VIBES: { id: Vibe; label: string; emoji: string; bg: string; card: string; dot1: string; dot2: string; dot3: string; textColor: string }[] = [
   {
-    id: 'twilight', label: 'Space', emoji: '🌌',
-    bg: '#0c0820', card: 'rgba(255,255,255,0.07)',
-    dot1: '#ec4899', dot2: '#a78bfa', dot3: '#06d6e0',
-    textColor: '#f4ecff',
+    id: 'twilight', label: 'Aura', emoji: '🔥',
+    bg: '#0d0d0d', card: '#1c1c1c',
+    dot1: '#e8453a', dot2: '#f5a623', dot3: '#f0c040',
+    textColor: '#f5f0eb',
   },
   {
     id: 'clay', label: 'Clay', emoji: '🧱',
