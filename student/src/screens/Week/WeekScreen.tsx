@@ -114,6 +114,24 @@ export default function WeekScreen() {
   const dayEvents = events.filter((ev) => ev.date && isSameDay(new Date(ev.date), selectedDay));
   const dayHomework = homework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), selectedDay) && !h.done);
 
+  // Weekend panels: overdue + upcoming next 7 days
+  const startOfSelectedDay = new Date(selectedDay); startOfSelectedDay.setHours(0, 0, 0, 0);
+  const overdueHw = isWeekend
+    ? homework.filter((h) => {
+        if (h.done || !h.dueDate) return false;
+        const d = new Date(h.dueDate); d.setHours(0, 0, 0, 0);
+        return d < startOfSelectedDay;
+      })
+    : [];
+  const sevenDaysOut = new Date(selectedDay); sevenDaysOut.setDate(selectedDay.getDate() + 7);
+  const upcomingHw = isWeekend
+    ? homework.filter((h) => {
+        if (h.done || !h.dueDate) return false;
+        const d = new Date(h.dueDate); d.setHours(0, 0, 0, 0);
+        return d > startOfSelectedDay && d <= sevenDaysOut;
+      }).sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+    : [];
+
   const monthLabel = viewMode === 'month'
     ? new Date(monthAnchor.year, monthAnchor.month, 1).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })
     : selectedDay.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
@@ -331,8 +349,84 @@ export default function WeekScreen() {
             })}
           </View>
 
-          {/* Day grid */}
-          <ScrollView style={styles.gridScroll} showsVerticalScrollIndicator={false}>
+          {/* Weekend panel — overdue + upcoming */}
+          {isWeekend && (
+            <ScrollView style={styles.gridScroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.weekendContent}>
+              <Text style={[styles.weekendTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
+                {selectedDay.getDay() === 6 ? 'Saturday.' : 'Sunday.'}
+              </Text>
+              <Text style={[styles.weekendSub, { fontFamily: theme.fMono, color: theme.soft }]}>
+                No school — catch up or get ahead.
+              </Text>
+
+              {overdueHw.length > 0 && (
+                <View style={styles.wkSection}>
+                  <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.red }]}>⚠ OVERDUE</Text>
+                  {overdueHw.map((hw) => {
+                    const color = hw.classColor ?? theme.accent;
+                    const daysAgo = Math.ceil((startOfSelectedDay.getTime() - new Date(hw.dueDate!).setHours(0,0,0,0)) / 86400000);
+                    return (
+                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: color, backgroundColor: theme.surface }]}>
+                        <View style={styles.wkItemTop}>
+                          <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{hw.title}</Text>
+                          <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color: theme.red, backgroundColor: theme.red + '18' }]}>
+                            {daysAgo === 1 ? 'yesterday' : `${daysAgo}d ago`}
+                          </Text>
+                        </View>
+                        {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color }]}>{hw.subject}</Text>}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+
+              {upcomingHw.length > 0 && (
+                <View style={styles.wkSection}>
+                  <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.accent }]}>COMING UP THIS WEEK</Text>
+                  {upcomingHw.map((hw) => {
+                    const color = hw.classColor ?? theme.accent;
+                    const due = new Date(hw.dueDate!);
+                    const dueLabel = due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+                    return (
+                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: color, backgroundColor: theme.surface }]}>
+                        <View style={styles.wkItemTop}>
+                          <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{hw.title}</Text>
+                          <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color, backgroundColor: color + '18' }]}>
+                            {dueLabel}
+                          </Text>
+                        </View>
+                        {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color }]}>{hw.subject}</Text>}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+
+              {overdueHw.length === 0 && upcomingHw.length === 0 && (
+                <View style={styles.wkEmpty}>
+                  <Text style={styles.wkEmptyIcon}>🎉</Text>
+                  <Text style={[styles.wkEmptyText, { fontFamily: theme.fBody, color: theme.soft }]}>
+                    All clear — nothing overdue and nothing due this week.
+                  </Text>
+                </View>
+              )}
+
+              {dayEvents.length > 0 && (
+                <View style={styles.wkSection}>
+                  <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.purple }]}>TODAY'S EVENTS</Text>
+                  {dayEvents.map((ev) => (
+                    <View key={ev.id} style={[styles.wkItem, { borderLeftColor: theme.purple, backgroundColor: theme.surface }]}>
+                      <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.title}</Text>
+                      {ev.time && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.purple }]}>{ev.time}</Text>}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+          )}
+
+          {/* Day grid — weekdays only */}
+          {!isWeekend && <ScrollView style={styles.gridScroll} showsVerticalScrollIndicator={false}>
             <View style={{ height: gridH, position: 'relative' }}>
               {hours.map((hour, i) => (
                 <TouchableOpacity
@@ -411,7 +505,7 @@ export default function WeekScreen() {
                 </View>
               )}
             </View>
-          </ScrollView>
+          </ScrollView>}
         </>
       )}
 
@@ -515,4 +609,17 @@ const styles = StyleSheet.create({
   hwRow: { position: 'absolute', right: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   hwChip: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3 },
   hwChipText: { fontSize: 10, letterSpacing: 0.2 },
+  weekendContent: { padding: 20, gap: 8, paddingBottom: 48 },
+  weekendTitle: { fontSize: 32, marginBottom: 2 },
+  weekendSub: { fontSize: 11, letterSpacing: 0.5, marginBottom: 8 },
+  wkSection: { gap: 8, marginTop: 16 },
+  wkSectionLabel: { fontSize: 10, letterSpacing: 1.2 },
+  wkItem: { borderLeftWidth: 3, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, gap: 4 },
+  wkItemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
+  wkItemTitle: { fontSize: 15, flex: 1, lineHeight: 20 },
+  wkItemBadge: { fontSize: 10, letterSpacing: 0.3, borderRadius: 32, paddingHorizontal: 8, paddingVertical: 3, overflow: 'hidden' },
+  wkItemSub: { fontSize: 11, letterSpacing: 0.3 },
+  wkEmpty: { alignItems: 'center', paddingVertical: 48, gap: 10 },
+  wkEmptyIcon: { fontSize: 40 },
+  wkEmptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
 });
