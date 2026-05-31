@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   badgeText: { color: '#fff', fontSize: 11 },
   listContent: { paddingHorizontal: 16, paddingBottom: 32, gap: 10 },
   section: { gap: 8, marginBottom: 8 },
-  friendRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 1, padding: 12, gap: 12 },
+  friendRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 0, padding: 12, gap: 12 },
   avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 20 },
   friendInfo: { flex: 1 },

@@ -31,6 +31,7 @@ interface AppState {
   notifications: ActivityNotif[];
   vibe: Vibe;
   darkMode: boolean;
+  bgImageUri: string;
   reward: { points: number; streak: number } | null;
   userId: string;
   displayName: string;
@@ -52,6 +53,7 @@ interface AppState {
   addEvent: (ev: Omit<CalEvent, 'id' | 'done'>) => void;
   setVibe: (vibe: Vibe) => void;
   setDarkMode: (v: boolean) => void;
+  setBgImageUri: (uri: string) => void;
   clearReward: () => void;
   acceptFriendRequest: (id: string) => void;
   declineFriendRequest: (id: string) => void;
@@ -124,6 +126,7 @@ export const useStore = create<AppState>()(
   ],
   vibe: 'twilight',
   darkMode: true,
+  bgImageUri: '',
   reward: null,
   userId: '',
   displayName: 'Student',
@@ -231,6 +234,7 @@ export const useStore = create<AppState>()(
 
   setVibe: (vibe) => set({ vibe, ...(vibe === 'clay' ? { darkMode: false } : {}) }),
   setDarkMode: (darkMode) => set({ darkMode }),
+  setBgImageUri: (bgImageUri) => set({ bgImageUri }),
   clearReward: () => set({ reward: null }),
 
   acceptFriendRequest: (id) => {
@@ -289,6 +293,7 @@ export const useStore = create<AppState>()(
         notifications: state.notifications,
         vibe: state.vibe,
         darkMode: state.darkMode,
+        bgImageUri: state.bgImageUri,
         userId: state.userId,
         userRole: state.userRole,
       }),

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import { useStore } from '../../store/useStore';
 import { makeTheme, Vibe } from '../../theme';
 import MicroLabel from '../../components/MicroLabel';
@@ -54,6 +55,8 @@ export default function MeScreen({ navigation }: any) {
   const parentPaired = useStore((s) => s.parentPaired);
   const setParentPaired = useStore((s) => s.setParentPaired);
   const userId = useStore((s) => s.userId);
+  const bgImageUri = useStore((s) => s.bgImageUri);
+  const setBgImageUri = useStore((s) => s.setBgImageUri);
   const theme = makeTheme(vibe, darkMode);
 
   const [email, setEmail] = useState('');
@@ -131,6 +134,19 @@ export default function MeScreen({ navigation }: any) {
       setPasswordSuccess(false);
       setShowPasswordForm(false);
     }, 2000);
+  }
+
+  async function handlePickBgImage() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setBgImageUri(result.assets[0].uri);
+    }
   }
 
   function handleDisconnectParent() {
@@ -437,6 +453,35 @@ export default function MeScreen({ navigation }: any) {
               />
             </View>
           )}
+          {/* Today background photo */}
+          <View style={[styles.bgPhotoRow, { borderColor: theme.line, backgroundColor: theme.surface }]}>
+            <View style={styles.bgPhotoInfo}>
+              <Text style={[styles.bgPhotoLabel, { fontFamily: theme.fBody, color: theme.ink }]}>Today background</Text>
+              <Text style={[styles.bgPhotoHint, { fontFamily: theme.fMono, color: theme.soft }]}>
+                {bgImageUri ? 'Photo set ✓' : 'No photo set'}
+              </Text>
+            </View>
+            <View style={styles.bgPhotoBtns}>
+              {bgImageUri !== '' && (
+                <TouchableOpacity
+                  style={[styles.bgPhotoBtn, { borderColor: theme.line }]}
+                  onPress={() => setBgImageUri('')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.bgPhotoBtnText, { fontFamily: theme.fMono, color: theme.soft }]}>Remove</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.bgPhotoBtn, { backgroundColor: theme.accent }]}
+                onPress={handlePickBgImage}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.bgPhotoBtnText, { fontFamily: theme.fMono, color: '#fff' }]}>
+                  {bgImageUri ? 'Change' : 'Choose photo'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
         {/* Sign out */}
@@ -478,7 +523,7 @@ const styles = StyleSheet.create({
   editLink: { fontSize: 11, letterSpacing: 0.5 },
   infoCard: {
     borderRadius: 34,
-    borderWidth: 1,
+    borderWidth: 0,
     overflow: 'hidden',
   },
   infoRow: {
@@ -589,4 +634,11 @@ const styles = StyleSheet.create({
   codeBox: { borderRadius: 20, borderWidth: 1, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', gap: 6 },
   codeText: { fontSize: 32, letterSpacing: 8, fontWeight: '700' },
   copyBtn: { fontSize: 11, letterSpacing: 1 },
+  bgPhotoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderRadius: 28, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 16, paddingVertical: 14, gap: 12, marginTop: 10 },
+  bgPhotoInfo: { flex: 1 },
+  bgPhotoLabel: { fontSize: 15 },
+  bgPhotoHint: { fontSize: 11, letterSpacing: 0.3, marginTop: 2 },
+  bgPhotoBtns: { flexDirection: 'row', gap: 8 },
+  bgPhotoBtn: { borderRadius: 28, paddingHorizontal: 14, paddingVertical: 8, borderWidth: StyleSheet.hairlineWidth },
+  bgPhotoBtnText: { fontSize: 12, letterSpacing: 0.3 },
 });

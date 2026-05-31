@@ -8,6 +8,7 @@ import {
   Animated,
   Image,
   Modal,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -105,12 +106,12 @@ function NewsTicker({ theme }: any) {
   );
 }
 
-function QuoteCard({ theme }: any) {
+function QuoteCard({ theme, cardSurface }: any) {
   const today = new Date();
   const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const q = quoteOfDay(dateStr);
   return (
-    <View style={[styles.quoteCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+    <View style={[styles.quoteCard, { backgroundColor: cardSurface ?? theme.surface, borderColor: theme.line }]}>
       <Text style={[styles.quoteFuel, { fontFamily: theme.fMono, color: theme.accent }]}>✦ DAILY FUEL</Text>
       <Text style={[styles.quoteText, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>"{q.t}"</Text>
       <Text style={[styles.quoteAuthor, { fontFamily: theme.fMono, color: theme.soft }]}>— {q.a}</Text>
@@ -174,12 +175,12 @@ function HwRow({ hw, theme, onToggle, onDetail }: { hw: Homework; theme: any; on
   );
 }
 
-function ClassBlock({ cls, homework, isNow, theme, onAddHw, onToggleHw, onDetailHw }: {
+function ClassBlock({ cls, homework, isNow, theme, cardSurface, onAddHw, onToggleHw, onDetailHw }: {
   cls: Class; homework: Homework[]; isNow: boolean;
-  theme: any; onAddHw: () => void; onToggleHw: (id: string) => void; onDetailHw: (hw: Homework) => void;
+  theme: any; cardSurface?: string; onAddHw: () => void; onToggleHw: (id: string) => void; onDetailHw: (hw: Homework) => void;
 }) {
   return (
-    <View style={[styles.classBlock, { backgroundColor: theme.surface, borderColor: isNow ? cls.color : theme.line }, isNow && { borderWidth: 1.5 }]}>
+    <View style={[styles.classBlock, { backgroundColor: cardSurface ?? theme.surface, borderColor: isNow ? cls.color : theme.line }, isNow && { borderWidth: 1.5 }]}>
       <View style={styles.classHeader}>
         <View style={[styles.classIcon, { backgroundColor: cls.color + '33' }]}>
           <Text style={styles.classEmoji}>{cls.emoji ?? '📚'}</Text>
@@ -245,10 +246,10 @@ function DueReminderBanner({ count, titles, theme, onDismiss }: {
   );
 }
 
-function EventBlock({ ev, theme, onToggle }: { ev: CalEvent; theme: any; onToggle: () => void }) {
+function EventBlock({ ev, theme, cardSurface, onToggle }: { ev: CalEvent; theme: any; cardSurface?: string; onToggle: () => void }) {
   return (
     <TouchableOpacity
-      style={[styles.eventBlock, { backgroundColor: theme.surface, borderColor: theme.line, borderLeftColor: theme.cyan }]}
+      style={[styles.eventBlock, { backgroundColor: cardSurface ?? theme.surface, borderColor: theme.line, borderLeftColor: theme.cyan }]}
       onPress={onToggle}
       activeOpacity={0.8}
     >
@@ -284,6 +285,7 @@ export default function TodayScreen() {
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const userId = useStore((s) => s.userId);
+  const bgImageUri = useStore((s) => s.bgImageUri);
   const theme = makeTheme(vibe, darkMode);
 
   useEffect(() => {
@@ -351,8 +353,20 @@ export default function TodayScreen() {
     })
     .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
+  const hasBg = bgImageUri !== '';
+  const cardSurface = hasBg ? 'rgba(20,20,20,0.78)' : theme.surface;
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+      {hasBg && (
+        <ImageBackground
+          source={{ uri: bgImageUri }}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+        >
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.62)' }]} />
+        </ImageBackground>
+      )}
       {showReminder && (
         <DueReminderBanner
           count={dueToday.length}
@@ -386,11 +400,11 @@ export default function TodayScreen() {
         </View>
 
         {/* Daily Fuel */}
-        <QuoteCard theme={theme} />
+        <QuoteCard theme={theme} cardSurface={cardSurface} />
 
         {/* No-school banner */}
         {(isWeekend || closedReason) && (
-          <View style={[styles.noSchoolBanner, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+          <View style={[styles.noSchoolBanner, { backgroundColor: cardSurface, borderColor: theme.line }]}>
             <Text style={[styles.noSchoolIcon, { color: theme.soft }]}>
               {isWeekend ? '🛋️' : '🏫'}
             </Text>
@@ -410,6 +424,7 @@ export default function TodayScreen() {
               homework={classHw}
               isNow={isClassNow(cls)}
               theme={theme}
+              cardSurface={cardSurface}
               onAddHw={() => setHwSheetClass(cls)}
               onToggleHw={toggleHomework}
               onDetailHw={setHwDetail}
@@ -419,7 +434,7 @@ export default function TodayScreen() {
 
         {/* Events */}
         {todayEvents.map((ev) => (
-          <EventBlock key={ev.id} ev={ev} theme={theme} onToggle={() => toggleEvent(ev.id)} />
+          <EventBlock key={ev.id} ev={ev} theme={theme} cardSurface={cardSurface} onToggle={() => toggleEvent(ev.id)} />
         ))}
 
         {/* Coming up this week */}
@@ -561,7 +576,6 @@ const styles = StyleSheet.create({
   },
   quoteCard: {
     borderRadius: 28,
-    borderWidth: StyleSheet.hairlineWidth,
     padding: 20,
     gap: 8,
     marginBottom: 14,
@@ -571,7 +585,6 @@ const styles = StyleSheet.create({
   quoteAuthor: { fontSize: 12, letterSpacing: 0.3 },
   classBlock: {
     borderRadius: 28,
-    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
     marginBottom: 14,
   },
@@ -637,7 +650,7 @@ const styles = StyleSheet.create({
   imgModalCloseText: { color: '#fff', fontSize: 32, lineHeight: 36 },
   eventBlock: {
     borderRadius: 32,
-    borderWidth: 1,
+    borderWidth: 0,
     borderLeftWidth: 4,
     padding: 14,
     flexDirection: 'row',
@@ -651,7 +664,7 @@ const styles = StyleSheet.create({
   eventLoc: { fontSize: 11, letterSpacing: 0.5, marginTop: 2 },
   noSchoolBanner: {
     borderRadius: 26,
-    borderWidth: 1,
+    borderWidth: 0,
     padding: 24,
     alignItems: 'center',
     gap: 8,
