@@ -475,9 +475,9 @@ export default function ParentDashboardScreen({ navigation }: any) {
       {/* Ambient glow — only when no photo bg */}
       {!hasBg && (
         <LinearGradient
-          colors={[theme.accent + '1A', 'transparent']}
+          colors={[theme.accent + '38', 'transparent']}
           start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 0.45 }}
+          end={{ x: 0.5, y: 0.65 }}
           style={StyleSheet.absoluteFillObject}
           pointerEvents="none"
         />
