@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
-  screenTitle: { fontSize: 40, lineHeight: 48 },
+  screenTitle: { fontSize: 52, lineHeight: 58 },
   pointsChip: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 6, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   headerLeft: { gap: 2 },
-  title: { fontSize: 28 },
+  title: { fontSize: 36 },
   monthLabel: { fontSize: 10, letterSpacing: 1.5 },
   navRow: { flexDirection: 'row', gap: 4, paddingBottom: 4, alignItems: 'center' },
   navBtn: { padding: 8 },

@@ -239,7 +239,11 @@ export const useStore = create<AppState>()(
     if (userId) upsertEvent(userId, newEv).catch(() => {});
   },
 
-  setVibe: (vibe) => set({ vibe, ...(vibe === 'clay' ? { darkMode: false } : {}) }),
+  setVibe: (vibe) => set({
+    vibe,
+    ...(vibe === 'clay' ? { darkMode: false } : {}),
+    ...(vibe === 'paper' || vibe === 'twilight' || vibe === 'mono' ? { darkMode: true } : {}),
+  }),
   setDarkMode: (darkMode) => set({ darkMode }),
   setBgImageUri: (bgImageUri) => set({ bgImageUri }),
   clearReward: () => set({ reward: null }),

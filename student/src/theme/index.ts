@@ -80,9 +80,9 @@ export function makeTheme(vibe: Vibe = 'twilight', dark: boolean = true): Theme 
       vibe, dark: d,
       // dark: solid warm-brown cards so text has a real backing
       // light: solid warm-white cards so sub/soft text pops on cream bg
-      bg: d ? '#1a1714' : '#f3eee3',
-      surface: d ? '#272420' : '#fffdf8',
-      surfaceHi: d ? '#312d29' : '#ffffff',
+      bg: d ? '#18130f' : '#f3eee3',
+      surface: d ? '#2a2320' : '#fffdf8',
+      surfaceHi: d ? '#342f2a' : '#ffffff',
       surfaceEdge: d ? 'rgba(255,255,255,0.08)' : 'rgba(28,25,23,0.10)',
       ink: d ? '#f4ece0' : '#1c1917',
       sub: d ? 'rgba(244,236,224,0.72)' : 'rgba(28,25,23,0.75)',

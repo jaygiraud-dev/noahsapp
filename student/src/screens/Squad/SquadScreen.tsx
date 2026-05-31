@@ -123,7 +123,7 @@ export default function SquadScreen() {
         </ImageBackground>
       )}
       <View style={styles.header}>
-        <SerifTitle size={28}>squad.</SerifTitle>
+        <SerifTitle size={40}>squad.</SerifTitle>
         <TouchableOpacity
           style={[styles.addFriendBtn, { borderColor: theme.accent }]}
           onPress={() => setShowAddFriend(true)}
