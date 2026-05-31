@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
@@ -17,9 +18,9 @@ import AddFriendSheet from '../sheets/AddFriendSheet';
 
 type SquadTab = 'friends' | 'groups';
 
-function FriendRow({ friend, theme, onChat }: any) {
+function FriendRow({ friend, theme, cardSurface, onChat }: any) {
   return (
-    <ShineCard style={[styles.friendRow, { backgroundColor: theme.surface }]}>
+    <ShineCard style={[styles.friendRow, { backgroundColor: cardSurface }]}>
       <View style={[styles.avatar, { backgroundColor: friend.color + '33' }]}>
         <Text style={[styles.avatarText, { fontFamily: theme.fDisplayItalic, color: friend.color }]}>
           {friend.name[0]}
@@ -44,9 +45,9 @@ function FriendRow({ friend, theme, onChat }: any) {
   );
 }
 
-function FriendRequestRow({ req, theme, onAccept, onDecline }: any) {
+function FriendRequestRow({ req, theme, cardSurface, onAccept, onDecline }: any) {
   return (
-    <ShineCard style={[styles.friendRow, { backgroundColor: theme.surface }]}>
+    <ShineCard style={[styles.friendRow, { backgroundColor: cardSurface }]}>
       <View style={[styles.avatar, { backgroundColor: theme.accent + '22' }]}>
         <Text style={[styles.avatarText, { fontFamily: theme.fDisplayItalic, color: theme.accent }]}>
           {req.name[0]}
@@ -87,14 +88,26 @@ export default function SquadScreen() {
   const declineFriendRequest = useStore((s) => s.declineFriendRequest);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
+  const bgImageUri = useStore((s) => s.bgImageUri);
   const theme = makeTheme(vibe, darkMode);
+  const hasBg = bgImageUri !== '';
+  const cardSurface = hasBg ? 'rgba(20,20,20,0.78)' : theme.surface;
 
   function handleChatWithFriend(_friend: any) {
     // Group chat feature coming — for now just open AddFriend to acknowledge
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
+      {hasBg && (
+        <ImageBackground
+          source={{ uri: bgImageUri }}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+        >
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.62)' }]} />
+        </ImageBackground>
+      )}
       <View style={styles.header}>
         <SerifTitle size={28}>squad.</SerifTitle>
         <TouchableOpacity
@@ -126,6 +139,7 @@ export default function SquadScreen() {
                   key={req.id}
                   req={req}
                   theme={theme}
+                  cardSurface={cardSurface}
                   onAccept={() => acceptFriendRequest(req.id)}
                   onDecline={() => declineFriendRequest(req.id)}
                 />
@@ -142,7 +156,7 @@ export default function SquadScreen() {
             />
           ) : (
             friends.map((f) => (
-              <FriendRow key={f.id} friend={f} theme={theme} onChat={handleChatWithFriend} />
+              <FriendRow key={f.id} friend={f} theme={theme} cardSurface={cardSurface} onChat={handleChatWithFriend} />
             ))
           )}
         </ScrollView>

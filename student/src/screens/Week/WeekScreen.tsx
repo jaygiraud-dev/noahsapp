@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
@@ -101,7 +102,10 @@ export default function WeekScreen() {
   const events = useStore((s) => s.events);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
+  const bgImageUri = useStore((s) => s.bgImageUri);
   const theme = makeTheme(vibe, darkMode);
+  const hasBg = bgImageUri !== '';
+  const cardSurface = hasBg ? 'rgba(20,20,20,0.78)' : theme.surface;
 
   const weekDays = getWeekDays(anchor);
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR);
@@ -256,7 +260,16 @@ export default function WeekScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
+      {hasBg && (
+        <ImageBackground
+          source={{ uri: bgImageUri }}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+        >
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.62)' }]} />
+        </ImageBackground>
+      )}
 
       {/* Header */}
       <View style={styles.header}>
@@ -290,7 +303,7 @@ export default function WeekScreen() {
           )}
           {/* Toggle button */}
           <TouchableOpacity
-            style={[styles.toggleViewBtn, { backgroundColor: theme.surface, borderColor: theme.line }]}
+            style={[styles.toggleViewBtn, { backgroundColor: cardSurface, borderColor: theme.line }]}
             onPress={() => {
               if (viewMode === 'day') {
                 setMonthAnchor({ year: selectedDay.getFullYear(), month: selectedDay.getMonth() });
@@ -366,7 +379,7 @@ export default function WeekScreen() {
                     const color = hw.classColor ?? theme.accent;
                     const daysAgo = Math.ceil((startOfSelectedDay.getTime() - new Date(hw.dueDate!).setHours(0,0,0,0)) / 86400000);
                     return (
-                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: color, backgroundColor: theme.surface }]}>
+                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: color, backgroundColor: cardSurface }]}>
                         <View style={styles.wkItemTop}>
                           <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{hw.title}</Text>
                           <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color: theme.red, backgroundColor: theme.red + '18' }]}>
@@ -388,7 +401,7 @@ export default function WeekScreen() {
                     const due = new Date(hw.dueDate!);
                     const dueLabel = due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
                     return (
-                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: color, backgroundColor: theme.surface }]}>
+                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: color, backgroundColor: cardSurface }]}>
                         <View style={styles.wkItemTop}>
                           <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{hw.title}</Text>
                           <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color, backgroundColor: color + '18' }]}>
@@ -415,7 +428,7 @@ export default function WeekScreen() {
                 <View style={styles.wkSection}>
                   <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.purple }]}>TODAY'S EVENTS</Text>
                   {dayEvents.map((ev) => (
-                    <View key={ev.id} style={[styles.wkItem, { borderLeftColor: theme.purple, backgroundColor: theme.surface }]}>
+                    <View key={ev.id} style={[styles.wkItem, { borderLeftColor: theme.purple, backgroundColor: cardSurface }]}>
                       <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.title}</Text>
                       {ev.time && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.purple }]}>{ev.time}</Text>}
                     </View>
@@ -443,7 +456,7 @@ export default function WeekScreen() {
               ))}
 
               {closedReason && (
-                <View style={[styles.closedBanner, { backgroundColor: theme.surface + 'ee', left: GUTTER }]}>
+                <View style={[styles.closedBanner, { backgroundColor: hasBg ? 'rgba(20,20,20,0.88)' : theme.surface + 'ee', left: GUTTER }]}>
                   <View style={[styles.closedPill, { backgroundColor: closedDotColor(closedReason) + '22', borderColor: closedDotColor(closedReason) + '55' }]}>
                     <Text style={[styles.closedLabel, { fontFamily: theme.fMono, color: closedDotColor(closedReason) }]}>
                       {closedReason.toUpperCase()}
@@ -514,7 +527,7 @@ export default function WeekScreen() {
       {/* Class detail */}
       <Modal visible={!!selectedClass} transparent animationType="fade" onRequestClose={() => setSelectedClass(null)}>
         <TouchableOpacity style={detailStyles.backdrop} activeOpacity={1} onPress={() => setSelectedClass(null)}>
-          <View style={[detailStyles.card, { backgroundColor: theme.bg, borderColor: selectedClass?.color ?? theme.line }]} onStartShouldSetResponder={() => true}>
+          <View style={[detailStyles.card, { backgroundColor: cardSurface, borderColor: selectedClass?.color ?? theme.line }]} onStartShouldSetResponder={() => true}>
             <View style={[detailStyles.colorBar, { backgroundColor: selectedClass?.color }]} />
             <View style={detailStyles.body}>
               <Text style={[detailStyles.cardTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
@@ -533,7 +546,7 @@ export default function WeekScreen() {
       {/* Event detail */}
       <Modal visible={!!selectedEvent} transparent animationType="fade" onRequestClose={() => setSelectedEvent(null)}>
         <TouchableOpacity style={detailStyles.backdrop} activeOpacity={1} onPress={() => setSelectedEvent(null)}>
-          <View style={[detailStyles.card, { backgroundColor: theme.bg, borderColor: theme.accent }]} onStartShouldSetResponder={() => true}>
+          <View style={[detailStyles.card, { backgroundColor: cardSurface, borderColor: theme.accent }]} onStartShouldSetResponder={() => true}>
             <View style={[detailStyles.colorBar, { backgroundColor: theme.accent }]} />
             <View style={detailStyles.body}>
               <Text style={[detailStyles.cardTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{selectedEvent?.title}</Text>

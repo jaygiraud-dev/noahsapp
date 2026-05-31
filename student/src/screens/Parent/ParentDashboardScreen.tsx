@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -49,11 +50,13 @@ interface StudentSnapshot {
 
 function PairKidCard({
   theme,
+  cardSurface,
   hasLinked,
   parentUserId,
   onLinked,
 }: {
   theme: ReturnType<typeof makeTheme>;
+  cardSurface: string;
   hasLinked: boolean;
   parentUserId: string;
   onLinked: () => void;
@@ -100,7 +103,7 @@ function PairKidCard({
   }
 
   return (
-    <View style={[styles.pairCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+    <View style={[styles.pairCard, { backgroundColor: cardSurface, borderColor: theme.line }]}>
       <Text style={[styles.pairTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
         {hasLinked ? 'Link another student' : 'Link a student'}
       </Text>
@@ -144,7 +147,10 @@ export default function ParentDashboardScreen({ navigation }: any) {
   const setPhase = useStore((s) => s.setPhase);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
+  const bgImageUri = useStore((s) => s.bgImageUri);
   const theme = makeTheme(vibe, darkMode);
+  const hasBg = bgImageUri !== '';
+  const cardSurface = hasBg ? 'rgba(20,20,20,0.78)' : theme.surface;
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const [parentUserId, setParentUserId] = useState('');
@@ -314,7 +320,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
       : null;
 
     return (
-      <View key={kid.id} style={[styles.kidCard, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+      <View key={kid.id} style={[styles.kidCard, { backgroundColor: cardSurface, borderColor: theme.line }]}>
         {/* Header */}
         <View style={styles.kidHeader}>
           <LinearGradient colors={theme.accentGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.kidAvatar}>
@@ -464,7 +470,16 @@ export default function ParentDashboardScreen({ navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
+      {hasBg && (
+        <ImageBackground
+          source={{ uri: bgImageUri }}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+        >
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.62)' }]} />
+        </ImageBackground>
+      )}
       <View style={styles.topBar}>
         <Text style={[styles.headline, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Dashboard.</Text>
         <View style={styles.topRight}>
@@ -503,6 +518,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
         {linkedKids.map(renderKidCard)}
         <PairKidCard
           theme={theme}
+          cardSurface={cardSurface}
           hasLinked={linkedKids.length > 0}
           parentUserId={parentUserId}
           onLinked={() => setLinkVersion((v) => v + 1)}
