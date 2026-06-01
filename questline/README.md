@@ -39,7 +39,7 @@ npx expo export --platform web --no-minify   # → dist/
 |---|---|
 | **Onboarding** — cinematic welcome, value cards, 3 personalization steps, first quest | ✅ |
 | **Today** — streak header, Mo–Su dots + multiplier, quick-log (✦/☀/💀), mood check-in, quest list, completion animation | ✅ |
-| **Explore** — 64 curated quests, pillar/difficulty filters, accept → appears in Today, share | ✅ |
+| **Explore** — 85 curated quests (incl. trending "side quests": plogging, rucking, polar plunge, skydive, raw-dog a flight…), pillar/difficulty filters, accept → appears in Today, share | ✅ |
 | **Days + Journal** — reverse-chron day cards, mood, multiplier, points, completed quests, journal entries with photo motifs, time-passed nudge | ✅ |
 | **Growth** — idea cards, challenges, "Continue Reading" books, one-tap *Start as quest* | ✅ |
 | **Profile** — Aura hero + trend graph (Now/7d/30d/90d/1y), four stat bars, streak, settings | ✅ |
