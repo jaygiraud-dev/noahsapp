@@ -1,5 +1,5 @@
 [build]
-  base    = "student"
+  base    = "questline"
   command = "npm ci --legacy-peer-deps && npx expo export --platform web --no-minify"
   publish = "dist"
 

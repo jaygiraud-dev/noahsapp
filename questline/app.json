@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Questline",
+    "slug": "questline",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0A0A0B"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "dev.jaygiraud.questline"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0B"
+      },
+      "package": "dev.jaygiraud.questline"
+    },
+    "plugins": [
+      ["expo-font", { "fonts": [] }]
+    ]
+  }
+}
