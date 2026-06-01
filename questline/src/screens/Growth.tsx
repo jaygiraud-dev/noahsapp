@@ -6,6 +6,8 @@ import { useStore } from '../store';
 import { T, PILLARS } from '../theme';
 import { IDEAS, BOOKS, CHALLENGES } from '../data/growth';
 import { registerQuest } from '../data/quests';
+import { cooldownRemainingMs, fmtCooldown } from '../economy';
+import type { Difficulty } from '../theme';
 import ShineCard from '../components/ShineCard';
 import { tap, pop } from '../haptics';
 
@@ -22,9 +24,14 @@ export default function Growth() {
   const insets = useSafeAreaInsets();
   const addQuest = useStore((s) => s.addQuest);
   const userQuests = useStore((s) => s.userQuests);
+  const lastCompleted = useStore((s) => s.lastCompleted);
   const [flash, setFlash] = useState<string | null>(null);
 
   const added = new Set(userQuests.filter((u) => u.status === 'active').map((u) => u.questId));
+  const lockFor = (id: string, diff: Difficulty) => {
+    const r = cooldownRemainingMs(lastCompleted[id], diff);
+    return r > 0 ? fmtCooldown(r) : null;
+  };
 
   const start = (id: string, title: string) => {
     pop();
@@ -54,13 +61,20 @@ export default function Growth() {
             </View>
             <Text style={styles.ideaTitle}>{i.title}</Text>
             <Text style={styles.ideaBlurb}>{i.blurb}</Text>
-            <TouchableOpacity activeOpacity={0.85} onPress={() => start(`g-${i.id}`, i.spawn.title)} disabled={added.has(`g-${i.id}`)}>
-              <View style={[styles.cta, added.has(`g-${i.id}`) && styles.ctaDone]}>
-                <Text style={[styles.ctaTxt, added.has(`g-${i.id}`) && { color: '#34D399' }]}>
-                  {added.has(`g-${i.id}`) ? '✓ Added' : `Start as quest · ${i.spawn.emoji}`}
-                </Text>
-              </View>
-            </TouchableOpacity>
+            {(() => {
+              const id = `g-${i.id}`;
+              const isAdded = added.has(id);
+              const lock = !isAdded ? lockFor(id, i.spawn.difficulty) : null;
+              return (
+                <TouchableOpacity activeOpacity={0.85} onPress={() => start(id, i.spawn.title)} disabled={isAdded || !!lock}>
+                  <View style={[styles.cta, (isAdded || lock) && styles.ctaDone]}>
+                    <Text style={[styles.ctaTxt, isAdded && { color: '#34D399' }, lock && { color: T.soft }]}>
+                      {isAdded ? '✓ Added' : lock ? `🔒 Done · ready in ${lock}` : `Start as quest · ${i.spawn.emoji}`}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })()}
           </ShineCard>
         ))}
 
@@ -83,18 +97,26 @@ export default function Growth() {
               <View style={styles.challengeBody}>
                 <Text style={styles.challengeTitle}>{c.title}</Text>
                 <Text style={styles.challengeBlurb} numberOfLines={3}>{c.blurb}</Text>
-                <TouchableOpacity activeOpacity={0.85} onPress={() => start(`g-${c.id}`, c.title)} disabled={added.has(`g-${c.id}`)}>
-                  <LinearGradient
-                    colors={added.has(`g-${c.id}`) ? ['#1E1E22', '#1E1E22'] : T.accentGrad}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.challengeBtn}
-                  >
-                    <Text style={[styles.challengeBtnTxt, added.has(`g-${c.id}`) && { color: '#34D399' }]}>
-                      {added.has(`g-${c.id}`) ? '✓ Started' : 'Start challenge'}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
+                {(() => {
+                  const id = `g-${c.id}`;
+                  const isAdded = added.has(id);
+                  const lock = !isAdded ? lockFor(id, c.perDay.difficulty) : null;
+                  const inactive = isAdded || !!lock;
+                  return (
+                    <TouchableOpacity activeOpacity={0.85} onPress={() => start(id, c.title)} disabled={inactive}>
+                      <LinearGradient
+                        colors={inactive ? ['#1E1E22', '#1E1E22'] : T.accentGrad}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.challengeBtn}
+                      >
+                        <Text style={[styles.challengeBtnTxt, isAdded && { color: '#34D399' }, lock && { color: T.soft }]}>
+                          {isAdded ? '✓ Started' : lock ? `🔒 Ready in ${lock}` : 'Start challenge'}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  );
+                })()}
               </View>
             </ShineCard>
           ))}

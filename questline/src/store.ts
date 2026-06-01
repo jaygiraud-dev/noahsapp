@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Pillar } from './theme';
 import { PILLAR_KEYS } from './theme';
 import { QUESTS, getQuest, sparksForDifficulty } from './data/quests';
-import { multiplierFor, todayKey, dayDiff } from './economy';
+import { multiplierFor, todayKey, dayDiff, cooldownRemainingMs } from './economy';
 
 export interface StatState {
   value: number; // 0..100
@@ -72,6 +72,7 @@ interface State {
   journal: JournalEntry[];
   auraHistory: AuraPoint[];
   startDate: string;
+  lastCompleted: Record<string, number>; // questId -> ms timestamp of last completion (cooldowns)
 
   // transient
   reward: RewardPayload | null;
@@ -143,6 +144,7 @@ const DEFAULTS = () => {
     journal: [] as JournalEntry[],
     auraHistory: seedHistory(aura),
     startDate: todayKey(),
+    lastCompleted: {} as Record<string, number>,
     reward: null as RewardPayload | null,
   };
 };
@@ -186,6 +188,9 @@ export const useStore = create<State>()(
       addQuest: (questId) => {
         const exists = get().userQuests.some((u) => u.questId === questId && u.status === 'active');
         if (exists) return;
+        // Honor the cooldown — a quest on cooldown can't be re-added to farm Aura.
+        const q = getQuest(questId);
+        if (q && cooldownRemainingMs(get().lastCompleted[questId], q.difficulty) > 0) return;
         set((s) => ({
           userQuests: [
             { uid: mkUid(), questId, status: 'active', addedDay: todayKey() },
@@ -199,6 +204,8 @@ export const useStore = create<State>()(
 
       // Quick-log: instantly add and complete a quest in one tap.
       quickComplete: (questId) => {
+        const q = getQuest(questId);
+        if (q && cooldownRemainingMs(get().lastCompleted[questId], q.difficulty) > 0) return;
         const uid = mkUid();
         set((s) => ({
           userQuests: [{ uid, questId, status: 'active', addedDay: todayKey() }, ...s.userQuests],
@@ -212,6 +219,17 @@ export const useStore = create<State>()(
         if (!uq || uq.status === 'done') return;
         const quest = getQuest(uq.questId);
         if (!quest) return;
+
+        // Anti-farm: if this quest was completed within its cooldown, clear the
+        // card without re-awarding any Sparks/Aura.
+        if (cooldownRemainingMs(s.lastCompleted[uq.questId], quest.difficulty) > 0) {
+          set({
+            userQuests: s.userQuests.map((u) =>
+              u.uid === uid ? { ...u, status: 'done', doneDay: todayKey() } : u
+            ),
+          });
+          return;
+        }
 
         const today = todayKey();
 
@@ -281,6 +299,7 @@ export const useStore = create<State>()(
           dayCounter,
           days,
           auraHistory,
+          lastCompleted: { ...s.lastCompleted, [quest.id]: Date.now() },
           reward: { sparks, multiplier, pillars: pillarsHit },
         });
       },

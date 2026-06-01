@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
 import { T, PILLARS, Pillar } from '../theme';
 import { QUESTS, getQuest, sparksForDifficulty } from '../data/quests';
-import { todayKey } from '../economy';
+import { todayKey, cooldownRemainingMs, fmtCooldown } from '../economy';
 import ShineCard from '../components/ShineCard';
 import StreakCard from '../components/StreakCard';
 import Sparkle from '../components/Sparkle';
@@ -39,6 +39,7 @@ export default function Today({ onNavigate }: { onNavigate: (t: Tab) => void }) 
   const completeQuest = useStore((s) => s.completeQuest);
   const quickComplete = useStore((s) => s.quickComplete);
   const setMood = useStore((s) => s.setMood);
+  const lastCompleted = useStore((s) => s.lastCompleted);
 
   const today = todayKey();
   const todayRec = days.find((d) => d.key === today);
@@ -178,23 +179,30 @@ export default function Today({ onNavigate }: { onNavigate: (t: Tab) => void }) 
             </Text>
             <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
               {QUESTS.filter((q) => (sheet === 'habit' ? q.difficulty === 'easy' : q.difficulty === 'hard' || q.difficulty === 'epic'))
-                .slice(0, 10)
-                .map((q) => (
-                  <TouchableOpacity
-                    key={q.id}
-                    activeOpacity={0.8}
-                    style={styles.sheetRow}
-                    onPress={() => {
-                      if (sheet === 'habit') { success(); quickComplete(q.id); }
-                      else { pop(); useStore.getState().addQuest(q.id); }
-                      setSheet(null);
-                    }}
-                  >
-                    <Text style={styles.sheetEmoji}>{q.emoji}</Text>
-                    <Text style={styles.sheetRowTitle}>{q.title}</Text>
-                    <Text style={styles.sheetRowReward}>{sparksForDifficulty(q.difficulty)} ✦</Text>
-                  </TouchableOpacity>
-                ))}
+                .slice(0, 12)
+                .map((q) => {
+                  const remaining = cooldownRemainingMs(lastCompleted[q.id], q.difficulty);
+                  const locked = remaining > 0;
+                  return (
+                    <TouchableOpacity
+                      key={q.id}
+                      activeOpacity={locked ? 1 : 0.8}
+                      disabled={locked}
+                      style={[styles.sheetRow, locked && { opacity: 0.4 }]}
+                      onPress={() => {
+                        if (sheet === 'habit') { success(); quickComplete(q.id); }
+                        else { pop(); useStore.getState().addQuest(q.id); }
+                        setSheet(null);
+                      }}
+                    >
+                      <Text style={styles.sheetEmoji}>{q.emoji}</Text>
+                      <Text style={styles.sheetRowTitle}>{q.title}</Text>
+                      <Text style={styles.sheetRowReward}>
+                        {locked ? `🔒 ${fmtCooldown(remaining)}` : `${sparksForDifficulty(q.difficulty)} ✦`}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
             </ScrollView>
           </Pressable>
         </Pressable>

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
 import { T, PILLAR_KEYS, PILLARS, Pillar, Difficulty, DIFF_LABEL } from '../theme';
 import { QUESTS } from '../data/quests';
+import { cooldownRemainingMs, fmtCooldown } from '../economy';
 import QuestCard from '../components/QuestCard';
 import { FilterPill } from '../components/Pills';
 import { tap, pop } from '../haptics';
@@ -14,6 +15,7 @@ export default function Explore() {
   const insets = useSafeAreaInsets();
   const addQuest = useStore((s) => s.addQuest);
   const userQuests = useStore((s) => s.userQuests);
+  const lastCompleted = useStore((s) => s.lastCompleted);
   const [pillar, setPillar] = useState<Pillar | null>(null);
   const [diff, setDiff] = useState<Difficulty | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
@@ -73,15 +75,19 @@ export default function Explore() {
 
         <Text style={styles.count}>{list.length} quests</Text>
 
-        {list.map((q) => (
-          <QuestCard
-            key={q.id}
-            quest={q}
-            added={addedIds.has(q.id)}
-            onAdd={() => { pop(); addQuest(q.id); }}
-            onShare={() => onShare(q.title)}
-          />
-        ))}
+        {list.map((q) => {
+          const remaining = cooldownRemainingMs(lastCompleted[q.id], q.difficulty);
+          return (
+            <QuestCard
+              key={q.id}
+              quest={q}
+              added={addedIds.has(q.id)}
+              lockLabel={remaining > 0 ? fmtCooldown(remaining) : undefined}
+              onAdd={() => { pop(); addQuest(q.id); }}
+              onShare={() => onShare(q.title)}
+            />
+          );
+        })}
       </ScrollView>
 
       {flash && (

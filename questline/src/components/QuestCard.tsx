@@ -39,11 +39,13 @@ export default function QuestCard({
   onAdd,
   onShare,
   added,
+  lockLabel,
 }: {
   quest: Quest;
   onAdd?: () => void;
   onShare?: () => void;
   added?: boolean;
+  lockLabel?: string; // e.g. "6d" — on cooldown, can't be re-accepted yet
 }) {
   return (
     <ShineCard style={styles.card}>
@@ -60,12 +62,16 @@ export default function QuestCard({
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={onAdd}
-            disabled={added}
+            disabled={added || !!lockLabel}
             style={styles.addBtnWrap}
           >
             {added ? (
               <View style={[styles.addBtn, styles.addedBtn]}>
                 <Text style={styles.addedTxt}>✓ On your Today</Text>
+              </View>
+            ) : lockLabel ? (
+              <View style={[styles.addBtn, styles.lockedBtn]}>
+                <Text style={styles.lockedTxt}>🔒 Completed · ready in {lockLabel}</Text>
               </View>
             ) : (
               <LinearGradient colors={T.accentGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtn}>
@@ -100,6 +106,8 @@ const styles = StyleSheet.create({
   addTxt: { fontFamily: T.fSemi, fontSize: 15, color: '#fff', letterSpacing: 0.2 },
   addedBtn: { backgroundColor: 'rgba(52,211,153,0.14)', borderWidth: 1, borderColor: 'rgba(52,211,153,0.45)' },
   addedTxt: { fontFamily: T.fSemi, fontSize: 14, color: '#34D399' },
+  lockedBtn: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: T.line },
+  lockedTxt: { fontFamily: T.fSemi, fontSize: 13, color: T.soft },
   shareBtn: {
     width: 50,
     borderRadius: 16,

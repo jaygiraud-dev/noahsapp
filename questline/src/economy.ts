@@ -50,3 +50,39 @@ export function pctOfYear(d = new Date()): number {
   const end = new Date(d.getFullYear() + 1, 0, 1).getTime();
   return Math.round(((d.getTime() - start) / (end - start)) * 100);
 }
+
+// --- anti-cheese cooldowns (PRD §10) ---
+// A quest can't be re-completed for Aura until its cooldown clears, so the same
+// quest can't be farmed over and over. Harder quests lock for longer.
+//   easy = daily habit · medium = a few days · hard = once a week · epic = monthly
+export const COOLDOWN_DAYS: Record<Difficulty, number> = {
+  easy: 1,
+  medium: 3,
+  hard: 7,
+  epic: 30,
+};
+
+export function cooldownMs(d: Difficulty): number {
+  return COOLDOWN_DAYS[d] * 86_400_000;
+}
+
+// Milliseconds left before a quest is available again (0 = ready now).
+export function cooldownRemainingMs(
+  lastCompleted: number | undefined,
+  difficulty: Difficulty,
+  now = Date.now()
+): number {
+  if (!lastCompleted) return 0;
+  return Math.max(0, lastCompleted + cooldownMs(difficulty) - now);
+}
+
+// Compact "ready in" label: 6d / 23h / 45m / <1m.
+export function fmtCooldown(ms: number): string {
+  if (ms <= 0) return 'ready';
+  const d = Math.floor(ms / 86_400_000);
+  if (d >= 1) return `${d}d`;
+  const h = Math.floor(ms / 3_600_000);
+  if (h >= 1) return `${h}h`;
+  const m = Math.floor(ms / 60_000);
+  return m >= 1 ? `${m}m` : '<1m';
+}

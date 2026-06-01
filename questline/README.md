@@ -57,6 +57,11 @@ npx expo export --platform web --no-minify   # → dist/
 Multiplier: `1–2 days = x1`, `3–6 = x1.5`, `7–13 = x2`, `14+ = x3`. Missing a day
 resets the multiplier, never the lifetime Aura.
 
+**Anti-cheese cooldowns (PRD §10):** a quest can't be re-completed for Aura until
+its cooldown clears, so the same quest can't be farmed: `easy = 1 day`,
+`medium = 3 days`, `hard = once a week`, `epic = once a month`. On-cooldown quests
+show a 🔒 "ready in Xd" state everywhere they appear (Explore, quick-log, Growth).
+
 ## Design language (PRD §11)
 
 Near-black canvas (`#0A0A0B`) under a warm orange→red→pink glow. Instrument Serif
