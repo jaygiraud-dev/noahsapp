@@ -30,7 +30,7 @@ bubbleboss/
 - Why BubbleBoss (value props)
 - Service Area (North Shore pills)
 - FAQ (collapsible)
-- Contact: 604 968 9530 · 778 918 3161 · @bubbleboss1
+- Contact: 604 968 9530 · 778 918 3161 · @bubblebosswashing1
 - Sticky mobile bar (Call / Text / DM) + LocalBusiness SEO data
 
 ## View it
@@ -51,9 +51,9 @@ of `<style>`. To swap a gallery photo, drop a new file in `img/` and update
 the matching `<img src="...">`.
 
 ### Things to confirm / customize
-- **Instagram handle:** the poster says `@bubbleboss1` but your videos are
-  watermarked `@bubblebosswashing1`. The site currently uses `@bubbleboss1`
-  everywhere — change it if the other one is correct.
+- **Instagram:** set to `@bubblebosswashing1` everywhere.
+- **Full Throttle Auto Spa address:** not on the site yet — send the street
+  address and I'll add it plus a Google Maps "Get Directions" link.
 - **"$5 off — post us to your Insta"** offer — remove the top banner + FAQ
   entry if you don't want to run it.
 - **"Exterior + Basic Interior"** was listed at $10–15 on the poster (below
