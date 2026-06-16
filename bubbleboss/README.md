@@ -1,40 +1,60 @@
 # BubbleBoss Detailing — Website
 
 A single-page website for **BubbleBoss Detailing**, a mobile auto detailing
-service in North Vancouver, BC.
-
-Built from the business poster: same black/gold/red branding, fonts
-(Bebas Neue + Barlow), packages, prices and contact info.
+service in North Vancouver, BC. Built from the business poster, using your
+own real photos and videos.
 
 ## What's here
 
-- `index.html` — the entire site (self-contained, no build step, no
-  dependencies beyond Google Fonts loaded over the network).
+```
+bubbleboss/
+├── index.html        ← the whole site (open this)
+├── img/              ← optimized photos + video poster frames
+│   ├── hero.jpg          (black VW — hero background)
+│   ├── car-vw.jpg        (black VW — gallery)
+│   ├── poster-v1.jpg     (green BMW M4 — video thumbnail)
+│   ├── foam-wash.jpg     (foam bath — video thumbnail)
+│   └── black-camaro.jpg  (Camaro — gallery)
+└── media/            ← web-compressed videos (from 40MB → ~7MB total)
+    ├── wash-m4.mp4
+    └── wash-foam.mp4
+```
 
 ## Sections
 
-- Hero + "Why BubbleBoss?" card
-- Car packages (Exterior Wash, Exterior + Basic Interior,
-  Exterior + Interior + Vacuum, Premium Detail)
-- Truck / large vehicle "Everything Package"
-- Full Wax add-on
+- Top **$10-off** offer banner (new customers)
+- Sticky nav + hero with a real photo background
+- **Our Work** gallery — 2 photos + 2 tap-to-play videos (lightbox)
+- Car packages, truck package, full-wax add-on — each with a "Book This" button
 - How It Works (Call → We Come To You → Ride Shines)
-- About (two friends, North Van local)
-- Contact: 604 968 9530 · 778 918 3161 · [@bubbleboss1](https://instagram.com/bubbleboss1)
+- Why BubbleBoss (value props)
+- Service Area (North Shore pills)
+- FAQ (collapsible)
+- Contact: 604 968 9530 · 778 918 3161 · @bubbleboss1
+- Sticky mobile bar (Call / Text / DM) + LocalBusiness SEO data
 
-## How to view it
+## View it
 
-Just open `index.html` in any browser — double-click the file, done.
+Open `index.html` in any browser — double-click it.
 
-## How to put it online (free options)
+## Put it online (free)
 
-1. **Netlify Drop** — go to https://app.netlify.com/drop and drag this
-   `bubbleboss` folder onto the page. You get a live URL in seconds.
-2. **GitHub Pages** — push to GitHub, then enable Pages on this folder.
-3. Any web host — upload `index.html`.
+1. **Netlify Drop** — https://app.netlify.com/drop → drag the `bubbleboss`
+   folder on. Live URL in seconds (videos + images included).
+2. **GitHub Pages** — push, then enable Pages on this folder.
 
 ## Editing
 
-Everything is in `index.html`. To change prices, package details or phone
-numbers, search for the text in the file and edit it directly. Colours live
-in the `:root { ... }` block near the top of the `<style>` section.
+Everything is in `index.html`. Prices, phone numbers and text are plain
+HTML — search and edit. Colours are in the `:root { ... }` block at the top
+of `<style>`. To swap a gallery photo, drop a new file in `img/` and update
+the matching `<img src="...">`.
+
+### Things to confirm / customize
+- **Instagram handle:** the poster says `@bubbleboss1` but your videos are
+  watermarked `@bubblebosswashing1`. The site currently uses `@bubbleboss1`
+  everywhere — change it if the other one is correct.
+- **"$10 off first detail"** offer — remove the top banner + FAQ entry if you
+  don't want to run it.
+- **"Exterior + Basic Interior"** was listed at $10–15 on the poster (below
+  the $25 wash, looked like a typo) — set to **$35** here. Adjust if needed.
