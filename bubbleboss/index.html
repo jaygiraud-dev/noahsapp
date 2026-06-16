@@ -154,25 +154,23 @@
   }
   @keyframes glowPulse { 0%,100%{ opacity:.75; } 50%{ opacity:1; } }
 
-  /* black background with soft diagonal molten-gold light streaks from lower-left */
-  .chrome-bg {
-    position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden;
-    background: radial-gradient(135% 130% at 82% 22%, #0e1018 0%, #08080c 52%, #050505 100%);
+  /* global fixed flowing-gold backdrop behind the whole black site */
+  #bgfx {
+    position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden;
+    background: radial-gradient(140% 130% at 82% 18%, #0c0e15 0%, #070709 52%, #040404 100%);
   }
-  .chrome-bg svg {
+  #bgfx svg {
     position:absolute; top:-8%; left:-8%; width:116%; height:116%;
-    animation: streakDrift 26s ease-in-out infinite alternate; will-change: transform;
+    animation: streakDrift 22s ease-in-out infinite alternate; will-change: transform;
   }
   @keyframes streakDrift {
     0%   { transform: translate3d(0,0,0) scale(1.03); }
     100% { transform: translate3d(-2.5%,1.5%,0) scale(1.09); }
   }
-  /* light that travels along the ribbons = flowy */
-  .chrome-bg .flow { stroke-dasharray: 120 1600; animation: flowMove 7s linear infinite; }
-  .chrome-bg .flow2 { animation-duration: 9s; animation-delay: -3s; }
+  /* light that travels along the ribbons = flowy (faster) */
+  #bgfx .flow { stroke-dasharray: 120 1600; animation: flowMove 3s linear infinite; }
+  #bgfx .flow2 { animation-duration: 3.8s; animation-delay: -1.5s; }
   @keyframes flowMove { from { stroke-dashoffset: 1720; } to { stroke-dashoffset: 0; } }
-  .hero-vignette { position:absolute; inset:0; z-index:0; pointer-events:none;
-    background: radial-gradient(125% 105% at 50% 42%, rgba(0,0,0,0.10), rgba(0,0,0,0.5) 68%, rgba(0,0,0,0.85) 100%); }
 
   /* slowly-spinning 3D car carousel (dramatic, auto — works on touch) */
   .car-stage {
@@ -487,12 +485,83 @@
   @media (prefers-reduced-motion: reduce){
     .reveal{ opacity:1 !important; transition:none; }
     .scroll3d{ transform:none !important; }
-    .car-ring, .chrome-bg svg, .chrome-bg .flow, .brand3d, .hero::before, .scroll-cue::after, .why::before, .why::after { animation:none !important; }
+    .car-ring, #bgfx svg, #bgfx .flow, .brand3d, .hero::before, .scroll-cue::after, .why::before, .why::after { animation:none !important; }
     html{ scroll-behavior:auto; }
   }
+
+  /* ===================================================================
+     GLOBAL DARK THEME — black site, gold flowing through every section
+     =================================================================== */
+  body { background:#000; color:#f1f1f1; }
+
+  /* sections go transparent so the fixed gold backdrop flows through */
+  .hero, .gallery, .area, .contact, section.block, #how,
+  .why, .trust { background: transparent !important; }
+  .why::before, .why::after { opacity:.7; }
+
+  /* nav as dark glass */
+  header.nav { background: rgba(8,8,9,0.72) !important; border-bottom:1px solid rgba(212,160,23,0.18); }
+  .nav-links a { color:#eee; }
+  .logo .b2 { color:#fff !important; }
+  .nav-cta { background:#000 !important; border:1px solid rgba(212,160,23,0.5); }
+  .nav-cta:hover { background: var(--gold) !important; border-color: var(--gold); }
+
+  /* cards & panels → translucent dark glass */
+  .pkg-card, .step, .contact-card, .area-map, details.faq, .area-pills span,
+  .area-info {
+    background: rgba(15,15,17,0.82) !important;
+    border-color: rgba(212,160,23,0.22) !important;
+  }
+  .pkg-card.popular { background: linear-gradient(180deg, rgba(212,160,23,0.18), rgba(212,160,23,0.04)) !important; }
+  .pkg-card.truck { background: rgba(181,32,32,0.16) !important; border-color: rgba(181,32,32,0.5) !important; }
+  .area-map { padding:0; }
+
+  /* text → light */
+  .section-heading, .pkg-name, .addr-val, .contact-card .val,
+  .step h3, details.faq summary { color:#f4f4f4 !important; }
+  .pkg-list li, .pkg-desc, .lead, .step p, details.faq p,
+  .addr-label, .contact-card .lbl, .pkg-foot, .area-pills span { color:#c4c4c4 !important; }
+  .pkg-list li { color:#cfcfcf !important; }
+  .why .lead { color:#bdbdbd !important; }
+
+  /* keep gold accents readable on dark */
+  .pkg-list li .note, .pkg-desc .extra { color: var(--gold2); }
+  .btn-ghost { color:#fff; border-color: rgba(255,255,255,0.5); }
+  .divider { background: linear-gradient(to right, transparent, rgba(212,160,23,0.4), transparent); }
+
+  /* dividers/borders between sections → subtle gold */
+  .gallery, #how, .area { border-color: rgba(212,160,23,0.14) !important; }
 </style>
 </head>
 <body>
+
+<!-- Global flowing-gold backdrop behind the whole (black) site -->
+<div id="bgfx" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="bbgold" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#6b4f10" stop-opacity="0"/>
+        <stop offset="0.30" stop-color="#caa23a" stop-opacity="0.65"/>
+        <stop offset="0.50" stop-color="#ffe9b0"/>
+        <stop offset="0.70" stop-color="#d4a017" stop-opacity="0.65"/>
+        <stop offset="1" stop-color="#6b4f10" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="bbglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter>
+      <filter id="bbglowL" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="26"/></filter>
+    </defs>
+    <rect width="1200" height="800" fill="#060607"/>
+    <g fill="none" stroke="url(#bbgold)" stroke-linecap="round">
+      <path d="M-80 640 C 140 760, 300 460, 470 560 S 760 740, 940 470 S 1180 250, 1340 380" stroke-width="80" opacity="0.18" filter="url(#bbglowL)"/>
+      <path d="M-80 700 C 180 580, 330 700, 520 540 S 820 360, 1000 520 S 1230 300, 1340 200" stroke-width="46" opacity="0.34" filter="url(#bbglow)"/>
+      <path d="M-80 660 C 150 770, 310 470, 480 565 S 770 745, 950 475 S 1185 255, 1345 385" stroke-width="3" opacity="0.95"/>
+      <path d="M-80 715 C 185 595, 335 705, 525 545 S 825 365, 1005 525 S 1235 305, 1345 205" stroke-width="2.2" opacity="0.8"/>
+      <path d="M-80 600 C 160 700, 300 430, 470 520 S 760 690, 940 430 S 1180 210, 1345 320" stroke-width="1.6" opacity="0.6"/>
+      <path d="M-80 770 C 220 660, 380 740, 580 560 S 880 400, 1060 560 S 1260 360, 1360 270" stroke-width="1.4" opacity="0.5"/>
+      <path class="flow" d="M-80 660 C 150 770, 310 470, 480 565 S 770 745, 950 475 S 1185 255, 1345 385" stroke-width="3.4" opacity="0.9" stroke="#fff2cf"/>
+      <path class="flow flow2" d="M-80 715 C 185 595, 335 705, 525 545 S 825 365, 1005 525 S 1235 305, 1345 205" stroke-width="2.6" opacity="0.85" stroke="#ffe7b0"/>
+    </g>
+  </svg>
+</div>
 
 <div class="offer">🫧 <b>$5 OFF</b> — just post us to your Insta &amp; send us the screenshot</div>
 
@@ -513,37 +582,6 @@
 
 <!-- IMMERSIVE 3D HERO -->
 <section class="hero" id="hero">
-  <div class="chrome-bg" aria-hidden="true">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id="bbgold" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0" stop-color="#6b4f10" stop-opacity="0"/>
-          <stop offset="0.30" stop-color="#caa23a" stop-opacity="0.65"/>
-          <stop offset="0.50" stop-color="#ffe9b0"/>
-          <stop offset="0.70" stop-color="#d4a017" stop-opacity="0.65"/>
-          <stop offset="1" stop-color="#6b4f10" stop-opacity="0"/>
-        </linearGradient>
-        <filter id="bbglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter>
-        <filter id="bbglowL" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="26"/></filter>
-      </defs>
-      <rect width="1200" height="800" fill="#070708"/>
-      <g fill="none" stroke="url(#bbgold)" stroke-linecap="round">
-        <!-- soft wide glow ribbons (wavy, undulating) -->
-        <path d="M-80 640 C 140 760, 300 460, 470 560 S 760 740, 940 470 S 1180 250, 1340 380" stroke-width="80" opacity="0.18" filter="url(#bbglowL)"/>
-        <path d="M-80 700 C 180 580, 330 700, 520 540 S 820 360, 1000 520 S 1230 300, 1340 200" stroke-width="46" opacity="0.34" filter="url(#bbglow)"/>
-        <!-- crisp flowing ribbons -->
-        <path d="M-80 660 C 150 770, 310 470, 480 565 S 770 745, 950 475 S 1185 255, 1345 385" stroke-width="3" opacity="0.95"/>
-        <path d="M-80 715 C 185 595, 335 705, 525 545 S 825 365, 1005 525 S 1235 305, 1345 205" stroke-width="2.2" opacity="0.8"/>
-        <path d="M-80 600 C 160 700, 300 430, 470 520 S 760 690, 940 430 S 1180 210, 1345 320" stroke-width="1.6" opacity="0.6"/>
-        <path d="M-80 770 C 220 660, 380 740, 580 560 S 880 400, 1060 560 S 1260 360, 1360 270" stroke-width="1.4" opacity="0.5"/>
-        <!-- travelling light highlights along the ribbons -->
-        <path class="flow" d="M-80 660 C 150 770, 310 470, 480 565 S 770 745, 950 475 S 1185 255, 1345 385" stroke-width="3.4" opacity="0.9" stroke="#fff2cf"/>
-        <path class="flow flow2" d="M-80 715 C 185 595, 335 705, 525 545 S 825 365, 1005 525 S 1235 305, 1345 205" stroke-width="2.6" opacity="0.85" stroke="#ffe7b0"/>
-      </g>
-    </svg>
-  </div>
-  <div class="hero-vignette" aria-hidden="true"></div>
-
   <div class="car-stage" aria-hidden="true">
     <div class="car-ring">
       <div class="car-card" style="--i:0"><img src="img/bmw-m4.jpg" alt="BMW M4" loading="eager"></div>
