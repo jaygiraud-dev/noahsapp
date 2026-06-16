@@ -13,3 +13,6 @@ parent/web-build/
 *.log
 .env
 .env.local
+
+# Generated site download bundle
+bubbleboss.zip
