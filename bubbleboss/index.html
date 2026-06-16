@@ -86,6 +86,26 @@
   .call-line a { white-space:nowrap; }
   .call-line a:hover { color: var(--gold); }
 
+  /* scroll progress bar */
+  .scroll-prog {
+    position:fixed; top:0; left:0; height:3px; width:100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold2), #ffe9a8);
+    transform: scaleX(0); transform-origin:left; z-index:200; will-change:transform;
+  }
+
+  /* shine sweep on gold buttons */
+  .btn-gold { position:relative; overflow:hidden; }
+  .btn-gold::after {
+    content:""; position:absolute; top:0; left:-120%; width:60%; height:100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.45), transparent);
+    transform: skewX(-20deg); transition: none;
+  }
+  .btn-gold:hover::after { animation: shine .7s ease; }
+  @keyframes shine { to { left:140%; } }
+
+  /* 3D tilt base — applied site-wide via JS */
+  .tilt { transform-style: preserve-3d; will-change: transform; transition: transform .18s ease, box-shadow .18s ease; }
+
   /* OFFER BANNER */
   .offer {
     background: linear-gradient(90deg, var(--gold), var(--gold2));
@@ -125,34 +145,39 @@
   /* glowing light arc (gold), like the reference but on-brand */
   .hero::before {
     content:""; position:absolute; top:-58%; left:50%;
-    width: min(1200px, 150vw); aspect-ratio:1; transform: translateX(-50%);
+    width: min(1200px, 150vw); aspect-ratio:1; margin-left: calc(min(1200px, 150vw) / -2);
     border-radius:50%;
     border: 2px solid rgba(212,160,23,0.55);
     box-shadow: 0 0 160px 30px rgba(212,160,23,0.40), inset 0 0 120px rgba(212,160,23,0.25);
     background: radial-gradient(circle at 50% 100%, rgba(212,160,23,0.18), transparent 55%);
-    filter: blur(1.5px);
-    pointer-events:none; z-index:0;
-    transform: translate(calc(-50% + var(--px,0px)), var(--py,0px));
+    pointer-events:none; z-index:0; will-change: transform;
+    transform: translate3d(var(--px,0px), var(--py,0px), 0);
   }
-  /* soft cursor-following glow */
-  .hero-spot {
-    position:absolute; inset:0; z-index:0; pointer-events:none;
-    background: radial-gradient(360px 360px at var(--mx,50%) var(--my,30%), rgba(212,160,23,0.16), transparent 70%);
-    transition: background .15s ease;
+  /* soft cursor-following glow — GPU transform only */
+  .glow-orb {
+    position:absolute; top:0; left:0; width:640px; height:640px; margin:-320px 0 0 -320px;
+    z-index:0; pointer-events:none;
+    background: radial-gradient(circle, rgba(212,160,23,0.22), rgba(212,160,23,0.06) 45%, transparent 70%);
+    transform: translate3d(50vw, 32vh, 0); will-change: transform;
+    transition: transform .12s ease-out;
   }
-  /* receding 3D grid floor */
+  /* receding 3D grid floor — animated via transform (GPU) */
   .hero-floor {
     position:absolute; left:50%; bottom:-2%; width:240%; height:62%;
     transform: translateX(-50%) rotateX(76deg); transform-origin:bottom center;
+    -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+            mask-image: linear-gradient(to top, #000 0%, transparent 85%);
+    opacity:.5; z-index:0; pointer-events:none; overflow:hidden;
+  }
+  .hero-floor::before {
+    content:""; position:absolute; left:0; right:0; top:-50%; height:200%;
     background-image:
       linear-gradient(rgba(212,160,23,0.22) 1px, transparent 1px),
       linear-gradient(90deg, rgba(212,160,23,0.22) 1px, transparent 1px);
     background-size: 64px 64px;
-    -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 85%);
-            mask-image: linear-gradient(to top, #000 0%, transparent 85%);
-    animation: floorMove 7s linear infinite; opacity:.55; z-index:0; pointer-events:none;
+    animation: floorMove 7s linear infinite; will-change: transform;
   }
-  @keyframes floorMove { from{background-position:0 0;} to{background-position:0 64px;} }
+  @keyframes floorMove { from{transform:translateY(0);} to{transform:translateY(64px);} }
   /* floating bubbles */
   .hero-bubbles { position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
   .bub {
@@ -205,7 +230,6 @@
     background: rgba(255,255,255,0.06); border:1px solid rgba(212,160,23,0.28);
     border-radius:30px; padding:7px 15px; font-size:13px; color:#eee;
     font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:1px; text-transform:uppercase;
-    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
   }
   .chip svg { width:15px; height:15px; fill: var(--gold2); }
 
@@ -216,8 +240,8 @@
     border:1px solid rgba(255,255,255,0.14);
     background:#000;
     box-shadow: 0 50px 90px rgba(0,0,0,0.65), 0 0 70px rgba(212,160,23,0.18);
-    transform: rotateX(var(--ry,6deg)) rotateY(var(--rx,-9deg));
-    transition: transform .25s ease;
+    transform: rotateX(6deg) rotateY(-9deg);
+    transition: transform .16s ease;
     will-change: transform;
   }
   .screen-bar {
@@ -229,8 +253,7 @@
   @media (max-width:880px){ .screen-frame img { height:230px; } }
   .screen-tag {
     position:absolute; left:14px; bottom:14px;
-    background: rgba(0,0,0,0.55); border:1px solid rgba(212,160,23,0.4);
-    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.72); border:1px solid rgba(212,160,23,0.4);
     color:#fff; padding:7px 13px; border-radius:30px;
     font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:13px;
     letter-spacing:1.5px; text-transform:uppercase;
@@ -347,7 +370,19 @@
   .step p { color: var(--muted); font-size:14.5px; margin-top:8px; }
 
   /* WHY / VALUE */
-  .why { background: var(--black2); color:#f0f0f0; }
+  .why { background: var(--black2); color:#f0f0f0; position:relative; overflow:hidden; }
+  .why::before, .why::after {
+    content:""; position:absolute; width:460px; height:460px; border-radius:50%;
+    background: radial-gradient(circle, rgba(212,160,23,0.16), transparent 65%);
+    pointer-events:none; z-index:0; will-change: transform;
+  }
+  .why::before { top:-140px; left:-120px; animation: floatBlob 14s ease-in-out infinite; }
+  .why::after { bottom:-160px; right:-120px; animation: floatBlob 18s ease-in-out infinite reverse; }
+  @keyframes floatBlob {
+    0%,100% { transform: translate3d(0,0,0) scale(1); }
+    50% { transform: translate3d(60px,40px,0) scale(1.15); }
+  }
+  .why .container { position:relative; z-index:1; }
   .why .eyebrow { color: var(--gold2); } .why .section-heading { color:#fff; }
   .why-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:18px; margin-top:42px; }
   @media (max-width:760px){ .why-grid{ grid-template-columns:1fr; } }
@@ -426,9 +461,13 @@
   .modal video { max-width:100%; max-height:86vh; border-radius:10px; }
   .modal .close { position:absolute; top:18px; right:22px; color:#fff; font-size:38px; line-height:1; cursor:pointer; font-family:'Barlow',sans-serif; }
 
-  .reveal { opacity:0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal { opacity:0; transform: translate3d(0,28px,0); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); will-change: opacity, transform; }
   .reveal.in { opacity:1; transform:none; }
-  @media (prefers-reduced-motion: reduce){ .reveal{ opacity:1; transform:none; transition:none; } html{ scroll-behavior:auto; } }
+  @media (prefers-reduced-motion: reduce){
+    .reveal{ opacity:1 !important; transform:none !important; transition:none; }
+    .hero-floor::before, .bub, .scroll-cue::after { animation:none !important; }
+    html{ scroll-behavior:auto; }
+  }
 </style>
 </head>
 <body>
@@ -448,9 +487,11 @@
   </div>
 </header>
 
+<div class="scroll-prog" id="scrollProg"></div>
+
 <!-- 3D INTERACTIVE HERO -->
 <section class="hero" id="hero">
-  <div class="hero-spot" id="heroSpot"></div>
+  <div class="glow-orb" id="glowOrb"></div>
   <div class="hero-floor"></div>
   <div class="hero-bubbles" id="heroBubbles"></div>
   <div class="container hero-inner" id="heroParallax">
@@ -757,9 +798,27 @@
 </script>
 
 <script>
-  // Scroll reveal
-  const obs = new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target);}})},{threshold:0.12});
-  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Scroll reveal with stagger
+  const obs = new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target);}})},{threshold:0.12, rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>{
+    const sibs=[...el.parentElement.children].filter(c=>c.classList.contains('reveal'));
+    el.style.transitionDelay = (Math.min(sibs.indexOf(el),6)*70)+'ms';
+    obs.observe(el);
+  });
+
+  // Scroll progress bar (rAF-throttled)
+  (function(){
+    const bar=document.getElementById('scrollProg'); if(!bar) return;
+    let ticking=false;
+    function upd(){ ticking=false;
+      const h=document.documentElement.scrollHeight-window.innerHeight;
+      bar.style.transform='scaleX('+(h>0?Math.min(window.scrollY/h,1):0)+')';
+    }
+    addEventListener('scroll',()=>{ if(!ticking){ticking=true; requestAnimationFrame(upd);} },{passive:true});
+    upd();
+  })();
 
   // Video lightbox
   const modal=document.getElementById('vidModal');
@@ -775,75 +834,74 @@
   modal.addEventListener('click',e=>{ if(e.target===modal) closeVid(); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeVid(); });
 
-  /* ===== 3D INTERACTIVE HERO ===== */
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* ===== 3D INTERACTIVE HERO (GPU transforms only) ===== */
+  const fine = window.matchMedia('(pointer:fine)').matches;
 
   // Floating bubbles
   (function(){
     const wrap = document.getElementById('heroBubbles');
     if(!wrap || reduce) return;
-    const N = window.innerWidth < 640 ? 10 : 18;
+    const N = window.innerWidth < 640 ? 9 : 16;
+    const frag = document.createDocumentFragment();
     for(let i=0;i<N;i++){
       const b = document.createElement('span');
       b.className = 'bub';
-      const size = 8 + Math.random()*46;
+      const size = 8 + Math.random()*42;
       b.style.width = b.style.height = size+'px';
       b.style.left = Math.random()*100+'%';
       b.style.setProperty('--drift', (Math.random()*120-60)+'px');
       b.style.animationDuration = (9 + Math.random()*12)+'s';
       b.style.animationDelay = (-Math.random()*16)+'s';
-      wrap.appendChild(b);
+      frag.appendChild(b);
     }
+    wrap.appendChild(frag);
   })();
 
-  // Pointer parallax: cursor glow, arc shift, content depth + screen tilt
+  // Hero pointer parallax — only transforms (orb, arc, screen tilt, copy depth)
   (function(){
     const hero = document.getElementById('hero');
-    const spot = document.getElementById('heroSpot');
+    const orb = document.getElementById('glowOrb');
     const screen = document.getElementById('heroScreen');
-    const parallax = document.getElementById('heroParallax');
-    if(!hero || reduce) return;
-    let raf = null, tx=0, ty=0;
-    function onMove(e){
-      const r = hero.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width;   // 0..1
-      const py = (e.clientY - r.top) / r.height;   // 0..1
-      tx = px; ty = py;
-      if(spot){ spot.style.setProperty('--mx', (px*100)+'%'); spot.style.setProperty('--my', (py*100)+'%'); }
-      if(!raf) raf = requestAnimationFrame(apply);
-    }
+    const copy = hero ? hero.querySelector('.hero-copy') : null;
+    if(!hero || reduce || !fine) return;
+    let raf=null, mx=0, my=0, w=1, h=1;
+    function measure(){ const r=hero.getBoundingClientRect(); w=r.width; h=r.height; }
+    measure(); addEventListener('resize', measure, {passive:true});
+    function onMove(e){ mx=e.clientX - hero.getBoundingClientRect().left; my=e.clientY - hero.getBoundingClientRect().top;
+      if(!raf) raf=requestAnimationFrame(apply); }
     function apply(){
-      raf = null;
-      const dx = (tx - 0.5), dy = (ty - 0.5);
-      hero.style.setProperty('--px', (dx*40)+'px');
-      hero.style.setProperty('--py', (dy*24)+'px');
-      if(screen){
-        screen.style.setProperty('--rx', (-9 + dx*18).toFixed(2)+'deg');
-        screen.style.setProperty('--ry', ( 6 - dy*16).toFixed(2)+'deg');
-      }
-      if(parallax){ parallax.style.transform = `rotateX(${(-dy*4).toFixed(2)}deg) rotateY(${(dx*5).toFixed(2)}deg)`; }
+      raf=null;
+      const dx=(mx/w-0.5), dy=(my/h-0.5);
+      if(orb) orb.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
+      hero.style.setProperty('--px', (dx*36).toFixed(1)+'px');
+      hero.style.setProperty('--py', (dy*22).toFixed(1)+'px');
+      if(screen) screen.style.transform = `rotateX(${(6 - dy*14).toFixed(2)}deg) rotateY(${(-9 + dx*16).toFixed(2)}deg)`;
+      if(copy) copy.style.transform = `translate3d(${(dx*-14).toFixed(1)}px, ${(dy*-10).toFixed(1)}px, 40px)`;
     }
     hero.addEventListener('pointermove', onMove, {passive:true});
     hero.addEventListener('pointerleave', ()=>{
-      if(spot){ spot.style.setProperty('--mx','50%'); spot.style.setProperty('--my','30%'); }
       hero.style.setProperty('--px','0px'); hero.style.setProperty('--py','0px');
-      if(screen){ screen.style.setProperty('--rx','-9deg'); screen.style.setProperty('--ry','6deg'); }
-      if(parallax){ parallax.style.transform='none'; }
+      if(screen) screen.style.transform='rotateX(6deg) rotateY(-9deg)';
+      if(copy) copy.style.transform='translateZ(40px)';
+      if(orb) orb.style.transform=`translate3d(${w*0.5}px, ${h*0.32}px, 0)`;
     });
   })();
 
-  // Subtle 3D tilt on gallery cards
+  // Site-wide 3D tilt on cards (GPU transforms, desktop pointers only)
   (function(){
-    if(reduce) return;
-    document.querySelectorAll('.work').forEach(card=>{
-      card.style.transition = 'transform .2s ease';
+    if(reduce || !fine) return;
+    const cards = document.querySelectorAll('.work, .pkg-card, .why-card, .step, .contact-card');
+    cards.forEach(card=>{
+      card.classList.add('tilt');
+      card.style.transition='transform .14s ease, box-shadow .2s ease';
+      let raf=null, mx=0, my=0;
       card.addEventListener('pointermove', e=>{
-        const r = card.getBoundingClientRect();
-        const dx = (e.clientX - r.left)/r.width - 0.5;
-        const dy = (e.clientY - r.top)/r.height - 0.5;
-        card.style.transform = `perspective(700px) rotateY(${(dx*10).toFixed(2)}deg) rotateX(${(-dy*10).toFixed(2)}deg) translateY(-4px)`;
-      });
-      card.addEventListener('pointerleave', ()=>{ card.style.transform='none'; });
+        const r=card.getBoundingClientRect(); mx=(e.clientX-r.left)/r.width-0.5; my=(e.clientY-r.top)/r.height-0.5;
+        if(!raf) raf=requestAnimationFrame(()=>{ raf=null;
+          card.style.transform=`perspective(800px) rotateY(${(mx*9).toFixed(2)}deg) rotateX(${(-my*9).toFixed(2)}deg) translateY(-5px)`;
+        });
+      }, {passive:true});
+      card.addEventListener('pointerleave', ()=>{ card.style.transform=''; });
     });
   })();
 </script>
