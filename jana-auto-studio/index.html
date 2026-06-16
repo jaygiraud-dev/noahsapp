@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JANA Auto Studio — Premium Auto Detailing, Ceramic Coating & PPF · Vancouver, BC</title>
+<meta name="description" content="JANA Auto Studio in Vancouver, BC. Premium auto detailing, ceramic coating, paint protection film (PPF), paint correction, vinyl wraps and window tinting. Book your appointment today." />
+<meta name="theme-color" content="#0b0d12" />
+<meta property="og:title" content="JANA Auto Studio — Vancouver" />
+<meta property="og:description" content="Premium detailing, ceramic coating & paint protection in Vancouver, BC." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b0d12;
+    --bg-2:#11141c;
+    --card:#161a24;
+    --line:#222838;
+    --text:#eef1f7;
+    --muted:#9aa3b6;
+    --accent:#ff5a1f;     /* burnt orange */
+    --accent-2:#ffb800;   /* amber */
+    --radius:18px;
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  h1,h2,h3,.brand{font-family:'Sora',sans-serif;letter-spacing:-.02em;line-height:1.1}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .accent{color:var(--accent)}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;font-weight:600;font-size:15px;
+    padding:14px 24px;border-radius:999px;border:1px solid transparent;cursor:pointer;
+    transition:transform .15s ease,box-shadow .2s ease,background .2s ease;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#1a0f02;box-shadow:0 8px 30px rgba(255,90,31,.35)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 38px rgba(255,90,31,.5)}
+  .btn-ghost{background:transparent;border-color:var(--line);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ---------- Nav ---------- */
+  header{position:fixed;top:0;left:0;right:0;z-index:50;transition:background .3s,border-color .3s;border-bottom:1px solid transparent}
+  header.scrolled{background:rgba(11,13,18,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  nav{display:flex;align-items:center;justify-content:space-between;height:72px}
+  .brand{font-size:21px;font-weight:800;display:flex;align-items:center;gap:10px}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#1a0f02;font-weight:800;font-size:17px}
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a{font-size:15px;color:var(--muted);transition:color .2s}
+  .nav-links a:hover{color:var(--text)}
+  .nav-cta{display:flex;gap:12px;align-items:center}
+  .menu-btn{display:none;background:none;border:0;color:var(--text);font-size:26px;cursor:pointer}
+  @media(max-width:880px){
+    .nav-links{position:fixed;inset:72px 0 auto 0;flex-direction:column;background:var(--bg-2);
+      border-bottom:1px solid var(--line);padding:24px;gap:20px;transform:translateY(-130%);transition:transform .35s ease;z-index:40}
+    .nav-links.open{transform:translateY(0)}
+    .nav-cta .btn-ghost{display:none}
+    .menu-btn{display:block}
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;min-height:100vh;display:flex;align-items:center;padding:120px 0 80px;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;z-index:0;
+    background:linear-gradient(180deg,rgba(11,13,18,.55),rgba(11,13,18,.92) 75%,var(--bg)),
+    url('https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;}
+  .hero-glow{position:absolute;width:600px;height:600px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,90,31,.22),transparent 70%);top:-120px;right:-100px;z-index:0;filter:blur(10px)}
+  .hero .wrap{position:relative;z-index:2}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:600;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent-2);border:1px solid var(--line);background:rgba(255,184,0,.06);
+    padding:8px 16px;border-radius:999px;margin-bottom:26px}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 12px var(--accent-2)}
+  .hero h1{font-size:clamp(40px,7vw,76px);font-weight:800;max-width:14ch}
+  .hero h1 span{background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p.lead{font-size:clamp(17px,2.4vw,20px);color:var(--muted);max-width:54ch;margin:24px 0 36px}
+  .hero-actions{display:flex;gap:14px;flex-wrap:wrap}
+  .hero-stats{display:flex;gap:40px;margin-top:60px;flex-wrap:wrap}
+  .hero-stats .stat .n{font-family:'Sora';font-size:34px;font-weight:800;color:#fff}
+  .hero-stats .stat .l{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+  /* ---------- Sections ---------- */
+  section{padding:96px 0;position:relative}
+  .section-head{max-width:640px;margin-bottom:54px}
+  .section-head .eyebrow{margin-bottom:18px}
+  .section-head h2{font-size:clamp(30px,4.5vw,46px);font-weight:800}
+  .section-head p{color:var(--muted);margin-top:16px;font-size:17px}
+
+  /* services */
+  .services{background:linear-gradient(180deg,var(--bg),var(--bg-2))}
+  .grid{display:grid;gap:22px;grid-template-columns:repeat(3,1fr)}
+  @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:30px;
+    transition:transform .2s ease,border-color .2s ease;position:relative;overflow:hidden}
+  .card:hover{transform:translateY(-5px);border-color:rgba(255,90,31,.5)}
+  .card .ic{width:52px;height:52px;border-radius:13px;display:grid;place-items:center;font-size:25px;
+    background:linear-gradient(135deg,rgba(255,90,31,.18),rgba(255,184,0,.1));border:1px solid var(--line);margin-bottom:18px}
+  .card h3{font-size:20px;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:15px}
+  .card .price{margin-top:16px;font-size:14px;color:var(--accent-2);font-weight:600}
+
+  /* why */
+  .why-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:center}
+  @media(max-width:860px){.why-grid{grid-template-columns:1fr}}
+  .why-img{border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3;
+    background:url('https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=1200&q=80') center/cover}
+  .feature{display:flex;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+  .feature:last-child{border-bottom:0}
+  .feature .fic{flex:0 0 auto;width:42px;height:42px;border-radius:11px;display:grid;place-items:center;
+    background:rgba(255,90,31,.12);color:var(--accent);font-size:20px}
+  .feature h4{font-family:'Sora';font-size:17px;margin-bottom:3px}
+  .feature p{color:var(--muted);font-size:14.5px}
+
+  /* gallery */
+  .gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:900px){.gallery-grid{grid-template-columns:repeat(2,1fr)}}
+  .gallery-grid figure{border-radius:14px;overflow:hidden;aspect-ratio:1;border:1px solid var(--line)}
+  .gallery-grid img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease}
+  .gallery-grid figure:hover img{transform:scale(1.08)}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+  @media(max-width:860px){.steps{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.steps{grid-template-columns:1fr}}
+  .step{position:relative;padding-top:14px}
+  .step .num{font-family:'Sora';font-size:46px;font-weight:800;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .step h4{font-family:'Sora';font-size:19px;margin:6px 0 6px}
+  .step p{color:var(--muted);font-size:15px}
+
+  /* testimonials */
+  .quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  @media(max-width:860px){.quotes{grid-template-columns:1fr}}
+  .quote{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px}
+  .stars{color:var(--accent-2);font-size:16px;letter-spacing:2px;margin-bottom:14px}
+  .quote p{font-size:15.5px;margin-bottom:18px}
+  .quote .who{display:flex;align-items:center;gap:12px}
+  .quote .av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center;color:#1a0f02;font-weight:700}
+  .quote .who b{font-family:'Sora';font-size:15px}
+  .quote .who span{display:block;color:var(--muted);font-size:13px}
+
+  /* contact */
+  .contact{background:linear-gradient(180deg,var(--bg-2),var(--bg))}
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px}
+  @media(max-width:860px){.contact-grid{grid-template-columns:1fr}}
+  .info-row{display:flex;gap:15px;align-items:flex-start;margin-bottom:24px}
+  .info-row .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:21px;
+    background:rgba(255,90,31,.12);color:var(--accent);flex:0 0 auto}
+  .info-row h4{font-family:'Sora';font-size:16px;margin-bottom:2px}
+  .info-row p,.info-row a{color:var(--muted);font-size:15px}
+  .info-row a:hover{color:var(--accent)}
+  form{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:30px}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:var(--muted)}
+  .field input,.field select,.field textarea{
+    width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:13px 15px;
+    color:var(--text);font-family:inherit;font-size:15px;transition:border-color .2s}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+  .field textarea{resize:vertical;min-height:110px}
+  .map{margin-top:14px;border-radius:14px;overflow:hidden;border:1px solid var(--line);height:240px}
+  .map iframe{width:100%;height:100%;border:0;filter:grayscale(.3) invert(.9) hue-rotate(180deg)}
+  .form-note{font-size:13px;color:var(--muted);margin-top:10px}
+
+  /* footer */
+  footer{border-top:1px solid var(--line);padding:50px 0 36px;background:var(--bg)}
+  .foot-grid{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:center}
+  .foot-links{display:flex;gap:24px;flex-wrap:wrap}
+  .foot-links a{color:var(--muted);font-size:14px}
+  .foot-links a:hover{color:var(--text)}
+  .copy{color:var(--muted);font-size:13.5px;margin-top:28px;text-align:center;border-top:1px solid var(--line);padding-top:24px}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--accent);
+    color:#1a0f02;font-weight:600;padding:14px 26px;border-radius:999px;z-index:80;transition:transform .4s ease;box-shadow:0 10px 40px rgba(255,90,31,.4)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="#top"><span class="mark">JA</span> JANA <span style="color:var(--muted);font-weight:600">Auto Studio</span></a>
+      <div class="nav-links" id="navLinks">
+        <a href="#services">Services</a>
+        <a href="#why">Why Us</a>
+        <a href="#work">Our Work</a>
+        <a href="#process">Process</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="nav-cta">
+        <a href="tel:+16045551234" class="btn btn-ghost">Call</a>
+        <a href="#contact" class="btn btn-primary">Book Now</a>
+        <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="wrap">
+    <span class="eyebrow"><span class="dot"></span> Vancouver, BC · Premium Auto Care</span>
+    <h1>Your car deserves the <span>studio treatment.</span></h1>
+    <p class="lead">JANA Auto Studio delivers showroom-level detailing, ceramic coating and paint protection — meticulous work, premium products, and results that turn heads.</p>
+    <div class="hero-actions">
+      <a href="#contact" class="btn btn-primary">Book an Appointment →</a>
+      <a href="#services" class="btn btn-ghost">Explore Services</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="n">1,200+</div><div class="l">Cars Detailed</div></div>
+      <div class="stat"><div class="n">5★</div><div class="l">Average Rating</div></div>
+      <div class="stat"><div class="n">100%</div><div class="l">Satisfaction</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section class="services" id="services">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">What We Do</span>
+      <h2>Detailing services, perfected.</h2>
+      <p>From a quick refresh to full paint protection, every package is tailored to your vehicle and finished by hand.</p>
+    </div>
+    <div class="grid">
+      <div class="card reveal"><div class="ic">✨</div><h3>Premium Detailing</h3><p>Full interior + exterior deep clean. Hand wash, decontamination, steam interior, leather conditioning and a streak-free finish.</p><div class="price">From $179</div></div>
+      <div class="card reveal"><div class="ic">🛡️</div><h3>Ceramic Coating</h3><p>Long-lasting nano-ceramic protection for unmatched gloss, hydrophobic beading and easier washes for years.</p><div class="price">From $699</div></div>
+      <div class="card reveal"><div class="ic">🎞️</div><h3>Paint Protection Film</h3><p>Self-healing PPF that shields your paint from rock chips, scratches and road debris — virtually invisible.</p><div class="price">Custom quote</div></div>
+      <div class="card reveal"><div class="ic">💎</div><h3>Paint Correction</h3><p>Multi-stage machine polishing to remove swirls, scratches and oxidation, restoring deep, mirror-like clarity.</p><div class="price">From $399</div></div>
+      <div class="card reveal"><div class="ic">🌫️</div><h3>Window Tinting</h3><p>Premium ceramic films that cut heat and UV while adding privacy and a sleek, finished look.</p><div class="price">From $249</div></div>
+      <div class="card reveal"><div class="ic">🏁</div><h3>Vinyl Wraps</h3><p>Full and partial wraps, colour changes and accents installed with precision for a flawless transformation.</p><div class="price">Custom quote</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section id="why">
+  <div class="wrap">
+    <div class="why-grid">
+      <div class="reveal">
+        <span class="eyebrow">Why JANA</span>
+        <h2 style="font-family:'Sora';font-size:clamp(28px,4vw,42px);font-weight:800;margin:14px 0 26px">Obsessed with the details others miss.</h2>
+        <div class="feature"><div class="fic">🔬</div><div><h4>Precision over speed</h4><p>Every vehicle is treated like a flagship build — no shortcuts, no rushed jobs.</p></div></div>
+        <div class="feature"><div class="fic">🧴</div><div><h4>Pro-grade products only</h4><p>We use trusted, professional-tier coatings, films and compounds for results that last.</p></div></div>
+        <div class="feature"><div class="fic">🤝</div><div><h4>Honest, transparent pricing</h4><p>Clear quotes up front. You'll always know exactly what you're paying for.</p></div></div>
+        <div class="feature"><div class="fic">📍</div><div><h4>Local & trusted in Vancouver</h4><p>A neighbourhood studio proud to keep Vancouver's cars looking their best.</p></div></div>
+      </div>
+      <div class="why-img reveal" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="work" style="background:linear-gradient(180deg,var(--bg),var(--bg-2))">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Our Work</span>
+      <h2>Results that speak for themselves.</h2>
+      <p>A glimpse of the finishes coming out of the studio.</p>
+    </div>
+    <div class="gallery-grid reveal">
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80" alt="Detailed sports car"></figure>
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=600&q=80" alt="Polished car exterior"></figure>
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80" alt="Luxury car front"></figure>
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=600&q=80" alt="Sports car detailing"></figure>
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1605515298946-d062f2e9da53?auto=format&fit=crop&w=600&q=80" alt="Glossy paint finish"></figure>
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=600&q=80" alt="Car interior detail"></figure>
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&w=600&q=80" alt="Car wheel close up"></figure>
+      <figure><img loading="lazy" src="https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80" alt="Clean modern car"></figure>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">How It Works</span>
+      <h2>Simple from quote to keys.</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="num">01</div><h4>Get a quote</h4><p>Tell us your vehicle and what you need. We'll recommend the right package.</p></div>
+      <div class="step reveal"><div class="num">02</div><h4>Book your slot</h4><p>Pick a time that works. Drop off or arrange a convenient handover.</p></div>
+      <div class="step reveal"><div class="num">03</div><h4>The studio work</h4><p>We get to work with meticulous, hand-finished care and pro products.</p></div>
+      <div class="step reveal"><div class="num">04</div><h4>Drive away proud</h4><p>Pick up a car that looks and feels brand new — protected and gleaming.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section id="reviews" style="background:linear-gradient(180deg,var(--bg-2),var(--bg))">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Reviews</span>
+      <h2>Loved by Vancouver drivers.</h2>
+    </div>
+    <div class="quotes">
+      <div class="quote reveal"><div class="stars">★★★★★</div><p>"Absolutely flawless work. My car came back looking better than the day I bought it. The ceramic coating is unreal in the rain."</p><div class="who"><div class="av">M</div><div><b>Marcus L.</b><span>Tesla Model 3</span></div></div></div>
+      <div class="quote reveal"><div class="stars">★★★★★</div><p>"Professional, honest, and genuinely passionate about cars. The paint correction removed years of swirls. Highly recommend."</p><div class="who"><div class="av">P</div><div><b>Priya S.</b><span>BMW M340i</span></div></div></div>
+      <div class="quote reveal"><div class="stars">★★★★★</div><p>"Best detailing studio in the city. Attention to detail is next level and the pricing was completely fair. Will be back."</p><div class="who"><div class="av">D</div><div><b>Dan K.</b><span>Audi RS5</span></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Get In Touch</span>
+      <h2>Book your appointment.</h2>
+      <p>Request a quote or reserve a slot — we'll get back to you fast.</p>
+    </div>
+    <div class="contact-grid">
+      <div class="reveal">
+        <div class="info-row"><div class="ic">📍</div><div><h4>Visit the Studio</h4><p>Vancouver, BC<br><a href="https://www.google.com/maps/place/JANA+AUTO+STUDIO/@49.3247888,-123.0775916,17z" target="_blank" rel="noopener">Open in Google Maps →</a></p></div></div>
+        <div class="info-row"><div class="ic">📞</div><div><h4>Call or Text</h4><p><a href="tel:+16045551234">(604) 555-1234</a></p></div></div>
+        <div class="info-row"><div class="ic">✉️</div><div><h4>Email</h4><p><a href="mailto:hello@janaautostudio.ca">hello@janaautostudio.ca</a></p></div></div>
+        <div class="info-row"><div class="ic">🕗</div><div><h4>Hours</h4><p>Mon–Sat: 9:00 AM – 6:00 PM<br>Sunday: By appointment</p></div></div>
+        <div class="map">
+          <iframe title="JANA Auto Studio location" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+            src="https://www.google.com/maps?q=49.3247853,-123.0750167&z=16&output=embed"></iframe>
+        </div>
+      </div>
+      <form id="bookForm" onsubmit="return submitForm(event)">
+        <div class="field"><label for="name">Name</label><input id="name" name="name" required placeholder="Your name" /></div>
+        <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" type="tel" required placeholder="(604) 000-0000" /></div>
+        <div class="field"><label for="vehicle">Vehicle</label><input id="vehicle" name="vehicle" placeholder="Year, make & model" /></div>
+        <div class="field"><label for="service">Service</label>
+          <select id="service" name="service">
+            <option>Premium Detailing</option>
+            <option>Ceramic Coating</option>
+            <option>Paint Protection Film (PPF)</option>
+            <option>Paint Correction</option>
+            <option>Window Tinting</option>
+            <option>Vinyl Wrap</option>
+            <option>Not sure — need advice</option>
+          </select>
+        </div>
+        <div class="field"><label for="msg">Message</label><textarea id="msg" name="msg" placeholder="Tell us what you're looking for..."></textarea></div>
+        <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center">Request Booking</button>
+        <p class="form-note">By submitting, you agree to be contacted about your request. We never share your details.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <a class="brand" href="#top"><span class="mark">JA</span> JANA <span style="color:var(--muted);font-weight:600">Auto Studio</span></a>
+      <div class="foot-links">
+        <a href="#services">Services</a>
+        <a href="#work">Our Work</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#contact">Contact</a>
+        <a href="tel:+16045551234">(604) 555-1234</a>
+      </div>
+    </div>
+    <p class="copy">© <span id="yr"></span> JANA Auto Studio · Vancouver, BC · Premium auto detailing, ceramic coating & paint protection.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast">Thanks! We'll be in touch shortly. ✨</div>
+
+<script>
+  // sticky header
+  const hdr=document.getElementById('hdr');
+  addEventListener('scroll',()=>hdr.classList.toggle('scrolled',scrollY>20));
+  // mobile menu
+  const navLinks=document.getElementById('navLinks');
+  document.getElementById('menuBtn').addEventListener('click',()=>navLinks.classList.toggle('open'));
+  navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('open')));
+  // reveal on scroll
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+  document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i%3*70)+'ms';io.observe(el)});
+  // year
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  // form (front-end demo — wire to a backend / form service to receive submissions)
+  function submitForm(e){
+    e.preventDefault();
+    const t=document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),3800);
+    e.target.reset();
+    return false;
+  }
+</script>
+</body>
+</html>
