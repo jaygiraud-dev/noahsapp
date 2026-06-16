@@ -154,46 +154,49 @@
   }
   @keyframes glowPulse { 0%,100%{ opacity:.75; } 50%{ opacity:1; } }
 
-  /* the 3D stage */
-  .scene {
-    position:relative; z-index:1; width:100%; max-width:1100px; height:78svh; min-height:560px;
-    transform-style: preserve-3d; display:flex; align-items:center; justify-content:center;
+  /* black + molten-gold "chrome veins" background (SVG fractal-noise, no image) */
+  .chrome-bg { position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .chrome-bg svg { position:absolute; top:-9%; left:-9%; width:118%; height:118%;
+    animation: chromeFlow 40s ease-in-out infinite alternate; will-change: transform; }
+  @keyframes chromeFlow {
+    0%   { transform: scale(1.02) translate3d(0,0,0) rotate(0deg); }
+    100% { transform: scale(1.16) translate3d(-3%,-2%,0) rotate(2.5deg); }
   }
-  /* input tilt layer (mouse / touch / gyro) */
-  .scene-tilt {
-    position:absolute; inset:0; transform-style:preserve-3d;
-    transform: rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
-    transition: transform .2s ease-out; will-change: transform;
+  .hero-vignette { position:absolute; inset:0; z-index:0; pointer-events:none;
+    background: radial-gradient(125% 105% at 50% 42%, rgba(0,0,0,0.10), rgba(0,0,0,0.5) 68%, rgba(0,0,0,0.85) 100%); }
+
+  /* slowly-spinning 3D car carousel (dramatic, auto — works on touch) */
+  .car-stage {
+    position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;
+    perspective: 1150px; pointer-events:none;
   }
-  /* auto-spinning rig that holds the floating photos */
-  .scene-rig {
-    position:absolute; inset:0; transform-style:preserve-3d;
-    animation: rigSpin 20s ease-in-out infinite;
+  .car-ring {
+    position:relative; width:0; height:0; transform-style:preserve-3d;
+    animation: ringSpin 36s linear infinite; will-change: transform; --ring-r: 360px;
   }
-  @keyframes rigSpin {
-    0%,100% { transform: scale(var(--rig-scale,1)) rotateY(-11deg) rotateX(2deg); }
-    50%     { transform: scale(var(--rig-scale,1)) rotateY(11deg) rotateX(-2deg); }
+  @keyframes ringSpin {
+    from { transform: rotateX(9deg) rotateY(0deg); }
+    to   { transform: rotateX(9deg) rotateY(360deg); }
   }
-  @media (max-width: 720px){ .scene-rig{ --rig-scale:.6; } }
-  /* floating photo panels */
-  .panel {
-    position:absolute; left:50%; top:50%; width:230px; height:158px;
-    margin:-79px 0 0 -115px; border-radius:14px; overflow:hidden;
-    border:1px solid rgba(255,255,255,0.14);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 0 40px rgba(212,160,23,0.12);
-    transform: translate3d(var(--x),var(--y),var(--z)) rotateY(var(--r,0deg));
-    animation: panelFloat var(--dur,9s) ease-in-out infinite;
-    animation-delay: var(--delay,0s);
-    will-change: transform; backface-visibility:hidden;
+  .car-card {
+    position:absolute; left:50%; top:50%; width:320px; height:202px;
+    margin:-101px 0 0 -160px; border-radius:14px; overflow:hidden;
+    border:1px solid rgba(212,160,23,0.5);
+    box-shadow: 0 26px 60px rgba(0,0,0,0.6), 0 0 55px rgba(212,160,23,0.22);
+    transform: rotateY(calc(var(--i) * 60deg)) translateZ(var(--ring-r));
+    backface-visibility:hidden;
   }
-  .panel img { width:100%; height:100%; object-fit:cover; display:block; filter:saturate(1.05); }
-  .panel::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.45)); }
-  @keyframes panelFloat {
-    0%,100% { transform: translate3d(var(--x),var(--y),var(--z)) rotateY(var(--r,0deg)); }
-    50%     { transform: translate3d(var(--x),calc(var(--y) - 26px),var(--z)) rotateY(var(--r,0deg)); }
+  .car-card img { width:100%; height:100%; object-fit:cover; display:block; }
+  .car-card::after { content:""; position:absolute; inset:0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.04) 42%, rgba(0,0,0,0.55));
+    box-shadow: inset 0 0 30px rgba(212,160,23,0.18); }
+  @media (max-width: 820px){
+    .car-ring{ --ring-r: 232px; }
+    .car-card{ width:212px; height:134px; margin:-67px 0 0 -106px; }
   }
-  @media (max-width: 720px){
-    .panel { width:150px; height:104px; margin:-52px 0 0 -75px; }
+  @media (max-width: 520px){
+    .car-ring{ --ring-r: 166px; }
+    .car-card{ width:158px; height:100px; margin:-50px 0 0 -79px; }
   }
 
   /* centered brand content, sits in front of the photos */
@@ -475,8 +478,7 @@
   @media (prefers-reduced-motion: reduce){
     .reveal{ opacity:1 !important; transition:none; }
     .scroll3d{ transform:none !important; }
-    .scene-rig, .panel, .brand3d, .hero::before, .scroll-cue::after, .why::before, .why::after { animation:none !important; }
-    .panel { transform: translate3d(var(--x),var(--y),var(--z)) rotateY(var(--r,0deg)) !important; }
+    .car-ring, .chrome-bg svg, .brand3d, .hero::before, .scroll-cue::after, .why::before, .why::after { animation:none !important; }
     html{ scroll-behavior:auto; }
   }
 </style>
@@ -502,19 +504,38 @@
 
 <!-- IMMERSIVE 3D HERO -->
 <section class="hero" id="hero">
-  <div class="scene">
-    <div class="scene-tilt" id="sceneTilt">
-    <div class="scene-rig" id="sceneRig">
-      <div class="panel" style="--x:-360px;--y:-150px;--z:-260px;--r:20deg;--dur:9s;--delay:0s;"><img src="img/car-vw.jpg" alt="Detailed black VW" loading="eager"></div>
-      <div class="panel" style="--x:380px;--y:-130px;--z:-300px;--r:-22deg;--dur:11s;--delay:-2s;"><img src="img/black-camaro.jpg" alt="Detailed black Camaro"></div>
-      <div class="panel" style="--x:-430px;--y:140px;--z:-160px;--r:18deg;--dur:10s;--delay:-1s;"><img src="img/foam-wash.jpg" alt="Foam wash"></div>
-      <div class="panel" style="--x:430px;--y:160px;--z:-220px;--r:-18deg;--dur:12s;--delay:-3s;"><img src="img/poster-v1.jpg" alt="Green BMW M4"></div>
-      <div class="panel" style="--x:-150px;--y:-250px;--z:-420px;--r:10deg;--dur:13s;--delay:-4s;"><img src="img/panel-m4.jpg" alt="BMW M4 detail"></div>
-      <div class="panel" style="--x:180px;--y:250px;--z:-400px;--r:-10deg;--dur:12s;--delay:-2.5s;"><img src="img/panel-shine.jpg" alt="Glossy shine"></div>
-      <div class="panel" style="--x:0px;--y:-30px;--z:-520px;--r:0deg;--dur:14s;--delay:-5s;"><img src="img/hero.jpg" alt="Freshly detailed car" fetchpriority="high"></div>
-    </div>
-    </div>
+  <div class="chrome-bg" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1200 800">
+      <defs>
+        <filter id="bbveins" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.010 0.018" numOctaves="5" seed="11" stitchTiles="stitch" result="t"/>
+          <feColorMatrix in="t" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="g"/>
+          <feComponentTransfer in="g" result="v">
+            <feFuncR type="table" tableValues="0 0 0.15 0.7 1 0.7 0.15 0 0"/>
+            <feFuncG type="table" tableValues="0 0 0.15 0.7 1 0.7 0.15 0 0"/>
+            <feFuncB type="table" tableValues="0 0 0.15 0.7 1 0.7 0.15 0 0"/>
+          </feComponentTransfer>
+          <feColorMatrix in="v" type="matrix" values="0.86 0 0 0 0   0.64 0 0 0 0   0.16 0 0 0 0   0 0 0 0 1"/>
+        </filter>
+      </defs>
+      <rect width="1200" height="800" fill="#070707"/>
+      <rect width="1200" height="800" filter="url(#bbveins)"/>
+    </svg>
+  </div>
+  <div class="hero-vignette" aria-hidden="true"></div>
 
+  <div class="car-stage" aria-hidden="true">
+    <div class="car-ring">
+      <div class="car-card" style="--i:0"><img src="img/bmw-m4.jpg" alt="BMW M4" loading="eager"></div>
+      <div class="car-card" style="--i:1"><img src="img/porsche.jpg" alt="Porsche 911 foam wash"></div>
+      <div class="car-card" style="--i:2"><img src="img/lexus.jpg" alt="Lexus IS foam wash"></div>
+      <div class="car-card" style="--i:3"><img src="img/black-camaro.jpg" alt="Detailed black Camaro"></div>
+      <div class="car-card" style="--i:4"><img src="img/car-vw.jpg" alt="Detailed black VW"></div>
+      <div class="car-card" style="--i:5"><img src="img/foam-wash.jpg" alt="Foam wash"></div>
+    </div>
+  </div>
+
+  <div class="scene" style="position:relative;z-index:3;display:flex;align-items:center;justify-content:center;width:100%;">
     <div class="hero-content">
       <span class="eyebrow" style="color:var(--gold2)">Auto Detailing · Full Throttle Auto Spa · North Van</span>
       <h1 class="brand3d"><span class="bubble">Bubble</span><span class="boss">Boss</span></h1>
