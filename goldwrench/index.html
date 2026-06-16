@@ -9,6 +9,7 @@
 
 <!-- Open Graph -->
 <meta property="og:type" content="business.business" />
+<meta property="og:image" content="images/storefront.jpeg" />
 <meta property="og:title" content="Gold Wrench Automotive — Honest Auto Repair in North Vancouver" />
 <meta property="og:description" content="Trusted, fair-priced auto repair on the North Shore. OEM parts, straight answers, and service that keeps customers coming back for years." />
 <meta property="og:locale" content="en_CA" />
@@ -23,7 +24,7 @@
   "@context": "https://schema.org",
   "@type": "AutoRepair",
   "name": "Gold Wrench Automotive",
-  "image": "",
+  "image": "images/storefront.jpeg",
   "telephone": "+1-604-990-9936",
   "priceRange": "$$",
   "address": {
@@ -129,6 +130,7 @@
     padding:7px 16px;border-radius:999px;font-size:14px;
   }
   .hero-card h3{font-size:26px;text-transform:uppercase;margin-bottom:6px}
+  .hero-sign{width:100%;height:230px;object-fit:cover;border-radius:12px;border:1px solid var(--line);margin-bottom:18px}
   .stars{color:var(--gold);letter-spacing:3px;font-size:18px}
   .quote{color:var(--muted);font-style:italic;margin:18px 0;border-left:3px solid var(--gold);padding-left:16px}
   .quote-name{color:var(--text);font-weight:600;font-style:normal;font-size:14px}
@@ -183,6 +185,17 @@
   .who .nm{font-weight:600;font-size:14px}
   .who .src{color:var(--muted);font-size:12px}
 
+  /* ---------- Gallery ---------- */
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .gallery figure{margin:0;position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+  .gallery img{width:100%;height:280px;object-fit:cover;transition:transform .4s ease;display:block}
+  .gallery figure:hover img{transform:scale(1.05)}
+  .gallery figcaption{
+    position:absolute;left:0;right:0;bottom:0;padding:26px 18px 14px;
+    font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:1px;font-weight:600;font-size:18px;
+    color:#fff;background:linear-gradient(to top,rgba(0,0,0,.82),transparent);
+  }
+
   /* ---------- Contact ---------- */
   .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px}
   .info-row{display:flex;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
@@ -223,6 +236,7 @@
   @media (max-width:900px){
     .hero-grid,.why-grid,.contact-grid{grid-template-columns:1fr}
     .services,.reviews{grid-template-columns:1fr 1fr}
+    .gallery{grid-template-columns:1fr 1fr}
     .foot-grid{grid-template-columns:1fr 1fr}
     .nav-links{display:none;position:absolute;top:70px;left:0;right:0;background:var(--bg-2);flex-direction:column;padding:18px 22px;border-bottom:1px solid var(--line);gap:6px}
     .nav-links.open{display:flex}
@@ -231,7 +245,7 @@
     .nav-phone{display:none}
   }
   @media (max-width:560px){
-    .services,.reviews,.foot-grid{grid-template-columns:1fr}
+    .services,.reviews,.gallery,.foot-grid{grid-template-columns:1fr}
     section{padding:64px 0}
     .hero-grid{padding:54px 0 64px}
   }
@@ -256,6 +270,7 @@
     <nav class="nav-links" id="navLinks">
       <a href="#services">Services</a>
       <a href="#why">Why Us</a>
+      <a href="#shop">Our Shop</a>
       <a href="#reviews">Reviews</a>
       <a href="#contact">Hours &amp; Location</a>
     </nav>
@@ -293,7 +308,7 @@
 
     <aside class="hero-card">
       <div class="badge">★ Trusted</div>
-      <h3>What customers say</h3>
+      <img class="hero-sign" src="images/sign.jpeg" alt="Gold Wrench Automotive shop sign — 604-990-9936" loading="lazy" />
       <div class="stars" aria-label="5 out of 5 stars">★★★★★</div>
       <p class="quote">"Kia is as honest as they come. I've trusted him with my cars for over ten years — fair, knowledgeable, and always does what's right."
         <br><span class="quote-name">— Long-time North Shore customer</span></p>
@@ -379,6 +394,31 @@
       <hr>
       <p style="font-style:italic">"Exceptional care, attention to detail, reliability, honesty, and integrity. Reasonable labour and OEM parts — exactly what you want from a mechanic."</p>
       <div class="stars" style="margin-top:10px">★★★★★</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Gallery ===== -->
+<section id="shop">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Inside The Shop</div>
+      <h2>Where The Work Gets Done</h2>
+      <p>A real, working garage on Esplanade East — professional lifts, the right tools, and the cars to prove it.</p>
+    </div>
+    <div class="gallery">
+      <figure>
+        <img src="images/storefront.jpeg" alt="Gold Wrench Automotive storefront with open bay door at unit 108, North Vancouver" loading="lazy" />
+        <figcaption>Our Shop — Unit 108, Esplanade East</figcaption>
+      </figure>
+      <figure>
+        <img src="images/bay-x6.jpeg" alt="BMW X6 raised on a Rotary lift inside the Gold Wrench service bay" loading="lazy" />
+        <figcaption>In The Bay</figcaption>
+      </figure>
+      <figure>
+        <img src="images/bay-335i.jpeg" alt="BMW 335i on the hoist undergoing service at Gold Wrench Automotive" loading="lazy" />
+        <figcaption>Service &amp; Repair</figcaption>
+      </figure>
     </div>
   </div>
 </section>

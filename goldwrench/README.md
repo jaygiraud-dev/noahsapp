@@ -31,12 +31,17 @@ cd goldwrench && python3 -m http.server 8080
 ## What's inside
 
 - `index.html` — the entire site (HTML + CSS + a little JS, all inline)
+- `images/` — the shop's real photos:
+  - `sign.jpeg` — Gold Wrench Automotive sign (featured in the hero card)
+  - `storefront.jpeg` — shop exterior, unit 108 (hero/social image + gallery)
+  - `bay-x6.jpeg` / `bay-335i.jpeg` — cars on the lifts (gallery)
 
 ## Features
 
 - Responsive, mobile-friendly dark/gold "industrial" design fitting the shop's name
 - Sticky nav with mobile hamburger menu
-- Hero, Services, Why Us, Reviews, and Hours/Location sections
+- Hero, Services, Why Us, **Our Shop photo gallery**, Reviews, and Hours/Location sections
+- Real shop photos throughout (sign in the hero, gallery of the storefront and service bay)
 - Live **"Open now / Closed"** indicator and today's-hours highlighting (computed in the browser)
 - Embedded Google Map + one-tap **Call** and **Directions** links
 - LocalBusiness (`AutoRepair`) JSON-LD structured data + Open Graph tags for SEO
