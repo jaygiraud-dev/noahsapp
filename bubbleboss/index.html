@@ -160,15 +160,12 @@
     background: radial-gradient(140% 130% at 82% 18%, #0c0e15 0%, #070709 52%, #040404 100%);
   }
   #bgfx svg {
-    position:absolute; top:-8%; left:-8%; width:116%; height:116%;
-    animation: streakDrift 22s ease-in-out infinite alternate; will-change: transform;
+    position:absolute; top:-6%; left:-6%; width:112%; height:112%;
   }
-  @keyframes streakDrift {
-    0%   { transform: translate3d(0,0,0) scale(1.03); }
-    100% { transform: translate3d(-2.5%,1.5%,0) scale(1.09); }
-  }
-  /* light that travels along the ribbons = flowy (faster) */
-  #bgfx .flow { stroke-dasharray: 120 1600; animation: flowMove 3s linear infinite; }
+  /* static blurred ribbons are rasterized once (no transform animation = no re-blur) */
+  .bg-static { transform: translateZ(0); }
+  /* only the thin, unfiltered flow lines animate = cheap */
+  #bgfx .flow { stroke-dasharray: 120 1600; animation: flowMove 3s linear infinite; will-change: stroke-dashoffset; }
   #bgfx .flow2 { animation-duration: 3.8s; animation-delay: -1.5s; }
   @keyframes flowMove { from { stroke-dashoffset: 1720; } to { stroke-dashoffset: 0; } }
 
@@ -189,9 +186,9 @@
     position:absolute; left:50%; top:50%; width:320px; height:202px;
     margin:-101px 0 0 -160px; border-radius:14px; overflow:hidden;
     border:1px solid rgba(212,160,23,0.5);
-    box-shadow: 0 26px 60px rgba(0,0,0,0.6), 0 0 55px rgba(212,160,23,0.22);
+    box-shadow: 0 18px 34px rgba(0,0,0,0.55);
     transform: rotateY(calc(var(--i) * 60deg)) translateZ(var(--ring-r));
-    backface-visibility:hidden;
+    backface-visibility:hidden; will-change: transform;
   }
   .car-card img { width:100%; height:100%; object-fit:cover; display:block; }
   .car-card::after { content:""; position:absolute; inset:0;
@@ -537,7 +534,7 @@
 
 <!-- Global flowing-gold backdrop behind the whole (black) site -->
 <div id="bgfx" aria-hidden="true">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+  <svg class="bg-static" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
     <defs>
       <linearGradient id="bbgold" x1="0" y1="1" x2="1" y2="0">
         <stop offset="0" stop-color="#6b4f10" stop-opacity="0"/>
@@ -546,8 +543,8 @@
         <stop offset="0.70" stop-color="#d4a017" stop-opacity="0.65"/>
         <stop offset="1" stop-color="#6b4f10" stop-opacity="0"/>
       </linearGradient>
-      <filter id="bbglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter>
-      <filter id="bbglowL" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="26"/></filter>
+      <filter id="bbglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+      <filter id="bbglowL" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14"/></filter>
     </defs>
     <rect width="1200" height="800" fill="#060607"/>
     <g fill="none" stroke="url(#bbgold)" stroke-linecap="round">
@@ -557,6 +554,10 @@
       <path d="M-80 715 C 185 595, 335 705, 525 545 S 825 365, 1005 525 S 1235 305, 1345 205" stroke-width="2.2" opacity="0.8"/>
       <path d="M-80 600 C 160 700, 300 430, 470 520 S 760 690, 940 430 S 1180 210, 1345 320" stroke-width="1.6" opacity="0.6"/>
       <path d="M-80 770 C 220 660, 380 740, 580 560 S 880 400, 1060 560 S 1260 360, 1360 270" stroke-width="1.4" opacity="0.5"/>
+    </g>
+  </svg>
+  <svg class="bg-flow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+    <g fill="none" stroke-linecap="round">
       <path class="flow" d="M-80 660 C 150 770, 310 470, 480 565 S 770 745, 950 475 S 1185 255, 1345 385" stroke-width="3.4" opacity="0.9" stroke="#fff2cf"/>
       <path class="flow flow2" d="M-80 715 C 185 595, 335 705, 525 545 S 825 365, 1005 525 S 1235 305, 1345 205" stroke-width="2.6" opacity="0.85" stroke="#ffe7b0"/>
     </g>
@@ -1011,15 +1012,18 @@
     function update(){
       raf=null;
       const vh = window.innerHeight, mid = vh/2;
-      for(const el of els){
-        const r = el.getBoundingClientRect();
-        if(r.bottom < -80 || r.top > vh+80) continue;          // skip well offscreen
+      // READ phase — measure everything first (one reflow), no writes yet
+      const rects = els.map(el => el.getBoundingClientRect());
+      // WRITE phase — apply transforms, no reads (avoids layout thrash = smooth scroll)
+      for(let i=0;i<els.length;i++){
+        const r = rects[i];
+        if(r.bottom < -120 || r.top > vh+120){ continue; }     // skip well offscreen
         const center = r.top + r.height/2;
-        const p = Math.max(-1, Math.min(1, (center - mid)/(mid+1)));   // -1 top … 0 centre … +1 bottom
-        const rx = (-p * 9 + gy).toFixed(2);                   // tilt in 3D as it flows past
-        const tz = (-Math.abs(p) * 70).toFixed(0);             // push away from centre = depth
-        const ty = (p * 10).toFixed(1);
-        el.style.transform = `perspective(1200px) translate3d(${gx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${(gx*0.4).toFixed(2)}deg)`;
+        const p = Math.max(-1, Math.min(1, (center - mid)/(mid+1)));
+        const rx = (-p * 8 + gy).toFixed(2);
+        const tz = (-Math.abs(p) * 60).toFixed(0);
+        const ty = (p * 9).toFixed(1);
+        els[i].style.transform = `perspective(1100px) translate3d(${gx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${(gx*0.4).toFixed(2)}deg)`;
       }
     }
     function onScroll(){ if(!raf) raf = requestAnimationFrame(update); }
