@@ -6,6 +6,10 @@
 <title>Miller Automotive — Honest Auto Repair in North Vancouver, BC</title>
 <meta name="description" content="Miller Automotive is a trusted North Vancouver auto repair shop. Honest diagnostics and quality repairs for vintage collector cars and modern vehicles. Call (604) 985-6355."/>
 <meta name="theme-color" content="#0e1116"/>
+<meta property="og:title" content="Miller Automotive — Honest Auto Repair in North Vancouver, BC"/>
+<meta property="og:description" content="Honest diagnostics and quality repairs for vintage collector cars and modern vehicles. North Vancouver, BC. Call (604) 985-6355."/>
+<meta property="og:type" content="business.business"/>
+<meta property="og:image" content="assets/shop-interior.jpeg"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -76,6 +80,10 @@ header{position:sticky;top:0;z-index:50;background:rgba(14,17,22,.82);backdrop-f
 .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:30px}
 .trust{display:flex;align-items:center;gap:22px;flex-wrap:wrap;color:var(--muted);font-size:14px;font-weight:500}
 .stars{color:var(--amber);letter-spacing:2px;font-size:17px}
+.hero-photo{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 70px rgba(0,0,0,.5);aspect-ratio:4/5}
+.hero-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-photo .open-badge{position:absolute;top:16px;left:16px;margin:0;backdrop-filter:blur(8px)}
+.photo-cap{position:absolute;left:0;right:0;bottom:0;padding:42px 18px 16px;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.82))}
 .hero-card{
   background:linear-gradient(180deg,var(--bg-2),var(--bg-3));border:1px solid var(--line);
   border-radius:18px;padding:30px;box-shadow:0 30px 70px rgba(0,0,0,.45);
@@ -117,6 +125,13 @@ section{padding:84px 0}
 .stat .n{font-family:'Barlow Condensed';font-size:46px;font-weight:800;color:#fff;line-height:1}
 .stat .n .small{font-size:26px;color:var(--red-2)}
 .stat .l{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.12em;margin-top:8px;font-weight:600}
+
+/* ---------- Gallery ---------- */
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.gphoto{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3;background:#000}
+.gphoto img{width:100%;height:100%;object-fit:cover;transition:.45s ease}
+.gphoto:hover img{transform:scale(1.06)}
+.gphoto figcaption{position:absolute;left:0;right:0;bottom:0;padding:30px 16px 14px;color:#fff;font-weight:600;font-size:15px;letter-spacing:.01em;background:linear-gradient(transparent,rgba(0,0,0,.82))}
 
 /* ---------- Reviews ---------- */
 .reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
@@ -162,14 +177,14 @@ footer{background:#0a0d11;border-top:1px solid var(--line);padding:48px 0 30px}
 /* ---------- Responsive ---------- */
 @media(max-width:920px){
   .hero-grid,.why-grid,.contact-grid{grid-template-columns:1fr}
-  .cards,.reviews{grid-template-columns:1fr 1fr}
+  .cards,.reviews,.gallery{grid-template-columns:1fr 1fr}
   .nav-links{display:none}
   .nav-links.open{display:flex;position:absolute;top:70px;left:0;right:0;flex-direction:column;background:var(--bg-2);border-bottom:1px solid var(--line);padding:18px 22px;gap:16px}
   .menu-btn{display:block}
   .hero{padding:64px 0 72px}
 }
 @media(max-width:600px){
-  .cards,.reviews,.stat-grid,.foot-grid{grid-template-columns:1fr}
+  .cards,.reviews,.gallery,.stat-grid,.foot-grid{grid-template-columns:1fr}
   section{padding:60px 0}
   .nav-call span{display:none}
 }
@@ -186,6 +201,7 @@ footer{background:#0a0d11;border-top:1px solid var(--line);padding:48px 0 30px}
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="#services">Services</a>
+      <a href="#gallery">Our Work</a>
       <a href="#why">Why Us</a>
       <a href="#reviews">Reviews</a>
       <a href="#contact">Hours &amp; Location</a>
@@ -213,17 +229,10 @@ footer{background:#0a0d11;border-top:1px solid var(--line);padding:48px 0 30px}
         <span>•&nbsp; Independent &amp; local</span>
       </div>
     </div>
-    <aside class="hero-card">
+    <aside class="hero-photo">
+      <img src="assets/shop-interior.jpeg" alt="Classic cars including a Corvette and a vintage Mustang being serviced inside the Miller Automotive shop in North Vancouver" fetchpriority="high"/>
       <div class="open-badge" id="openBadge"><span class="dot"></span> Open Now</div>
-      <h3>Shop Hours</h3>
-      <div class="sub">Drop in or book ahead — we'll get you back on the road.</div>
-      <div class="hours-row" data-day="1"><span>Monday</span><span>8:00 AM – 5:00 PM</span></div>
-      <div class="hours-row" data-day="2"><span>Tuesday</span><span>8:00 AM – 5:00 PM</span></div>
-      <div class="hours-row" data-day="3"><span>Wednesday</span><span>8:00 AM – 5:00 PM</span></div>
-      <div class="hours-row" data-day="4"><span>Thursday</span><span>8:00 AM – 5:00 PM</span></div>
-      <div class="hours-row" data-day="5"><span>Friday</span><span>8:00 AM – 5:00 PM</span></div>
-      <div class="hours-row closed" data-day="6"><span>Saturday</span><span>Closed</span></div>
-      <div class="hours-row closed" data-day="0"><span>Sunday</span><span>Closed</span></div>
+      <div class="photo-cap">Inside the shop — North Vancouver, BC</div>
     </aside>
   </div>
 </section>
@@ -247,8 +256,24 @@ footer{background:#0a0d11;border-top:1px solid var(--line);padding:48px 0 30px}
   </div>
 </section>
 
+<!-- GALLERY -->
+<section id="gallery" class="bg-alt">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">In The Shop</div>
+      <h2>Classics Welcome Here</h2>
+      <p>A few of the vintage and collector cars our team has had the pleasure of bringing back to life.</p>
+    </div>
+    <div class="gallery">
+      <figure class="gphoto reveal"><img src="assets/cadillac-1959.jpeg" loading="lazy" alt="Light blue 1959 Cadillac with tail fins in the Miller Automotive shop"/><figcaption>1959 Cadillac — in for service</figcaption></figure>
+      <figure class="gphoto reveal"><img src="assets/lincoln-continental.jpeg" loading="lazy" alt="Red 1960s Lincoln Continental convertible outside the shop"/><figcaption>Lincoln Continental convertible</figcaption></figure>
+      <figure class="gphoto reveal"><img src="assets/engine-rebuild.jpeg" loading="lazy" alt="Classic V8 engine bay with carburetor during a rebuild"/><figcaption>Engine rebuilds &amp; tuning</figcaption></figure>
+    </div>
+  </div>
+</section>
+
 <!-- WHY -->
-<section id="why" class="bg-alt">
+<section id="why">
   <div class="wrap why-grid">
     <div class="reveal">
       <div class="eyebrow">Why Drivers Choose Us</div>
@@ -270,7 +295,7 @@ footer{background:#0a0d11;border-top:1px solid var(--line);padding:48px 0 30px}
 </section>
 
 <!-- REVIEWS -->
-<section id="reviews">
+<section id="reviews" class="bg-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="eyebrow">From The Community</div>
@@ -286,7 +311,7 @@ footer{background:#0a0d11;border-top:1px solid var(--line);padding:48px 0 30px}
 </section>
 
 <!-- CONTACT / HOURS / MAP -->
-<section id="contact" class="bg-alt">
+<section id="contact">
   <div class="wrap">
     <div class="sec-head reveal">
       <div class="eyebrow">Find Us</div>
@@ -357,7 +382,7 @@ footer{background:#0a0d11;border-top:1px solid var(--line);padding:48px 0 30px}
   "@context":"https://schema.org",
   "@type":"AutoRepair",
   "name":"Miller Automotive",
-  "image":"",
+  "image":"assets/shop-interior.jpeg",
   "telephone":"+1-604-985-6355",
   "address":{
     "@type":"PostalAddress",
