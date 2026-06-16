@@ -22,7 +22,7 @@ bubbleboss/
 
 ## Sections
 
-- Top **$10-off** offer banner (new customers)
+- Top **$5-off** offer banner (post us to your Insta + send the screenshot)
 - Sticky nav + hero with a real photo background
 - **Our Work** gallery — 2 photos + 2 tap-to-play videos (lightbox)
 - Car packages, truck package, full-wax add-on — each with a "Book This" button
@@ -54,7 +54,7 @@ the matching `<img src="...">`.
 - **Instagram handle:** the poster says `@bubbleboss1` but your videos are
   watermarked `@bubblebosswashing1`. The site currently uses `@bubbleboss1`
   everywhere — change it if the other one is correct.
-- **"$10 off first detail"** offer — remove the top banner + FAQ entry if you
-  don't want to run it.
+- **"$5 off — post us to your Insta"** offer — remove the top banner + FAQ
+  entry if you don't want to run it.
 - **"Exterior + Basic Interior"** was listed at $10–15 on the poster (below
   the $25 wash, looked like a typo) — set to **$35** here. Adjust if needed.
