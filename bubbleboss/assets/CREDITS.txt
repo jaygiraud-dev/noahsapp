@@ -1,5 +1,0 @@
-3D model: car.glb
-Source: "ToyCar" from KhronosGroup glTF-Sample-Assets
-License: CC0 1.0 Universal (public domain — free for commercial use, no attribution required)
-Authors: Guido Odendahl (model), Eric Chadwick (materials/scene)
-Optimized for web with gltf-transform: WebP textures @1024, Draco geometry compression (5.4MB -> ~0.55MB).
