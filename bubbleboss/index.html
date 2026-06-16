@@ -154,13 +154,25 @@
   }
   @keyframes glowPulse { 0%,100%{ opacity:.75; } 50%{ opacity:1; } }
 
-  /* black + molten-gold "chrome veins" background (SVG fractal-noise, no image) */
-  .chrome-bg { position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
-  .chrome-bg svg { position:absolute; top:-9%; left:-9%; width:118%; height:118%;
-    animation: chromeFlow 40s ease-in-out infinite alternate; will-change: transform; }
-  @keyframes chromeFlow {
-    0%   { transform: scale(1.02) translate3d(0,0,0) rotate(0deg); }
-    100% { transform: scale(1.16) translate3d(-3%,-2%,0) rotate(2.5deg); }
+  /* black background with soft diagonal molten-gold light streaks from lower-left */
+  .chrome-bg {
+    position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+    background: radial-gradient(135% 130% at 82% 22%, #0e1018 0%, #08080c 52%, #050505 100%);
+  }
+  .chrome-bg .streaks {
+    position:absolute; inset:-25%;
+    background:
+      linear-gradient(118deg, transparent 33%, rgba(208,158,40,0.16) 43%, rgba(255,224,150,0.5) 49%, rgba(214,162,40,0.2) 55%, transparent 65%),
+      linear-gradient(118deg, transparent 41%, rgba(214,170,60,0.12) 49%, rgba(255,232,170,0.34) 52%, transparent 61%),
+      linear-gradient(118deg, transparent 22%, rgba(176,128,28,0.12) 32%, rgba(230,190,110,0.18) 36%, transparent 45%);
+    filter: blur(26px) saturate(1.12);
+    -webkit-mask: radial-gradient(95% 100% at 10% 95%, #000 0%, rgba(0,0,0,0.7) 38%, transparent 80%);
+            mask: radial-gradient(95% 100% at 10% 95%, #000 0%, rgba(0,0,0,0.7) 38%, transparent 80%);
+    animation: streakDrift 20s ease-in-out infinite alternate; will-change: transform, opacity;
+  }
+  @keyframes streakDrift {
+    0%   { transform: translate3d(0,0,0) rotate(0deg); opacity:.85; }
+    100% { transform: translate3d(2.5%,-3%,0) rotate(1.6deg); opacity:1; }
   }
   .hero-vignette { position:absolute; inset:0; z-index:0; pointer-events:none;
     background: radial-gradient(125% 105% at 50% 42%, rgba(0,0,0,0.10), rgba(0,0,0,0.5) 68%, rgba(0,0,0,0.85) 100%); }
@@ -478,7 +490,7 @@
   @media (prefers-reduced-motion: reduce){
     .reveal{ opacity:1 !important; transition:none; }
     .scroll3d{ transform:none !important; }
-    .car-ring, .chrome-bg svg, .brand3d, .hero::before, .scroll-cue::after, .why::before, .why::after { animation:none !important; }
+    .car-ring, .chrome-bg .streaks, .brand3d, .hero::before, .scroll-cue::after, .why::before, .why::after { animation:none !important; }
     html{ scroll-behavior:auto; }
   }
 </style>
@@ -504,24 +516,7 @@
 
 <!-- IMMERSIVE 3D HERO -->
 <section class="hero" id="hero">
-  <div class="chrome-bg" aria-hidden="true">
-    <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1200 800">
-      <defs>
-        <filter id="bbveins" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.010 0.018" numOctaves="5" seed="11" stitchTiles="stitch" result="t"/>
-          <feColorMatrix in="t" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="g"/>
-          <feComponentTransfer in="g" result="v">
-            <feFuncR type="table" tableValues="0 0 0.15 0.7 1 0.7 0.15 0 0"/>
-            <feFuncG type="table" tableValues="0 0 0.15 0.7 1 0.7 0.15 0 0"/>
-            <feFuncB type="table" tableValues="0 0 0.15 0.7 1 0.7 0.15 0 0"/>
-          </feComponentTransfer>
-          <feColorMatrix in="v" type="matrix" values="0.86 0 0 0 0   0.64 0 0 0 0   0.16 0 0 0 0   0 0 0 0 1"/>
-        </filter>
-      </defs>
-      <rect width="1200" height="800" fill="#070707"/>
-      <rect width="1200" height="800" filter="url(#bbveins)"/>
-    </svg>
-  </div>
+  <div class="chrome-bg" aria-hidden="true"><div class="streaks"></div></div>
   <div class="hero-vignette" aria-hidden="true"></div>
 
   <div class="car-stage" aria-hidden="true">
