@@ -164,9 +164,13 @@
     animation: streakDrift 26s ease-in-out infinite alternate; will-change: transform;
   }
   @keyframes streakDrift {
-    0%   { transform: translate3d(0,0,0) scale(1.02); }
-    100% { transform: translate3d(-2.5%,1.5%,0) scale(1.08); }
+    0%   { transform: translate3d(0,0,0) scale(1.03); }
+    100% { transform: translate3d(-2.5%,1.5%,0) scale(1.09); }
   }
+  /* light that travels along the ribbons = flowy */
+  .chrome-bg .flow { stroke-dasharray: 120 1600; animation: flowMove 7s linear infinite; }
+  .chrome-bg .flow2 { animation-duration: 9s; animation-delay: -3s; }
+  @keyframes flowMove { from { stroke-dashoffset: 1720; } to { stroke-dashoffset: 0; } }
   .hero-vignette { position:absolute; inset:0; z-index:0; pointer-events:none;
     background: radial-gradient(125% 105% at 50% 42%, rgba(0,0,0,0.10), rgba(0,0,0,0.5) 68%, rgba(0,0,0,0.85) 100%); }
 
@@ -483,7 +487,7 @@
   @media (prefers-reduced-motion: reduce){
     .reveal{ opacity:1 !important; transition:none; }
     .scroll3d{ transform:none !important; }
-    .car-ring, .chrome-bg svg, .brand3d, .hero::before, .scroll-cue::after, .why::before, .why::after { animation:none !important; }
+    .car-ring, .chrome-bg svg, .chrome-bg .flow, .brand3d, .hero::before, .scroll-cue::after, .why::before, .why::after { animation:none !important; }
     html{ scroll-behavior:auto; }
   }
 </style>
@@ -524,12 +528,17 @@
       </defs>
       <rect width="1200" height="800" fill="#070708"/>
       <g fill="none" stroke="url(#bbgold)" stroke-linecap="round">
-        <path d="M-60 720 C 260 560, 470 600, 700 380 S 1060 120, 1320 50" stroke-width="70" opacity="0.22" filter="url(#bbglowL)"/>
-        <path d="M-60 760 C 300 600, 520 560, 760 360 S 1080 150, 1320 95" stroke-width="36" opacity="0.4" filter="url(#bbglow)"/>
-        <path d="M-60 738 C 280 588, 500 582, 742 372 S 1080 140, 1320 80" stroke-width="3" opacity="0.95"/>
-        <path d="M-50 700 C 262 540, 470 592, 690 358 S 1040 108, 1320 48" stroke-width="2" opacity="0.7"/>
-        <path d="M-40 792 C 322 652, 560 600, 822 410 S 1122 200, 1330 120" stroke-width="2.4" opacity="0.55"/>
-        <path d="M-60 660 C 240 520, 440 560, 660 350 S 1000 95, 1320 30" stroke-width="1.4" opacity="0.5"/>
+        <!-- soft wide glow ribbons (wavy, undulating) -->
+        <path d="M-80 640 C 140 760, 300 460, 470 560 S 760 740, 940 470 S 1180 250, 1340 380" stroke-width="80" opacity="0.18" filter="url(#bbglowL)"/>
+        <path d="M-80 700 C 180 580, 330 700, 520 540 S 820 360, 1000 520 S 1230 300, 1340 200" stroke-width="46" opacity="0.34" filter="url(#bbglow)"/>
+        <!-- crisp flowing ribbons -->
+        <path d="M-80 660 C 150 770, 310 470, 480 565 S 770 745, 950 475 S 1185 255, 1345 385" stroke-width="3" opacity="0.95"/>
+        <path d="M-80 715 C 185 595, 335 705, 525 545 S 825 365, 1005 525 S 1235 305, 1345 205" stroke-width="2.2" opacity="0.8"/>
+        <path d="M-80 600 C 160 700, 300 430, 470 520 S 760 690, 940 430 S 1180 210, 1345 320" stroke-width="1.6" opacity="0.6"/>
+        <path d="M-80 770 C 220 660, 380 740, 580 560 S 880 400, 1060 560 S 1260 360, 1360 270" stroke-width="1.4" opacity="0.5"/>
+        <!-- travelling light highlights along the ribbons -->
+        <path class="flow" d="M-80 660 C 150 770, 310 470, 480 565 S 770 745, 950 475 S 1185 255, 1345 385" stroke-width="3.4" opacity="0.9" stroke="#fff2cf"/>
+        <path class="flow flow2" d="M-80 715 C 185 595, 335 705, 525 545 S 825 365, 1005 525 S 1235 305, 1345 205" stroke-width="2.6" opacity="0.85" stroke="#ffe7b0"/>
       </g>
     </svg>
   </div>
