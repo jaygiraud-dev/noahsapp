@@ -1,0 +1,12 @@
+# Netlify config for the JANA Auto Studio static site.
+# When creating the new Netlify site from this GitHub repo, set the
+# "Base directory" to: jana-auto-studio
+# (No build step needed — it's a static page.)
+[build]
+  base    = "jana-auto-studio"
+  publish = "."
+
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
