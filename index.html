@@ -121,6 +121,56 @@ body.paper{
 }
 
 /* ============================================================
+   CSS VARIABLES — CLAUDE THEME
+   (warm ivory + Claude coral, editorial serif — builds on
+    the light "paper" structural styles via body.paper.claude)
+============================================================ */
+body.claude{
+  --bg: #F0EEE6;
+  --bg2: #EAE7DC;
+  --bg3: #E3DFD2;
+  --surface: #FAF9F5;
+  --surface2: #F4F2EA;
+  --border: #DED9CB;
+  --border2: #CBC5B3;
+  --text: #1F1E1D;
+  --text2: #6B6760;
+  --text3: #A8A296;
+  --accent: #D97757;
+  --accent2: #BF5A38;
+  --accent-grad: linear-gradient(135deg,#D97757,#BF5A38);
+  --accent-glow: rgba(217,119,87,0.22);
+  --class-bg: #EFE9F1;
+  --class-border: #D2C2DA;
+  --class-text: #6A3E84;
+  --sport-bg: #FBEDE2;
+  --sport-border: #E8C4A0;
+  --sport-text: #A85420;
+  --job-bg: #E9EEE9;
+  --job-border: #B2C4B2;
+  --job-text: #3A5E3A;
+  --hw-bg: #E8F1EA;
+  --hw-border: #A4CBA8;
+  --hw-text: #2A6038;
+  --test-bg: #FAEEDD;
+  --test-border: #DFC289;
+  --test-text: #8A5414;
+  --personal-bg: #FBF3DF;
+  --personal-border: #E2D294;
+  --personal-text: #7A5C18;
+  --xp-grad: linear-gradient(90deg,#D97757,#BF5A38);
+  --now-line: #D97757;
+  --now-glow: rgba(217,119,87,0.55);
+  --card-radius: 16px;
+  --btn-radius: 12px;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  background: #F0EEE6;
+  color: #1F1E1D;
+}
+
+/* ============================================================
    LAYOUT SHELLS
 ============================================================ */
 #app{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;position:relative}
@@ -502,7 +552,7 @@ body.paper .parent-kid-name{font-weight:900}
 .toggle.on{background:var(--accent)}
 .toggle-ball{width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
 .toggle.on .toggle-ball{transform:translateX(18px)}
-.theme-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.theme-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
 .theme-opt{padding:12px;border-radius:12px;border:2px solid var(--border);background:var(--surface);text-align:center;cursor:pointer;transition:all .2s}
 .theme-opt.active{border-color:var(--accent)}
 .theme-opt-preview{height:32px;border-radius:7px;margin-bottom:7px}
@@ -814,12 +864,14 @@ function toast(msg,dur){
    THEME
 ============================================================ */
 function applyTheme(t){
-  document.body.className=t;
   S.theme=t;
+  // Claude theme builds on the light "paper" structural styles,
+  // then overrides the palette via body.claude.
+  document.body.className = t==='claude' ? 'paper claude' : t;
 }
 function autoTheme(){
   if(!S.loggedIn){applyTheme('clay');return;}
-  applyTheme(S.theme||( S.accountType==='parent'?'paper':'clay'));
+  applyTheme(S.theme||'claude');
 }
 
 /* ============================================================
@@ -1003,7 +1055,7 @@ async function doSignup(){
     await sb.from('profiles').upsert({
       id:signupResult.data.user.id,name:nameVal,email:emailVal,
       account_type:accountType,link_code:linkCode,
-      theme:accountType==='parent'?'paper':'clay',
+      theme:'claude',
       xp:0,streak:0,onboarded:false
     });
   }catch(dbErr){console.warn('Profile save failed:',dbErr);}
@@ -1115,7 +1167,7 @@ function linkKid(){
 function demoMode(type){
   S.loggedIn=true;
   S.accountType=type;
-  S.theme=type==='parent'?'paper':'clay';
+  S.theme='claude';
   S.onboarded=true;
   S.user={email:'demo@scholarquest.app',name:type==='parent'?'Parent':'Noah'};
   S.linkCode='DEMO01';
@@ -1224,7 +1276,7 @@ async function loadUserProfile(user){
   if(profile){
     S.user={email:user.email,name:profile.name||user.user_metadata?.full_name||user.email.split('@')[0]};
     S.accountType=profile.account_type||'kid';
-    S.theme=profile.theme||(S.accountType==='parent'?'paper':'clay');
+    S.theme=profile.theme||'claude';
     S.linkCode=profile.link_code||genCode();
     S.xp=profile.xp||0;
     S.streak=profile.streak||0;
@@ -1268,7 +1320,7 @@ async function loadUserProfile(user){
     S.user={email:user.email,name:pending.name||user.user_metadata?.full_name||user.email.split('@')[0]};
     S.loggedIn=true;
     S.accountType=pending.accountType||'kid';
-    S.theme=S.accountType==='parent'?'paper':'clay';
+    S.theme='claude';
     S.linkCode=pending.linkCode||genCode();
     S.onboarded=false;
     try{localStorage.removeItem('sq2_pending');}catch(e){}
@@ -1711,6 +1763,10 @@ function renderSettings(container){
     '<div class="settings-section fade-up anim-2">'+
       '<div class="sec-label">App theme</div>'+
       '<div class="theme-row">'+
+        '<div class="theme-opt '+(S.theme==='claude'?'active':'')+'" onclick="applyTheme(\'claude\');save();renderCurrentScreen();renderTopbar()">'+
+          '<div class="theme-opt-preview" style="background:linear-gradient(120deg,#F0EEE6 58%,#D97757 58%);border:1px solid #DED9CB"></div>'+
+          '<div class="theme-opt-label">Claude · Warm</div>'+
+        '</div>'+
         '<div class="theme-opt '+(S.theme==='clay'?'active':'')+'" onclick="applyTheme(\'clay\');save();renderCurrentScreen();renderTopbar()">'+
           '<div class="theme-opt-preview" style="background:linear-gradient(135deg,#131020,#1a1628);border:1px solid #2a2238"></div>'+
           '<div class="theme-opt-label">Clay · Dark</div>'+
