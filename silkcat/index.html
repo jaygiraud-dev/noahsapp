@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Silk Cat Automotive — British & Italian Classic Restoration · North Vancouver · Since 1990</title>
+<meta name="description" content="North Vancouver's home for British & Italian motoring since 1990. Restoration, service and dealer-level care for Jaguar, Aston Martin, Ferrari, Maserati, Alfa Romeo and every fine European marque." />
+<meta name="theme-color" content="#14352a" />
+<meta property="og:title" content="Silk Cat Automotive Specialists" />
+<meta property="og:description" content="British & Italian motoring, restored and perfected. North Vancouver, since 1990." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,500;1,600&family=Oswald:wght@300;400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%2314352a'/%3E%3Cg fill='none' stroke='%23d8b15a' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M16 22 L11 8 L25 17 Q32 15 39 17 L53 8 L48 22 Q53 30 49 40 Q44 52 32 53 Q20 52 15 40 Q11 30 16 22 Z'/%3E%3Cpath d='M22 41 L9 39 M22 44 L10 47'/%3E%3Cpath d='M42 41 L55 39 M42 44 L54 47'/%3E%3C/g%3E%3C/svg%3E" />
+<style>
+  :root{
+    --paper:#efe6d1; --paper2:#e7dbbf; --paper3:#ddcfae;
+    --ink:#241f17; --ink2:#534b3c;
+    --green:#163d2d; --green-d:#0e2a1e; --green-l:#1f5239;
+    --red:#962030; --red-br:#b3242f;
+    --brass:#b08a45; --brass-l:#d8b15a; --brass-d:#8a6a32;
+    --line:rgba(36,31,23,.22); --line-s:rgba(36,31,23,.12);
+    --disp:'Playfair Display',Georgia,serif;
+    --sign:'Oswald',Impact,sans-serif;
+    --body:'Spectral',Georgia,serif;
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden;position:relative}
+  /* aged paper texture + vignette */
+  body::before{content:"";position:fixed;inset:0;z-index:-3;pointer-events:none;
+    background:
+      radial-gradient(120% 90% at 50% 0,rgba(255,250,235,.5),transparent 55%),
+      radial-gradient(100% 120% at 100% 100%,rgba(120,95,55,.16),transparent 55%),
+      radial-gradient(100% 120% at 0% 100%,rgba(120,95,55,.10),transparent 55%);}
+  body::after{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  a{color:inherit;text-decoration:none}
+  img,svg{display:block}
+  ::selection{background:var(--green);color:var(--paper)}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+  /* racing tri-stripe (BRG + cream + Rosso) */
+  .rs{display:inline-block;height:5px;width:70px;vertical-align:middle;border-radius:1px;
+    background:linear-gradient(90deg,var(--green) 0 38%,#f6efdd 38% 62%,var(--red) 62% 100%)}
+
+  .eyebrow{display:inline-flex;align-items:center;gap:14px;font-family:var(--sign);font-weight:500;
+    font-size:13px;letter-spacing:.34em;text-transform:uppercase;color:var(--green-l)}
+  .eyebrow::before,.eyebrow.two::after{content:"";width:30px;height:1px;background:var(--brass)}
+  h1,h2,h3,h4{font-family:var(--disp);font-weight:700;line-height:1.04;color:var(--ink)}
+  .script{font-style:italic;font-weight:600}
+  .red{color:var(--red)} .grn{color:var(--green)}
+
+  /* ---------- top notice bar ---------- */
+  .topbar{background:var(--green-d);color:var(--paper2);font-family:var(--sign);font-weight:300;
+    font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;text-align:center;padding:8px 16px}
+  .topbar b{color:var(--brass-l);font-weight:500}
+
+  /* ---------- nav ---------- */
+  header{position:sticky;top:0;z-index:100;background:var(--paper);border-bottom:2px solid var(--ink);
+    box-shadow:0 1px 0 var(--brass)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:78px}
+  .brand{display:flex;align-items:center;gap:13px}
+  .brand .crest{width:50px;height:50px;flex:none}
+  .brand .name{display:flex;flex-direction:column;line-height:1}
+  .brand .name b{font-family:var(--disp);font-size:23px;font-weight:800;letter-spacing:.01em}
+  .brand .name span{font-family:var(--sign);font-size:9.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--green-l);margin-top:4px;font-weight:500}
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a{font-family:var(--sign);font-weight:400;font-size:14px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink2);transition:color .25s;position:relative;padding:4px 0}
+  .nav-links a::after{content:"";position:absolute;left:0;bottom:-2px;height:2px;width:0;background:var(--red);transition:width .3s}
+  .nav-links a:hover{color:var(--ink)}.nav-links a:hover::after{width:100%}
+  .nav-cta{display:flex;align-items:center;gap:14px}
+
+  .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--sign);font-weight:500;font-size:14px;
+    letter-spacing:.12em;text-transform:uppercase;border-radius:3px;padding:13px 24px;cursor:pointer;border:2px solid var(--ink);
+    transition:transform .2s,background .25s,color .25s,box-shadow .25s;white-space:nowrap}
+  .btn-fill{background:var(--green);color:var(--paper);border-color:var(--green)}
+  .btn-fill:hover{background:var(--green-d);transform:translateY(-2px);box-shadow:0 8px 20px rgba(14,42,30,.35)}
+  .btn-red{background:var(--red);color:var(--paper);border-color:var(--red)}
+  .btn-red:hover{background:var(--red-br);transform:translateY(-2px);box-shadow:0 8px 20px rgba(150,32,48,.3)}
+  .btn-out{background:transparent;color:var(--ink)}
+  .btn-out:hover{background:var(--ink);color:var(--paper);transform:translateY(-2px)}
+  .hamb{display:none;flex-direction:column;gap:5px;background:none;border:0;cursor:pointer;padding:8px}
+  .hamb span{width:26px;height:2px;background:var(--ink);transition:.3s;border-radius:2px}
+
+  /* ---------- hero (vintage poster) ---------- */
+  .hero{padding:70px 0 40px;text-align:center;position:relative}
+  .hero .plate{display:inline-flex;align-items:center;gap:12px;border:2px solid var(--ink);border-radius:4px;
+    padding:7px 16px;font-family:var(--sign);font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink);background:var(--paper2)}
+  .hero .plate .flag{width:26px;height:17px;border:1px solid var(--ink);border-radius:1px;flex:none}
+  .hero h1{font-size:clamp(44px,8.4vw,108px);margin:26px 0 0;letter-spacing:-.01em}
+  .hero h1 .line2{display:block;color:var(--green)}
+  .hero .lede{font-size:clamp(17px,2.1vw,21px);color:var(--ink2);max-width:660px;margin:24px auto 32px;font-style:italic}
+  .hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .hero-rule{display:flex;align-items:center;justify-content:center;gap:18px;margin:34px 0 6px;color:var(--brass-d)}
+  .hero-rule .ln{height:1px;width:90px;background:var(--brass)}
+  .hero-rule span{font-family:var(--sign);font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--green-l)}
+
+  /* framed roadster illustration */
+  .car-frame{margin:8px auto 0;max-width:880px;border:2px solid var(--ink);border-radius:6px;background:
+    repeating-linear-gradient(0deg,rgba(36,31,23,.025) 0 1px,transparent 1px 26px),var(--paper2);
+    box-shadow:0 24px 50px rgba(36,31,23,.16),inset 0 0 0 6px var(--paper),inset 0 0 0 7px var(--brass);
+    padding:30px 24px 18px;position:relative;overflow:hidden}
+  .car-frame .corner{position:absolute;width:16px;height:16px;border:2px solid var(--brass)}
+  .car-frame .corner.tl{top:14px;left:14px;border-right:0;border-bottom:0}
+  .car-frame .corner.tr{top:14px;right:14px;border-left:0;border-bottom:0}
+  .car-frame .corner.bl{bottom:14px;left:14px;border-right:0;border-top:0}
+  .car-frame .corner.br{bottom:14px;right:14px;border-left:0;border-top:0}
+  .car-frame .car{width:100%;height:auto;color:var(--green)}
+  .car-frame .cap{font-family:var(--sign);font-size:11.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink2);margin-top:6px}
+
+  /* ---------- crest symbol styling ---------- */
+  .crest .ring{fill:none;stroke:var(--brass);stroke-width:3}
+  .crest .ring2{fill:none;stroke:var(--ink);stroke-width:1.4}
+  .crest .ctext{fill:var(--ink);font-family:var(--sign);font-size:15px;font-weight:500;letter-spacing:3px}
+  .crest .cat{fill:none;stroke:var(--green);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  .crest .catf{fill:var(--green)}
+  .crest .ribbon{fill:var(--red)}
+  .crest .rtext{fill:var(--paper);font-family:var(--sign);font-size:13px;font-weight:600;letter-spacing:2px}
+  .crest .star{fill:var(--red)}
+
+  /* ---------- sections ---------- */
+  .sec{padding:104px 0}
+  .sec-head{max-width:680px;margin-bottom:54px}
+  .sec-head.center{margin-left:auto;margin-right:auto;text-align:center}
+  .sec-head h2{font-size:clamp(32px,5vw,54px);margin:18px 0 0}
+  .sec-head p{color:var(--ink2);margin-top:18px;font-size:18px;font-style:italic}
+  .center .eyebrow::before{display:none}.center .eyebrow.two::after{display:none}
+
+  .band{background:var(--green);color:var(--paper);position:relative}
+  .band::before,.band::after{content:"";position:absolute;left:0;right:0;height:4px;
+    background:linear-gradient(90deg,var(--brass-d),var(--brass-l),var(--brass-d))}
+  .band::before{top:0}.band::after{bottom:0}
+  .band h2,.band h3,.band h4{color:var(--paper)}
+  .band .eyebrow{color:var(--brass-l)}.band .eyebrow::before,.band .eyebrow.two::after{background:var(--brass-l)}
+  .band .sec-head p{color:rgba(239,230,209,.78)}
+
+  /* ---------- marquee badges ---------- */
+  .marquee{overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+  .marquee + .marquee{margin-top:24px}
+  .track{display:flex;width:max-content;gap:24px;will-change:transform}
+  .row1 .track{animation:scrollX 48s linear infinite}
+  .row2 .track{animation:scrollX 60s linear infinite reverse}
+  .marquee:hover .track{animation-play-state:paused}
+  @keyframes scrollX{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .badge{position:relative;flex:none;display:flex;align-items:center;justify-content:center;
+    height:104px;min-width:184px;padding:0 30px;border-radius:6px;overflow:hidden;color:var(--paper);
+    background:var(--green-d);box-shadow:inset 0 0 0 1px var(--brass-l),inset 0 0 0 5px var(--green-d),inset 0 0 0 6px rgba(216,177,90,.5);
+    transition:transform .35s,box-shadow .35s,color .35s}
+  .badge .bsvg{height:52px;width:auto;opacity:.92;transition:opacity .35s,filter .35s}
+  .badge:hover{transform:translateY(-5px);color:var(--brass-l);box-shadow:inset 0 0 0 1px var(--brass-l),inset 0 0 0 5px var(--green-d),inset 0 0 0 6px var(--brass-l),0 18px 34px rgba(0,0,0,.4)}
+  .badge:hover .bsvg{opacity:1;filter:drop-shadow(0 0 10px rgba(216,177,90,.45))}
+  .badge::after{content:"";position:absolute;top:0;bottom:0;width:50%;left:-80%;background:linear-gradient(105deg,transparent,rgba(255,245,220,.18),transparent);transform:skewX(-18deg);transition:left .7s ease}
+  .badge:hover::after{left:130%}
+  .bword{fill:currentColor;font-family:var(--disp);font-weight:600}
+  .marq-cap{text-align:center;margin-top:40px;color:rgba(239,230,209,.6);font-size:13px;font-style:italic}
+
+  /* ---------- services ---------- */
+  .svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:2px solid var(--ink)}
+  .scard{position:relative;padding:36px 30px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);background:var(--paper);transition:background .3s}
+  .svc-grid .scard:nth-child(3n){border-right:0}
+  .svc-grid .scard:nth-last-child(-n+3){border-bottom:0}
+  .scard:hover{background:var(--paper2)}
+  .scard .ico{width:54px;height:54px;display:flex;align-items:center;justify-content:center;color:var(--paper);
+    background:var(--green);border-radius:50%;margin-bottom:20px;box-shadow:0 0 0 4px var(--paper),0 0 0 5px var(--brass)}
+  .scard:hover .ico{background:var(--red);box-shadow:0 0 0 4px var(--paper2),0 0 0 5px var(--brass)}
+  .scard .ico svg{width:26px;height:26px}
+  .scard .no{position:absolute;top:22px;right:26px;font-family:var(--disp);font-style:italic;font-size:34px;color:var(--line-s)}
+  .scard h3{font-size:23px;margin-bottom:8px}
+  .scard p{color:var(--ink2);font-size:15.5px}
+  @media(max-width:980px){.svc-grid .scard{border-right:0!important;border-bottom:2px solid var(--ink)!important}.svc-grid .scard:last-child{border-bottom:0!important}}
+
+  /* ---------- about ---------- */
+  .split{display:grid;grid-template-columns:1.02fr .98fr;gap:60px;align-items:center}
+  .about-card{position:relative;border:2px solid var(--brass-l);border-radius:8px;background:rgba(239,230,209,.06);
+    box-shadow:inset 0 0 0 5px var(--green),inset 0 0 0 6px var(--brass-l);min-height:440px;display:flex;align-items:center;justify-content:center;padding:30px}
+  .about-card .bigcrest{width:72%;max-width:300px}
+  .about-card .est{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:var(--red);color:var(--paper);
+    font-family:var(--sign);letter-spacing:.24em;text-transform:uppercase;font-size:13px;padding:9px 22px;border-radius:3px;
+    box-shadow:0 0 0 3px var(--green),0 0 0 5px var(--brass-l)}
+  .feat{display:flex;gap:16px;padding:20px 0;border-top:1px solid rgba(216,177,90,.4)}
+  .feat:last-of-type{border-bottom:1px solid rgba(216,177,90,.4)}
+  .feat .fi{flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green);background:var(--brass-l)}
+  .band .feat .fi{color:var(--green-d)}
+  .feat .fi svg{width:20px;height:20px}
+  .feat h4{font-family:var(--disp);font-size:19px;margin-bottom:2px}
+  .feat p{font-size:14.5px}.band .feat p{color:rgba(239,230,209,.75)}
+
+  /* ---------- reviews ---------- */
+  .rev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .rev{padding:34px 30px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);position:relative;
+    box-shadow:6px 6px 0 var(--green)}
+  .rev .qm{font-family:var(--disp);font-size:64px;line-height:.6;color:var(--red);height:34px}
+  .stars{color:var(--red);letter-spacing:4px;font-size:16px;margin:10px 0 14px}
+  .rev p{font-family:var(--disp);font-size:20px;font-style:italic;line-height:1.45}
+  .rev .who{margin-top:18px;font-family:var(--sign);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+  .rev .who b{color:var(--green);font-weight:600}
+
+  /* ---------- contact ---------- */
+  .contact{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:stretch}
+  .info-card{padding:40px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);box-shadow:6px 6px 0 var(--brass)}
+  .info-row{display:flex;gap:16px;padding:20px 0;border-bottom:1px solid var(--line-s)}
+  .info-row:last-of-type{border-bottom:0}
+  .info-row .ii{flex:none;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper);background:var(--green);box-shadow:0 0 0 3px var(--paper),0 0 0 4px var(--brass)}
+  .info-row .ii svg{width:20px;height:20px}
+  .info-row .lab{font-family:var(--sign);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--green-l);margin-bottom:3px}
+  .info-row .val{font-size:16.5px;font-weight:500}
+  .info-row .val a:hover{color:var(--red)}
+  .map-card{border:2px solid var(--ink);border-radius:6px;overflow:hidden;position:relative;min-height:430px;background:var(--paper2);box-shadow:6px 6px 0 var(--green)}
+  .map-card .mapgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(22,61,45,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(22,61,45,.10) 1px,transparent 1px);background-size:40px 40px}
+  .map-card .roads path{stroke:rgba(22,61,45,.22)}
+  .map-card .pin{position:absolute;top:45%;left:50%;transform:translate(-50%,-100%);color:var(--red);filter:drop-shadow(0 6px 10px rgba(0,0,0,.3))}
+  .map-card .pin svg{width:48px;height:48px}
+  .map-card .pulse{position:absolute;top:45%;left:50%;width:18px;height:18px;border-radius:50%;transform:translate(-50%,-50%);background:rgba(150,32,48,.5);animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(150,32,48,.4)}100%{box-shadow:0 0 0 36px rgba(150,32,48,0)}}
+  .map-card .maplabel{position:absolute;left:18px;right:18px;bottom:18px;background:var(--paper);border:2px solid var(--ink);border-radius:5px;padding:15px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .map-card .maplabel b{font-family:var(--disp);font-size:18px}
+  .map-card .maplabel span{font-size:14px;color:var(--ink2)}
+
+  /* ---------- cta band ---------- */
+  .cta{padding:96px 0}
+  .cta .wrap{text-align:center}
+  .cta h2{font-size:clamp(32px,5.4vw,58px)}
+  .cta p{max-width:560px;margin:18px auto 30px;font-size:18px;font-style:italic;color:rgba(239,230,209,.82)}
+  .cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+  /* ---------- footer ---------- */
+  footer{background:var(--green-d);color:var(--paper2);padding:60px 0 38px}
+  .foot{display:flex;justify-content:space-between;gap:44px;flex-wrap:wrap}
+  .foot .brand .name b{color:var(--paper)}.foot .brand .name span{color:var(--brass-l)}
+  .foot-brand{max-width:300px}.foot-brand p{margin-top:14px;font-size:14.5px;color:rgba(239,230,209,.7);font-style:italic}
+  .foot .col h5{font-family:var(--sign);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--brass-l);margin-bottom:14px}
+  .foot .col a,.foot .col p{display:block;color:rgba(239,230,209,.78);font-size:14.5px;margin-bottom:9px;transition:color .25s}
+  .foot .col a:hover{color:var(--brass-l)}
+  .foot-bottom{margin-top:44px;padding-top:24px;border-top:1px solid rgba(216,177,90,.3);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:rgba(239,230,209,.55);font-family:var(--sign);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+
+  /* ---------- reveal ---------- */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}
+
+  @media(max-width:980px){
+    .split{grid-template-columns:1fr;gap:50px}.rev-grid{grid-template-columns:1fr}
+    .svc-grid{grid-template-columns:1fr}.contact{grid-template-columns:1fr}
+  }
+  @media(max-width:760px){
+    .nav-links{position:fixed;inset:78px 0 auto 0;flex-direction:column;align-items:flex-start;background:var(--paper);
+      border-bottom:2px solid var(--ink);padding:24px 26px;gap:6px;transform:translateY(-140%);transition:transform .4s}
+    .nav-links.open{transform:none}.nav-links a{font-size:16px;padding:10px 0;width:100%}
+    .hamb{display:flex}.nav-cta .btn-out{display:none}
+    .hamb.active span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+    .hamb.active span:nth-child(2){opacity:0}.hamb.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+    .sec{padding:74px 0}
+  }
+  @media(prefers-reduced-motion:reduce){.track{animation:none!important}.reveal{opacity:1;transform:none;transition:none}.pulse{animation:none}}
+</style>
+</head>
+<body>
+
+<!-- shared cat mark -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="catmark" viewBox="0 0 64 64">
+    <g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M16 22 L11 8 L25 17 Q32 15 39 17 L53 8 L48 22 Q53 30 49 40 Q44 52 32 53 Q20 52 15 40 Q11 30 16 22 Z"/>
+      <path d="M22 41 L9 39 M22 44.5 L10 47.5"/><path d="M42 41 L55 39 M42 44.5 L54 47.5"/>
+    </g>
+    <path d="M22 31 Q26 28 30.5 31 Q26 34 22 31 Z" fill="currentColor"/>
+    <path d="M33.5 31 Q38 28 42 31 Q38 34 33.5 31 Z" fill="currentColor"/>
+    <path d="M29.5 37 L34.5 37 L32 40.5 Z" fill="currentColor"/>
+  </symbol>
+
+  <!-- heraldic crest -->
+  <symbol id="crest" viewBox="0 0 200 200">
+    <circle class="ring" cx="100" cy="100" r="94"/>
+    <circle class="ring2" cx="100" cy="100" r="85"/>
+    <path id="crestArc" d="M 32,100 A 68,68 0 0 1 168,100" fill="none"/>
+    <text class="ctext"><textPath href="#crestArc" startOffset="50%" text-anchor="middle">SILK CAT AUTOMOTIVE</textPath></text>
+    <circle class="star" cx="18" cy="100" r="3.4"/><circle class="star" cx="182" cy="100" r="3.4"/>
+    <g transform="translate(64,52) scale(1.12)"><use href="#catmark" class="catstack"/></g>
+    <!-- ribbon -->
+    <path class="ribbon" d="M44 150 L156 150 L156 168 L100 178 L44 168 Z"/>
+    <text class="rtext" x="100" y="164" text-anchor="middle">EST. 1990</text>
+  </symbol>
+</svg>
+<style>.crestbox use{}.crestbox .catstack g{stroke:var(--green)} </style>
+
+<!-- top bar -->
+<div class="topbar">North Vancouver's home for fine motoring since <b>1990</b> &nbsp;·&nbsp; Restoration &amp; service for British &amp; Italian classics &nbsp;·&nbsp; <b>(604) 987-8228</b></div>
+
+<!-- nav -->
+<header>
+  <div class="wrap nav">
+    <a href="#top" class="brand crestbox" aria-label="Silk Cat Automotive home">
+      <svg class="crest"><use href="#crest"/></svg>
+      <span class="name"><b>Silk Cat</b><span>Automotive Specialists</span></span>
+    </a>
+    <nav class="nav-links" id="navlinks">
+      <a href="#services">Workshop</a>
+      <a href="#brands">Marques</a>
+      <a href="#about">Heritage</a>
+      <a href="#reviews">Word of Mouth</a>
+      <a href="#visit">Visit</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="#visit" class="btn btn-out">Find Us</a>
+      <a href="tel:+16049878228" class="btn btn-fill">Call the Shop</a>
+      <button class="hamb" id="hamb" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- hero -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <span class="plate reveal">
+      <svg class="flag" viewBox="0 0 30 20" aria-label="British"><rect width="30" height="20" fill="#0a2f5e"/><path d="M0 0 30 20M30 0 0 20" stroke="#fff" stroke-width="4"/><path d="M0 0 30 20M30 0 0 20" stroke="#c8102e" stroke-width="1.8"/><rect x="12" width="6" height="20" fill="#fff"/><rect y="7" width="30" height="6" fill="#fff"/><rect x="13" width="4" height="20" fill="#c8102e"/><rect y="8" width="30" height="4" fill="#c8102e"/></svg>
+      British &amp; Italian Specialists
+      <svg class="flag" viewBox="0 0 30 20" aria-label="Italian"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#f4f5f0"/><rect x="20" width="10" height="20" fill="#cd212a"/></svg>
+    </span>
+    <h1 class="reveal d1">Fine motoring,<span class="line2 script">restored &amp; perfected.</span></h1>
+    <p class="lede reveal d2">Since 1990, North Shore drivers have trusted Silk Cat for the unhurried, honest craftsmanship their British &amp; Italian classics — and every fine European marque — deserve.</p>
+    <div class="hero-actions reveal d3">
+      <a href="tel:+16049878228" class="btn btn-fill">Book Your Motor In</a>
+      <a href="#services" class="btn btn-out">The Workshop</a>
+    </div>
+    <div class="hero-rule reveal d4"><span class="ln"></span><span>Established MCMXC · North Vancouver</span><span class="ln"></span></div>
+    <div class="car-frame reveal d4">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <svg class="car" viewBox="0 0 680 250" role="img" aria-label="Classic roadster illustration">
+        <g fill="currentColor">
+          <!-- body -->
+          <path d="M36 176
+            C36 156 50 150 80 149 C120 148 138 147 158 140
+            C176 120 206 128 246 132 L356 132
+            C360 112 380 96 416 94 L470 92
+            C500 70 528 66 560 70 C604 76 622 100 632 130
+            C638 148 642 160 642 172 C642 180 636 182 622 182
+            L52 182 C42 182 36 180 36 176 Z"/>
+          <!-- windscreen frame -->
+          <path d="M414 96 L470 94 L452 60 L432 62 Z" opacity=".0"/>
+        </g>
+        <!-- chrome side spear (cream) -->
+        <path d="M120 158 L470 152" stroke="var(--brass-l)" stroke-width="2.4" fill="none" opacity=".7"/>
+        <!-- windscreen post -->
+        <path d="M430 94 L448 62" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <!-- ground -->
+        <line x1="20" y1="216" x2="660" y2="216" stroke="currentColor" stroke-width="2" opacity=".35"/>
+        <!-- wheels -->
+        <g>
+          <circle cx="196" cy="190" r="40" fill="currentColor"/>
+          <circle cx="196" cy="190" r="24" fill="var(--paper2)"/>
+          <circle cx="196" cy="190" r="5" fill="currentColor"/>
+          <g stroke="currentColor" stroke-width="1.6">
+            <line x1="196" y1="166" x2="196" y2="214"/><line x1="172" y1="190" x2="220" y2="190"/>
+            <line x1="179" y1="173" x2="213" y2="207"/><line x1="213" y1="173" x2="179" y2="207"/></g>
+          <circle cx="522" cy="190" r="40" fill="currentColor"/>
+          <circle cx="522" cy="190" r="24" fill="var(--paper2)"/>
+          <circle cx="522" cy="190" r="5" fill="currentColor"/>
+          <g stroke="currentColor" stroke-width="1.6">
+            <line x1="522" y1="166" x2="522" y2="214"/><line x1="498" y1="190" x2="546" y2="190"/>
+            <line x1="505" y1="173" x2="539" y2="207"/><line x1="539" y1="173" x2="505" y2="207"/></g>
+        </g>
+      </svg>
+      <div class="cap">— A specialist's care, in every detail —</div>
+    </div>
+  </div>
+</section>
+
+<!-- stats band -->
+<section class="band" style="padding:0">
+  <div class="wrap" style="display:grid;grid-template-columns:repeat(4,1fr)">
+    <div style="padding:42px 16px;text-align:center;border-left:1px solid rgba(216,177,90,.3)" class="reveal">
+      <div style="font-family:var(--disp);font-size:clamp(34px,5vw,52px);font-weight:800;color:var(--brass-l);line-height:1" data-count="35" data-suffix="+">0</div>
+      <div style="font-family:var(--sign);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:rgba(239,230,209,.8);margin-top:10px">Years at the bench</div></div>
+    <div style="padding:42px 16px;text-align:center;border-left:1px solid rgba(216,177,90,.3)" class="reveal d1">
+      <div style="font-family:var(--disp);font-size:clamp(34px,5vw,52px);font-weight:800;color:var(--brass-l);line-height:1">1990</div>
+      <div style="font-family:var(--sign);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:rgba(239,230,209,.8);margin-top:10px">Serving since</div></div>
+    <div style="padding:42px 16px;text-align:center;border-left:1px solid rgba(216,177,90,.3)" class="reveal d2">
+      <div style="font-family:var(--disp);font-size:clamp(34px,5vw,52px);font-weight:800;color:var(--brass-l);line-height:1" data-count="16" data-suffix="+">0</div>
+      <div style="font-family:var(--sign);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:rgba(239,230,209,.8);margin-top:10px">Marques cared for</div></div>
+    <div style="padding:42px 16px;text-align:center;border-left:1px solid rgba(216,177,90,.3);border-right:1px solid rgba(216,177,90,.3)" class="reveal d3">
+      <div style="font-family:var(--disp);font-size:clamp(34px,5vw,52px);font-weight:800;color:var(--brass-l);line-height:1">5.0★</div>
+      <div style="font-family:var(--sign);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:rgba(239,230,209,.8);margin-top:10px">A reputation earned</div></div>
+  </div>
+</section>
+
+<!-- marques (badges) -->
+<section class="band" id="brands" style="padding:84px 0">
+  <div class="wrap center" style="margin-bottom:46px">
+    <span class="eyebrow two reveal">The marques we know by heart</span>
+    <h2 class="reveal d1" style="font-size:clamp(30px,4.6vw,46px);margin-top:14px">From Coventry to Modena</h2>
+    <p class="reveal d2" style="color:rgba(239,230,209,.78);font-style:italic;margin-top:14px;max-width:600px;margin-left:auto;margin-right:auto">British grit and Italian soul — restored, serviced and sent back out singing.</p>
+  </div>
+  <div class="marquee row1"><div class="track" id="track1"></div></div>
+  <div class="marquee row2"><div class="track" id="track2"></div></div>
+  <p class="marq-cap reveal">Marque names &amp; emblems shown to indicate vehicles serviced. Silk Cat Automotive is an independent specialist, not affiliated with any manufacturer.</p>
+</section>
+
+<!-- workshop / services -->
+<section class="sec" id="services">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">In the workshop</span>
+      <h2>Old-world craft,<br>modern know-how.</h2>
+      <p>From a full sympathetic restoration to the smallest tune, everything your motor needs under one honest roof.</p>
+    </div>
+    <div class="svc-grid" id="svc"></div>
+  </div>
+</section>
+
+<!-- heritage / about -->
+<section class="sec band" id="about" style="padding-top:96px;padding-bottom:120px">
+  <div class="wrap split">
+    <div class="reveal">
+      <span class="eyebrow">Our heritage</span>
+      <h2 style="font-size:clamp(30px,4.6vw,48px);margin:16px 0 20px">Three decades of<br>doing it properly.</h2>
+      <p style="color:rgba(239,230,209,.82);font-size:16.5px;font-style:italic;margin-bottom:10px">Silk Cat Automotive Specialists has worked from the same North Vancouver shop since 1990 — long enough to know these cars the way you know an old friend.</p>
+      <p style="color:rgba(239,230,209,.72);font-size:15.5px;margin-bottom:18px">We earned our name one honest repair at a time, treating fine British &amp; Italian machinery (and the people who love it) with the patience and respect the work demands.</p>
+      <div class="feat">
+        <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+        <div><h4>Honest, no-padding work</h4><p>Every job discussed in full before a spanner is lifted — never any non-essential extras.</p></div>
+      </div>
+      <div class="feat">
+        <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6 2.7 2.7 6-6a4 4 0 0 0 5.4-5.4l-2.3 2.3-1.4-1.4 2.3-2.3Z"/></svg></div>
+        <div><h4>Hand skill meets diagnostics</h4><p>Time-served craftsmanship backed by dealer-level computer diagnostics.</p></div>
+      </div>
+      <div class="feat">
+        <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.5 2.3 7.1L12 16.4 5.4 21l2.3-7.1-6-4.5h7.6L12 2Z"/></svg></div>
+        <div><h4>Better than new</h4><p>We don't just fix the car — we make it run the way its maker intended.</p></div>
+      </div>
+    </div>
+    <div class="about-card crestbox reveal d2">
+      <svg class="crest bigcrest"><use href="#crest"/></svg>
+      <span class="est">North Vancouver, BC</span>
+    </div>
+  </div>
+</section>
+
+<!-- reviews -->
+<section class="sec" id="reviews">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <span class="eyebrow">Word of mouth</span>
+      <h2>Drivers don't go anywhere else.</h2>
+    </div>
+    <div class="rev-grid">
+      <div class="rev reveal"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>Greg and his crew are very knowledgeable and skillful. He doesn't pad his work with non-essential items and always discusses the work fully before starting.</p><div class="who"><b>Long-time customer</b> — North Vancouver</div></div>
+      <div class="rev reveal d1"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>Honest, reliable, and the facility is spotless. Exactly what you want when someone's working on your car.</p><div class="who"><b>Verified review</b> — Yelp</div></div>
+      <div class="rev reveal d2"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>They don't just fix the car — they make it run better than new, at an honest price. Thirty years of trust well earned.</p><div class="who"><b>Repeat client</b> — North Shore</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- visit -->
+<section class="sec" id="visit" style="background:var(--paper2);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">Come by the shop</span><h2>Pay us a visit.</h2><p>Drop in or call ahead to book your motor in. We're easy to find in North Vancouver.</p></div>
+    <div class="contact">
+      <div class="info-card reveal">
+        <div class="info-row">
+          <div class="ii"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div><div class="lab">The Workshop</div><div class="val"><a href="https://maps.google.com/?q=1053+Churchill+Crescent+North+Vancouver+BC+V7P+1P9" target="_blank" rel="noopener">1053 Churchill Crescent<br>North Vancouver, BC V7P 1P9</a></div></div>
+        </div>
+        <div class="info-row">
+          <div class="ii"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg></div>
+          <div><div class="lab">Telephone</div><div class="val"><a href="tel:+16049878228">(604) 987-8228</a></div></div>
+        </div>
+        <div class="info-row">
+          <div class="ii"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <div><div class="lab">Opening Hours</div><div class="val">Monday – Friday · 8:00 AM – 5:00 PM<br><span style="font-size:13.5px;color:var(--ink2)">Weekends closed · please call to confirm</span></div></div>
+        </div>
+        <div style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">
+          <a href="tel:+16049878228" class="btn btn-fill">Call the shop</a>
+          <a href="https://maps.google.com/?q=1053+Churchill+Crescent+North+Vancouver+BC+V7P+1P9" target="_blank" rel="noopener" class="btn btn-out">Get directions</a>
+        </div>
+      </div>
+      <div class="map-card reveal d1">
+        <div class="mapgrid"></div>
+        <svg class="roads" viewBox="0 0 400 430" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%">
+          <path d="M-10 130 L410 96" stroke-width="11" fill="none"/><path d="M74 -10 L138 440" stroke-width="14" fill="none"/>
+          <path d="M-10 310 L410 340" stroke-width="8" fill="none"/><path d="M268 -10 L330 440" stroke-width="7" fill="none"/>
+        </svg>
+        <div class="pulse"></div>
+        <div class="pin"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg></div>
+        <div class="maplabel"><div><b>Silk Cat Automotive</b><br><span>1053 Churchill Crescent, North Vancouver</span></div>
+          <a href="https://maps.google.com/?q=1053+Churchill+Crescent+North+Vancouver+BC+V7P+1P9" target="_blank" rel="noopener" class="btn btn-out" style="padding:9px 16px">Open in Maps</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- cta band -->
+<section class="cta band">
+  <div class="wrap">
+    <span class="eyebrow two reveal" style="display:inline-flex">Ready when you are</span>
+    <h2 class="reveal d1" style="margin-top:14px">Give your motor the<br><span style="color:var(--brass-l)" class="script">specialist it deserves.</span></h2>
+    <p class="reveal d2">Three decades of British &amp; Italian expertise, one phone call away. Book your service with Silk Cat today.</p>
+    <div class="cta-actions reveal d3">
+      <a href="tel:+16049878228" class="btn btn-red">Call (604) 987-8228</a>
+      <a href="#visit" class="btn btn-out" style="color:var(--paper);border-color:var(--brass-l)">Visit the shop</a>
+    </div>
+  </div>
+</section>
+
+<!-- footer -->
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div class="foot-brand">
+        <a href="#top" class="brand crestbox"><svg class="crest" style="width:50px;height:50px"><use href="#crest"/></svg>
+          <span class="name"><b>Silk Cat</b><span>Automotive Specialists</span></span></a>
+        <p>North Vancouver's home for fine British &amp; Italian motoring since 1990. Genuine work, trusted skill, honest pricing.</p>
+      </div>
+      <div class="col"><h5>The Shop</h5><a href="#services">Workshop</a><a href="#brands">Marques</a><a href="#about">Heritage</a><a href="#reviews">Word of Mouth</a><a href="#visit">Visit</a></div>
+      <div class="col"><h5>Contact</h5><a href="tel:+16049878228">(604) 987-8228</a><a href="https://maps.google.com/?q=1053+Churchill+Crescent+North+Vancouver+BC+V7P+1P9" target="_blank" rel="noopener">1053 Churchill Crescent<br>North Vancouver, BC V7P 1P9</a><p>Mon – Fri · 8 AM – 5 PM</p></div>
+    </div>
+    <div class="foot-bottom"><span>© <span id="yr"></span> Silk Cat Automotive Specialists Ltd.</span><span>British &amp; Italian · North Vancouver, BC</span></div>
+  </div>
+</footer>
+
+<script>
+/* ---- vintage marque badges (stylized engravings) ---- */
+const WING=`<path d="M0 0 Q34 -12 88 -14"/><path d="M0 6 Q30 -2 76 -3"/><path d="M0 12 Q26 7 64 10"/><path d="M0 18 Q22 17 52 23"/>`;
+const winged=(label,fs=14,sp=2)=>`<svg class="bsvg" viewBox="0 0 250 64"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g transform="translate(146,22)">${WING}</g><g transform="translate(104,22) scale(-1,1)">${WING}</g></g><text class="bword" x="125" y="54" text-anchor="middle" font-size="${fs}" letter-spacing="${sp}">${label}</text></svg>`;
+const word=(label,fs=21,sp=4,it='')=>`<svg class="bsvg" viewBox="0 0 250 64"><text class="bword" x="125" y="42" text-anchor="middle" font-size="${fs}" letter-spacing="${sp}" ${it?'font-style="italic"':''}>${label}</text></svg>`;
+const shield=(inner)=>`<svg class="bsvg" viewBox="0 0 120 130"><path d="M60 8 L104 22 L104 64 Q104 100 60 122 Q16 100 16 64 L16 22 Z" fill="none" stroke="currentColor" stroke-width="3"/>${inner}</svg>`;
+const octagon=(inner)=>`<svg class="bsvg" viewBox="0 0 120 120"><path d="M40 16 L80 16 L104 40 L104 80 L80 104 L40 104 L16 80 L16 40 Z" fill="none" stroke="currentColor" stroke-width="3"/>${inner}</svg>`;
+const oval=(label,fs=15,sp=2.5)=>`<svg class="bsvg" viewBox="0 0 130 80"><ellipse cx="65" cy="40" rx="60" ry="32" fill="none" stroke="currentColor" stroke-width="3"/><ellipse cx="65" cy="40" rx="54" ry="26" fill="none" stroke="currentColor" stroke-width="1"/><text class="bword" x="65" y="46" text-anchor="middle" font-size="${fs}" letter-spacing="${sp}">${label}</text></svg>`;
+
+const BRANDS=[
+  /* ---- British ---- */
+  {n:'Jaguar',svg:word('JAGUAR',20,5)},
+  {n:'Aston Martin',svg:winged('ASTON MARTIN',12,2)},
+  {n:'Land Rover',svg:`<svg class="bsvg" viewBox="0 0 250 64"><rect x="20" y="14" width="210" height="36" rx="18" fill="none" stroke="currentColor" stroke-width="2.6"/><text class="bword" x="125" y="39" text-anchor="middle" font-size="15" letter-spacing="3">LAND ROVER</text></svg>`},
+  {n:'MG',svg:octagon(`<text class="bword" x="60" y="72" text-anchor="middle" font-size="36" font-weight="700" letter-spacing="1">MG</text>`)},
+  {n:'Triumph',svg:`<svg class="bsvg" viewBox="0 0 250 64"><circle cx="125" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="2"/><path d="M103 30 H147 M125 8 V52" stroke="currentColor" stroke-width="1.4"/><rect x="40" y="44" width="170" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><text class="bword" x="125" y="58" text-anchor="middle" font-size="12" letter-spacing="3">TRIUMPH</text></svg>`},
+  {n:'Lotus',svg:`<svg class="bsvg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="3"/><path d="M60 28 Q40 40 38 64 Q60 60 82 64 Q80 40 60 28 Z" fill="none" stroke="currentColor" stroke-width="2"/><text class="bword" x="60" y="92" text-anchor="middle" font-size="14" letter-spacing="1" font-style="italic">Lotus</text></svg>`},
+  {n:'MINI',svg:winged('MINI',16,3)},
+  {n:'Bentley',svg:`<svg class="bsvg" viewBox="0 0 250 64"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g transform="translate(150,30)">${WING}</g><g transform="translate(100,30) scale(-1,1)">${WING}</g></g><text class="bword" x="125" y="40" text-anchor="middle" font-size="26" font-weight="700">B</text></svg>`},
+  {n:'Austin-Healey',svg:oval('A·H',22,2)},
+  /* ---- Italian ---- */
+  {n:'Ferrari',svg:shield(`<path d="M60 36 Q50 30 46 40 Q44 50 54 52 L52 64 L60 58 L68 64 L66 52 Q76 50 74 40 Q70 30 60 36 Z" fill="currentColor"/><text class="bword" x="60" y="98" text-anchor="middle" font-size="13" letter-spacing="1">Ferrari</text>`)},
+  {n:'Maserati',svg:`<svg class="bsvg" viewBox="0 0 120 120"><g fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M26 54 Q60 38 94 54"/><path d="M26 54 L26 26"/><path d="M94 54 L94 26"/><path d="M60 47 L60 22"/><path d="M60 54 L60 96"/><path d="M60 96 Q74 100 70 112"/></g></svg>`},
+  {n:'Alfa Romeo',svg:`<svg class="bsvg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="60" cy="60" r="44" fill="none" stroke="currentColor" stroke-width="1"/><line x1="60" y1="16" x2="60" y2="104" stroke="currentColor" stroke-width="1.4"/><path d="M40 50 V40 H50" fill="none" stroke="currentColor" stroke-width="3"/><path d="M70 78 Q74 64 70 50 Q66 64 70 78 Z" fill="currentColor"/><text class="bword" x="35" y="64" text-anchor="middle" font-size="8" letter-spacing="1">ALFA</text><text class="bword" x="85" y="64" text-anchor="middle" font-size="7" letter-spacing="1">ROMEO</text></svg>`},
+  {n:'Lancia',svg:shield(`<path d="M60 30 V96 M30 56 H90" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="60" cy="56" r="20" fill="none" stroke="currentColor" stroke-width="2"/><text class="bword" x="60" y="116" text-anchor="middle" font-size="11" letter-spacing="2">LANCIA</text>`)},
+  {n:'Fiat',svg:`<svg class="bsvg" viewBox="0 0 200 80"><g transform="skewX(-8)"><rect x="34" y="16" width="150" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><text class="bword" x="112" y="50" text-anchor="middle" font-size="26" font-weight="700" letter-spacing="3">FIAT</text></g></svg>`},
+  /* ---- and every fine European marque ---- */
+  {n:'Porsche',svg:word('PORSCHE',18,3)},
+  {n:'Mercedes-Benz',svg:`<svg class="bsvg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="4"/><g stroke="currentColor" stroke-width="4" stroke-linecap="round"><line x1="60" y1="60" x2="60" y2="10"/><line x1="60" y1="60" x2="17" y2="84"/><line x1="60" y1="60" x2="103" y2="84"/></g><circle cx="60" cy="60" r="4.5" fill="currentColor"/></svg>`},
+  {n:'BMW',svg:`<svg class="bsvg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="60" cy="60" r="38" fill="none" stroke="currentColor" stroke-width="3"/><path d="M60 22 A38 38 0 0 0 22 60 L60 60 Z" fill="currentColor"/><path d="M60 98 A38 38 0 0 0 98 60 L60 60 Z" fill="currentColor"/></svg>`},
+  {n:'Audi',svg:`<svg class="bsvg" viewBox="0 0 210 64"><g fill="none" stroke="currentColor" stroke-width="5"><circle cx="30" cy="32" r="24"/><circle cx="70" cy="32" r="24"/><circle cx="110" cy="32" r="24"/><circle cx="150" cy="32" r="24"/></g></svg>`},
+];
+
+function fill(id,arr){document.getElementById(id).innerHTML=arr.concat(arr).map(b=>`<div class="badge" title="${b.n}" aria-label="${b.n}">${b.svg}</div>`).join('');}
+fill('track1',BRANDS);
+fill('track2',BRANDS.slice().reverse());
+
+/* ---- workshop services ---- */
+const ICON=(p)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const SERVICES=[
+  {t:'Full Restoration',d:'Sympathetic, ground-up restoration that honours the way your classic left the factory.',i:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6 2.7 2.7 6-6a4 4 0 0 0 5.4-5.4l-2.3 2.3-1.4-1.4 2.3-2.3Z"/>'},
+  {t:'Computer Diagnostics',d:'Dealer-level scanning to read your car the way the factory does — and find the real fault fast.',i:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4M7 9l2 2-2 2M12 13h4"/>'},
+  {t:'Engine & Rebuilds',d:'From timing and seals to complete rebuilds — keeping fine powertrains running their best.',i:'<path d="M5 13v-2h3l2-2h4l1 2h3v3h2v3h-3l-1 2H9l-2-2H4v-4Z"/><path d="M9 9V6h4v3"/>'},
+  {t:'Brake Systems',d:'Pads, rotors, calipers and fluid — stopping power restored to original spec and beyond.',i:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>'},
+  {t:'Transmission',d:'Automatic and manual service, fluid changes and repairs for smooth, faithful shifting.',i:'<circle cx="7" cy="7" r="2.5"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/><path d="M7 9.5v7M7 12h10M17 12v2.5"/>'},
+  {t:'Performance Tuning',d:'Tuning and upgrades that wake up your motor — more response, more character, more soul.',i:'<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/>'},
+  {t:'Heating & Air-Con',d:'Heating and air-conditioning diagnosis, recharge and repair — comfort in every season.',i:'<path d="M12 3v18M3 12h18M6 6l12 12M18 6 6 18"/>'},
+  {t:'Servicing & Oil',d:'Scheduled maintenance and oil changes that protect your investment for the long road.',i:'<path d="M14 4h3a2 2 0 0 1 2 2v3M8 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8M16 14l3 3 4-4"/><circle cx="9" cy="11" r="3"/>'},
+  {t:'Towing & Recovery',d:'Stuck, stranded or locked out? We help get you and your motor safely back on the road.',i:'<path d="M3 17h2l2-5h7l3 3h2a2 2 0 0 1 2 2v1"/><circle cx="7" cy="18.5" r="1.6"/><circle cx="17" cy="18.5" r="1.6"/><path d="M14 12V7h3l3 3"/>'},
+];
+document.getElementById('svc').innerHTML=SERVICES.map((s,i)=>`<div class="scard reveal d${i%3}"><span class="no">${String(i+1).padStart(2,'0')}</span><div class="ico">${ICON(s.i)}</div><h3>${s.t}</h3><p>${s.d}</p></div>`).join('');
+
+/* ---- reveal ---- */
+const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ---- count up ---- */
+const cio=new IntersectionObserver((es)=>es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target,end=+el.dataset.count,suf=el.dataset.suffix||'';let t=0;(function step(){t+=Math.ceil(end/40);if(t>=end)t=end;else requestAnimationFrame(step);el.textContent=t+suf;})();cio.unobserve(el);}),{threshold:.5});
+document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
+
+/* ---- mobile nav ---- */
+const hamb=document.getElementById('hamb'),links=document.getElementById('navlinks');
+hamb.addEventListener('click',()=>{hamb.classList.toggle('active');links.classList.toggle('open');});
+links.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{hamb.classList.remove('active');links.classList.remove('open');}));
+document.getElementById('yr').textContent=new Date().getFullYear();
+</script>
+</body>
+</html>
