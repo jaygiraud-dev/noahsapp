@@ -256,6 +256,9 @@
   .gtile .gtag{position:absolute;top:10px;left:10px;background:var(--red);color:var(--paper);font-family:var(--sign);
     font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:4px 9px;border-radius:2px}
   .gal-empty{text-align:center;color:var(--ink2);font-style:italic;padding:40px 0;grid-column:1/-1}
+  .gtile.img-missing img{opacity:0}
+  .gtile.img-missing{display:flex;align-items:center;justify-content:center}
+  .gtile.img-missing::after{content:"📷 photo unavailable";position:absolute;color:var(--ink2);font-family:var(--sign);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
 
   /* ---------- lightbox ---------- */
   .lightbox{position:fixed;inset:0;z-index:1000;background:rgba(14,28,20,.95);display:none;align-items:center;justify-content:center;padding:30px}
@@ -653,7 +656,7 @@ const GALLERY={
     {src:'photos/maserati-03.jpeg',cap:'Maserati — Trident-capped alloy'},
   ],
 };
-const GAL_ORDER=['Jaguar','Ferrari','Maserati'];
+const GAL_ORDER=['Ferrari','Jaguar','Maserati'];
 /* flat list with brand tag */
 const PHOTOS=[];GAL_ORDER.forEach(b=>GALLERY[b].forEach(p=>PHOTOS.push({...p,brand:b})));
 const hasPhotos=(n)=>!!GALLERY[n];
@@ -677,7 +680,7 @@ function setFilter(f){curFilter=f;galFilter.querySelectorAll('.chip').forEach(c=
 function renderGrid(){
   curList=(curFilter==='All')?PHOTOS.slice():PHOTOS.filter(p=>p.brand===curFilter);
   if(!curList.length){galGrid.innerHTML='<p class="gal-empty">No photos here yet — call us about your motor and we’ll add it to the collection.</p>';return;}
-  galGrid.innerHTML=curList.map((p,i)=>`<figure class="gtile" data-i="${i}"><span class="gtag">${p.brand}</span><img loading="lazy" src="${p.src}" alt="${p.cap}"><figcaption class="gcap">${p.cap}</figcaption></figure>`).join('');
+  galGrid.innerHTML=curList.map((p,i)=>`<figure class="gtile" data-i="${i}"><span class="gtag">${p.brand}</span><img loading="lazy" src="${p.src}" alt="${p.cap}" onerror="this.closest('.gtile').classList.add('img-missing')"><figcaption class="gcap">${p.cap}</figcaption></figure>`).join('');
   galGrid.querySelectorAll('.gtile').forEach(t=>t.addEventListener('click',()=>openLB(+t.dataset.i)));
 }
 buildFilters();renderGrid();
