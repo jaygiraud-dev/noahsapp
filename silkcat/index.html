@@ -236,6 +236,47 @@
   .foot .col a:hover{color:var(--brass-l)}
   .foot-bottom{margin-top:44px;padding-top:24px;border-top:1px solid rgba(216,177,90,.3);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:rgba(239,230,209,.55);font-family:var(--sign);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
 
+  /* ---------- gallery ---------- */
+  .gal-filter{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:36px}
+  .chip{font-family:var(--sign);font-size:13px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;
+    padding:9px 20px;border:2px solid var(--ink);border-radius:3px;background:transparent;color:var(--ink);transition:background .25s,color .25s,transform .2s}
+  .chip:hover{transform:translateY(-2px)}
+  .chip.active{background:var(--green);color:var(--paper);border-color:var(--green)}
+  .chip .ct{opacity:.6;font-size:11px;margin-left:6px}
+  .gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:16px}
+  .gtile{position:relative;border:2px solid var(--ink);border-radius:5px;overflow:hidden;cursor:pointer;aspect-ratio:4/3;
+    background:var(--paper2);box-shadow:4px 4px 0 var(--green);transition:transform .3s,box-shadow .3s}
+  .gtile:hover{transform:translateY(-4px);box-shadow:6px 8px 0 var(--brass)}
+  .gtile img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease;filter:saturate(1.02)}
+  .gtile:hover img{transform:scale(1.06)}
+  .gtile .gcap{position:absolute;left:0;right:0;bottom:0;padding:26px 14px 11px;color:var(--paper);
+    font-family:var(--sign);font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    background:linear-gradient(transparent,rgba(14,42,30,.86));transform:translateY(8px);opacity:0;transition:.3s}
+  .gtile:hover .gcap{transform:none;opacity:1}
+  .gtile .gtag{position:absolute;top:10px;left:10px;background:var(--red);color:var(--paper);font-family:var(--sign);
+    font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:4px 9px;border-radius:2px}
+  .gal-empty{text-align:center;color:var(--ink2);font-style:italic;padding:40px 0;grid-column:1/-1}
+
+  /* ---------- lightbox ---------- */
+  .lightbox{position:fixed;inset:0;z-index:1000;background:rgba(14,28,20,.95);display:none;align-items:center;justify-content:center;padding:30px}
+  .lightbox.open{display:flex}
+  .lb-fig{margin:0;max-width:1000px;width:100%;display:flex;flex-direction:column;align-items:center}
+  .lb-fig img{max-width:100%;max-height:80vh;border:3px solid var(--paper);border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 6px var(--brass)}
+  .lb-fig figcaption{margin-top:16px;color:var(--paper);font-family:var(--sign);letter-spacing:.1em;text-transform:uppercase;font-size:13px;text-align:center;display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .lb-count{color:var(--brass-l)}
+  .lb-close,.lb-nav{position:absolute;background:rgba(239,230,209,.1);border:2px solid var(--brass-l);color:var(--paper);
+    cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .25s,transform .2s}
+  .lb-close{top:24px;right:24px;width:48px;height:48px;font-size:28px;line-height:1}
+  .lb-nav{top:50%;transform:translateY(-50%);width:56px;height:56px;font-size:34px;line-height:1}
+  .lb-prev{left:24px}.lb-next{right:24px}
+  .lb-close:hover,.lb-nav:hover{background:var(--red);border-color:var(--red)}
+  .lb-nav:hover{transform:translateY(-50%) scale(1.08)}
+  @media(max-width:600px){.lb-nav{width:44px;height:44px;font-size:26px}.lb-prev{left:10px}.lb-next{right:10px}.lb-close{top:14px;right:14px}}
+
+  /* clickable badges */
+  .badge.has-photos{cursor:pointer}
+  .badge .cam{position:absolute;top:8px;right:10px;font-size:13px;opacity:.85}
+
   /* ---------- reveal ---------- */
   .reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
   .reveal.in{opacity:1;transform:none}
@@ -299,6 +340,7 @@
     <nav class="nav-links" id="navlinks">
       <a href="#services">Workshop</a>
       <a href="#brands">Marques</a>
+      <a href="#gallery">Gallery</a>
       <a href="#about">Heritage</a>
       <a href="#reviews">Word of Mouth</a>
       <a href="#visit">Visit</a>
@@ -391,7 +433,7 @@
   <div class="wrap center" style="margin-bottom:46px">
     <span class="eyebrow two reveal">The marques we know by heart</span>
     <h2 class="reveal d1" style="font-size:clamp(30px,4.6vw,46px);margin-top:14px">From Coventry to Modena</h2>
-    <p class="reveal d2" style="color:rgba(239,230,209,.78);font-style:italic;margin-top:14px;max-width:600px;margin-left:auto;margin-right:auto">British grit and Italian soul — restored, serviced and sent back out singing.</p>
+    <p class="reveal d2" style="color:rgba(239,230,209,.78);font-style:italic;margin-top:14px;max-width:620px;margin-left:auto;margin-right:auto">British grit and Italian soul — restored, serviced and sent back out singing. <b style="color:var(--brass-l);font-style:normal">Tap a badge with a 📷 to see our work.</b></p>
   </div>
   <div class="marquee row1"><div class="track" id="track1"></div></div>
   <div class="marquee row2"><div class="track" id="track2"></div></div>
@@ -437,6 +479,30 @@
     </div>
   </div>
 </section>
+
+<!-- gallery / the collection -->
+<section class="sec" id="gallery">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <span class="eyebrow">Through our doors</span>
+      <h2>The collection.</h2>
+      <p>A glimpse of the British &amp; Italian machinery that's passed across our ramps. Choose a marque, then tap any photo to view it full size.</p>
+    </div>
+    <div class="gal-filter reveal" id="galFilter"></div>
+    <div class="gal-grid" id="galGrid"></div>
+  </div>
+</section>
+
+<!-- lightbox -->
+<div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-label="Photo viewer">
+  <button class="lb-close" id="lbClose" aria-label="Close">&times;</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous">&#8249;</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Next">&#8250;</button>
+  <figure class="lb-fig">
+    <img id="lbImg" src="" alt="" />
+    <figcaption><span id="lbCap"></span><span class="lb-count" id="lbCount"></span></figcaption>
+  </figure>
+</div>
 
 <!-- reviews -->
 <section class="sec" id="reviews">
@@ -553,9 +619,94 @@ const BRANDS=[
   {n:'Audi',svg:`<svg class="bsvg" viewBox="0 0 210 64"><g fill="none" stroke="currentColor" stroke-width="5"><circle cx="30" cy="32" r="24"/><circle cx="70" cy="32" r="24"/><circle cx="110" cy="32" r="24"/><circle cx="150" cy="32" r="24"/></g></svg>`},
 ];
 
-function fill(id,arr){document.getElementById(id).innerHTML=arr.concat(arr).map(b=>`<div class="badge" title="${b.n}" aria-label="${b.n}">${b.svg}</div>`).join('');}
+/* ---- workshop gallery, grouped by marque ---- */
+const GALLERY={
+  Jaguar:[
+    {src:'photos/jaguar-etype-01.jpeg',cap:'Jaguar E-Type 4.2 — long-bonnet profile'},
+    {src:'photos/jaguar-etype-02.jpeg',cap:'Jaguar E-Type — headlamp & wire wheel'},
+    {src:'photos/jaguar-etype-03.jpeg',cap:'Jaguar E-Type 4.2 — bootlid script'},
+    {src:'photos/jaguar-etype-05.jpeg',cap:'Jaguar E-Type — cockpit & wood-rim wheel'},
+    {src:'photos/jaguar-etype-04.jpeg',cap:'Jaguar E-Type — chrome bumper & wires'},
+    {src:'photos/jaguar-etype-06.jpeg',cap:'Jaguar E-Type — wire-wheel detail'},
+    {src:'photos/jaguar-etype-07.jpeg',cap:'Jaguar E-Type — chrome wire wheel'},
+    {src:'photos/jaguar-xkr-01.jpeg',cap:'Jaguar XKR — supercharged nose'},
+    {src:'photos/jaguar-xkr-02.jpeg',cap:'Jaguar XKR — twin-pipe rear'},
+    {src:'photos/jaguar-xkr-03.jpeg',cap:'Jaguar XKR — black alloy on Michelin'},
+    {src:'photos/jaguar-xkr-04.jpeg',cap:'Jaguar XKR — wheel & brake detail'},
+    {src:'photos/jaguar-xtype-01.jpeg',cap:'Jaguar X-Type — mesh grille & growler'},
+    {src:'photos/jaguar-xtype-02.jpeg',cap:'Jaguar X-Type — rear badge'},
+    {src:'photos/jaguar-xtype-03.jpeg',cap:'Jaguar X-Type — alloy & growler cap'},
+  ],
+  Ferrari:[
+    {src:'photos/ferrari-01.jpeg',cap:'Ferrari 348 Spider — front three-quarter'},
+    {src:'photos/ferrari-02.jpeg',cap:'Ferrari 348 — the Cavallino up front'},
+    {src:'photos/ferrari-03.jpeg',cap:'Ferrari 348 Spider — nose'},
+    {src:'photos/ferrari-04.jpeg',cap:'Ferrari 348 — decklid Cavallino'},
+    {src:'photos/ferrari-05.jpeg',cap:'Ferrari 348 Spider — quad-pipe rear'},
+    {src:'photos/ferrari-06.jpeg',cap:'Ferrari 348 Spider — rear three-quarter'},
+    {src:'photos/ferrari-07.jpeg',cap:'Ferrari 348 — tan leather cockpit'},
+    {src:'photos/ferrari-08.jpeg',cap:'Ferrari 348 — five-spoke alloy'},
+  ],
+  Maserati:[
+    {src:'photos/maserati-01.jpeg',cap:'Maserati — Trident in the grille'},
+    {src:'photos/maserati-02.jpeg',cap:'Maserati — rear three-quarter & badge'},
+    {src:'photos/maserati-03.jpeg',cap:'Maserati — Trident-capped alloy'},
+  ],
+};
+const GAL_ORDER=['Jaguar','Ferrari','Maserati'];
+/* flat list with brand tag */
+const PHOTOS=[];GAL_ORDER.forEach(b=>GALLERY[b].forEach(p=>PHOTOS.push({...p,brand:b})));
+const hasPhotos=(n)=>!!GALLERY[n];
+
+function fill(id,arr){document.getElementById(id).innerHTML=arr.concat(arr).map(b=>{
+  const hp=hasPhotos(b.n);
+  return `<div class="badge${hp?' has-photos':''}" title="${b.n}${hp?' — view our work':''}" aria-label="${b.n}"${hp?` data-brand="${b.n}" role="button" tabindex="0"`:''}>${hp?'<span class="cam">📷</span>':''}${b.svg}</div>`;
+}).join('');}
 fill('track1',BRANDS);
 fill('track2',BRANDS.slice().reverse());
+
+/* ---- gallery render + filter ---- */
+let curFilter='All',curList=PHOTOS.slice();
+const galGrid=document.getElementById('galGrid'),galFilter=document.getElementById('galFilter');
+function buildFilters(){
+  const chips=[['All',PHOTOS.length]].concat(GAL_ORDER.map(b=>[b,GALLERY[b].length]));
+  galFilter.innerHTML=chips.map(([n,c])=>`<button class="chip${n===curFilter?' active':''}" data-f="${n}">${n}<span class="ct">${c}</span></button>`).join('');
+  galFilter.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>setFilter(c.dataset.f)));
+}
+function setFilter(f){curFilter=f;galFilter.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.f===f));renderGrid();}
+function renderGrid(){
+  curList=(curFilter==='All')?PHOTOS.slice():PHOTOS.filter(p=>p.brand===curFilter);
+  if(!curList.length){galGrid.innerHTML='<p class="gal-empty">No photos here yet — call us about your motor and we’ll add it to the collection.</p>';return;}
+  galGrid.innerHTML=curList.map((p,i)=>`<figure class="gtile" data-i="${i}"><span class="gtag">${p.brand}</span><img loading="lazy" src="${p.src}" alt="${p.cap}"><figcaption class="gcap">${p.cap}</figcaption></figure>`).join('');
+  galGrid.querySelectorAll('.gtile').forEach(t=>t.addEventListener('click',()=>openLB(+t.dataset.i)));
+}
+buildFilters();renderGrid();
+
+/* ---- badge click -> jump to that marque's gallery ---- */
+function openBrand(name){
+  if(!hasPhotos(name))return;
+  setFilter(name);
+  document.getElementById('gallery').scrollIntoView({behavior:'smooth'});
+  setTimeout(()=>openLB(0),520);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('.badge.has-photos');if(b)openBrand(b.dataset.brand);});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&document.activeElement.classList.contains('has-photos')){e.preventDefault();openBrand(document.activeElement.dataset.brand);}});
+
+/* ---- lightbox ---- */
+let lbIndex=0;
+const lb=document.getElementById('lightbox'),lbImg=document.getElementById('lbImg'),lbCap=document.getElementById('lbCap'),lbCount=document.getElementById('lbCount');
+function openLB(i){lbIndex=i;showLB();lb.classList.add('open');lb.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
+function closeLB(){lb.classList.remove('open');lb.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+function showLB(){const p=curList[lbIndex];if(!p)return;lbImg.src=p.src;lbImg.alt=p.cap;lbCap.textContent=p.cap;lbCount.textContent=`${lbIndex+1} / ${curList.length}`;}
+function stepLB(d){lbIndex=(lbIndex+d+curList.length)%curList.length;showLB();}
+document.getElementById('lbClose').addEventListener('click',closeLB);
+document.getElementById('lbPrev').addEventListener('click',()=>stepLB(-1));
+document.getElementById('lbNext').addEventListener('click',()=>stepLB(1));
+lb.addEventListener('click',e=>{if(e.target===lb)closeLB();});
+document.addEventListener('keydown',e=>{if(!lb.classList.contains('open'))return;if(e.key==='Escape')closeLB();if(e.key==='ArrowLeft')stepLB(-1);if(e.key==='ArrowRight')stepLB(1);});
+/* swipe on touch */
+let tx=0;lb.addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
+lb.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)stepLB(dx<0?1:-1);},{passive:true});
 
 /* ---- workshop services ---- */
 const ICON=(p)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
