@@ -13,3 +13,7 @@ parent/web-build/
 *.log
 .env
 .env.local
+
+# delivery / build artifacts
+silkcat-site.zip
+*.zip
