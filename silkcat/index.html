@@ -161,7 +161,7 @@
     height:104px;min-width:184px;padding:0 30px;border-radius:6px;overflow:hidden;color:var(--paper);
     background:var(--green-d);box-shadow:inset 0 0 0 1px var(--brass-l),inset 0 0 0 5px var(--green-d),inset 0 0 0 6px rgba(216,177,90,.5);
     transition:transform .35s,box-shadow .35s,color .35s}
-  .badge .bsvg{height:52px;width:auto;opacity:.92;transition:opacity .35s,filter .35s}
+  .badge .bsvg{height:60px;width:auto;opacity:1;transition:opacity .35s,filter .35s}
   .badge:hover{transform:translateY(-5px);color:var(--brass-l);box-shadow:inset 0 0 0 1px var(--brass-l),inset 0 0 0 5px var(--green-d),inset 0 0 0 6px var(--brass-l),0 18px 34px rgba(0,0,0,.4)}
   .badge:hover .bsvg{opacity:1;filter:drop-shadow(0 0 10px rgba(216,177,90,.45))}
   .badge::after{content:"";position:absolute;top:0;bottom:0;width:50%;left:-80%;background:linear-gradient(105deg,transparent,rgba(255,245,220,.18),transparent);transform:skewX(-18deg);transition:left .7s ease}
@@ -186,11 +186,16 @@
 
   /* ---------- about ---------- */
   .split{display:grid;grid-template-columns:1.02fr .98fr;gap:60px;align-items:center}
-  .about-card{position:relative;border:2px solid var(--brass-l);border-radius:8px;background:rgba(239,230,209,.06);
-    box-shadow:inset 0 0 0 5px var(--green),inset 0 0 0 6px var(--brass-l);min-height:440px;display:flex;align-items:center;justify-content:center;padding:30px}
-  .about-card .bigcrest{width:72%;max-width:300px}
-  .about-card .est{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:var(--red);color:var(--paper);
-    font-family:var(--sign);letter-spacing:.24em;text-transform:uppercase;font-size:13px;padding:9px 22px;border-radius:3px;
+  .about-card{position:relative;border:2px solid var(--brass-l);border-radius:8px;overflow:hidden;
+    box-shadow:inset 0 0 0 5px var(--green),inset 0 0 0 6px var(--brass-l);min-height:470px}
+  .about-card .about-photo{width:100%;height:100%;min-height:470px;object-fit:cover;display:block;filter:saturate(1.03)}
+  .about-card::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(10,20,14,.28),transparent 38%,transparent 62%,rgba(10,20,14,.6))}
+  .about-card .about-cap{position:absolute;left:18px;top:16px;z-index:2;color:var(--paper);font-family:var(--sign);
+    letter-spacing:.14em;text-transform:uppercase;font-size:12px;background:rgba(10,20,14,.45);backdrop-filter:blur(3px);
+    padding:6px 12px;border-radius:3px;border:1px solid rgba(216,177,90,.5)}
+  .about-card .est{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);z-index:3;background:var(--red);color:var(--paper);
+    font-family:var(--sign);letter-spacing:.24em;text-transform:uppercase;font-size:13px;padding:9px 22px;border-radius:3px;white-space:nowrap;
     box-shadow:0 0 0 3px var(--green),0 0 0 5px var(--brass-l)}
   .feat{display:flex;gap:16px;padding:20px 0;border-top:1px solid rgba(216,177,90,.4)}
   .feat:last-of-type{border-bottom:1px solid rgba(216,177,90,.4)}
@@ -287,10 +292,6 @@
   .lb-close:hover,.lb-nav:hover{background:var(--red);border-color:var(--red)}
   .lb-nav:hover{transform:translateY(-50%) scale(1.08)}
   @media(max-width:600px){.lb-nav{width:44px;height:44px;font-size:26px}.lb-prev{left:10px}.lb-next{right:10px}.lb-close{top:14px;right:14px}}
-
-  /* clickable badges */
-  .badge.has-photos{cursor:pointer}
-  .badge .cam{position:absolute;top:8px;right:10px;font-size:13px;opacity:.85}
 
   /* ---------- inquiry / quote form ---------- */
   .inq{background:var(--paper2);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)}
@@ -465,7 +466,7 @@
   <div class="wrap center" style="margin-bottom:46px">
     <span class="eyebrow two reveal">The marques we know by heart</span>
     <h2 class="reveal d1" style="font-size:clamp(30px,4.6vw,46px);margin-top:14px">From Coventry to Modena</h2>
-    <p class="reveal d2" style="color:rgba(239,230,209,.78);font-style:italic;margin-top:14px;max-width:620px;margin-left:auto;margin-right:auto">British grit and Italian soul — restored, serviced and sent back out singing. <b style="color:var(--brass-l);font-style:normal">Tap a badge with a 📷 to see our work.</b></p>
+    <p class="reveal d2" style="color:rgba(239,230,209,.78);font-style:italic;margin-top:14px;max-width:620px;margin-left:auto;margin-right:auto">British grit and Italian soul — restored, serviced and sent back out singing.</p>
   </div>
   <div class="marquee row1"><div class="track" id="track1"></div></div>
   <div class="marquee row2"><div class="track" id="track2"></div></div>
@@ -505,9 +506,10 @@
         <div><h4>Better than new</h4><p>We don't just fix the car — we make it run the way its maker intended.</p></div>
       </div>
     </div>
-    <div class="about-card crestbox reveal d2">
-      <svg class="crest bigcrest"><use href="#crest"/></svg>
-      <span class="est">North Vancouver, BC</span>
+    <div class="about-card reveal d2">
+      <img class="about-photo" src="photos/jaguar-etype-01.jpeg" alt="Classic Jaguar E-Type 4.2 cared for by Silk Cat Automotive" loading="lazy" />
+      <span class="about-cap">In the shop · Jaguar E-Type 4.2</span>
+      <span class="est">North Vancouver · Est. 1990</span>
     </div>
   </div>
 </section>
@@ -544,10 +546,11 @@
       <h2>Drivers don't go anywhere else.</h2>
     </div>
     <div class="rev-grid">
-      <div class="rev reveal"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>Greg and his crew are very knowledgeable and skillful. He doesn't pad his work with non-essential items and always discusses the work fully before starting.</p><div class="who"><b>Long-time customer</b> — North Vancouver</div></div>
-      <div class="rev reveal d1"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>Honest, reliable, and the facility is spotless. Exactly what you want when someone's working on your car.</p><div class="who"><b>Verified review</b> — Yelp</div></div>
-      <div class="rev reveal d2"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>They don't just fix the car — they make it run better than new, at an honest price. Thirty years of trust well earned.</p><div class="who"><b>Repeat client</b> — North Shore</div></div>
+      <div class="rev reveal"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>For over 25 years I have entrusted Greg and his team with some of my prized possessions.</p><div class="who"><b>Google review</b> — North Vancouver</div></div>
+      <div class="rev reveal d1"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>Greg is knowledgeable and isn't afraid to tackle any sort of nightmare the old classics throw at him.</p><div class="who"><b>Google review</b> — North Vancouver</div></div>
+      <div class="rev reveal d2"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>Greg and Amir are both very easy to deal with, and it's obvious why they've been in business as long as they have.</p><div class="who"><b>Google review</b> — North Vancouver</div></div>
     </div>
+    <p class="reveal" style="text-align:center;margin-top:30px"><a href="https://www.google.com/search?q=Silk+Cat+Automotive+Specialists+North+Vancouver+reviews" target="_blank" rel="noopener" class="btn btn-out">Read more on Google</a></p>
   </div>
 </section>
 
@@ -789,10 +792,9 @@ const GAL_ORDER=['Ferrari','Jaguar','Maserati'];
 const PHOTOS=[];GAL_ORDER.forEach(b=>GALLERY[b].forEach(p=>PHOTOS.push({...p,brand:b})));
 const hasPhotos=(n)=>!!GALLERY[n];
 
-function fill(id,arr){document.getElementById(id).innerHTML=arr.concat(arr).map(b=>{
-  const hp=hasPhotos(b.n);
-  return `<div class="badge${hp?' has-photos':''}" title="${b.n}${hp?' — view our work':''}" aria-label="${b.n}"${hp?` data-brand="${b.n}" role="button" tabindex="0"`:''}>${hp?'<span class="cam">📷</span>':''}${b.svg}</div>`;
-}).join('');}
+function fill(id,arr){document.getElementById(id).innerHTML=arr.concat(arr).map(b=>
+  `<div class="badge" title="${b.n}" aria-label="${b.n}">${b.svg}</div>`
+).join('');}
 fill('track1',BRANDS);
 fill('track2',BRANDS.slice().reverse());
 
@@ -812,16 +814,6 @@ function renderGrid(){
   galGrid.querySelectorAll('.gtile').forEach(t=>t.addEventListener('click',()=>openLB(+t.dataset.i)));
 }
 buildFilters();renderGrid();
-
-/* ---- badge click -> jump to that marque's gallery ---- */
-function openBrand(name){
-  if(!hasPhotos(name))return;
-  setFilter(name);
-  document.getElementById('gallery').scrollIntoView({behavior:'smooth'});
-  setTimeout(()=>openLB(0),520);
-}
-document.addEventListener('click',e=>{const b=e.target.closest('.badge.has-photos');if(b)openBrand(b.dataset.brand);});
-document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&document.activeElement.classList.contains('has-photos')){e.preventDefault();openBrand(document.activeElement.dataset.brand);}});
 
 /* ---- lightbox ---- */
 let lbIndex=0;
