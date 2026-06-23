@@ -62,6 +62,8 @@
     box-shadow:0 1px 0 var(--brass)}
   .nav{display:flex;align-items:center;justify-content:space-between;height:78px}
   .brand{display:flex;align-items:center;gap:13px}
+  .brandlogo{height:44px;width:auto;display:block}
+  .brandlogo.foot{height:50px}
   .brand .crest{width:50px;height:50px;flex:none}
   .brand .name{display:flex;flex-direction:column;line-height:1}
   .brand .name b{font-family:var(--disp);font-size:23px;font-weight:800;letter-spacing:.01em}
@@ -409,9 +411,8 @@
 <!-- nav -->
 <header>
   <div class="wrap nav">
-    <a href="#top" class="brand crestbox" aria-label="Silk Cat Automotive home">
-      <svg class="crest"><use href="#crest"/></svg>
-      <span class="name"><b>Silk Cat</b><span>Automotive Specialists</span></span>
+    <a href="#top" class="brand" aria-label="Silk Cat Automotive Specialists home">
+      <img class="brandlogo" src="photos/logo-green.png" alt="Silk Cat Automotive Specialists" />
     </a>
     <nav class="nav-links" id="navlinks">
       <a href="#services">Workshop</a>
@@ -716,8 +717,7 @@
   <div class="wrap">
     <div class="foot">
       <div class="foot-brand">
-        <a href="#top" class="brand crestbox"><svg class="crest" style="width:50px;height:50px"><use href="#crest"/></svg>
-          <span class="name"><b>Silk Cat</b><span>Automotive Specialists</span></span></a>
+        <a href="#top" class="brand"><img class="brandlogo foot" src="photos/logo-cream.png" alt="Silk Cat Automotive Specialists" /></a>
         <p>North Vancouver's home for fine British &amp; Italian motoring since 1990. Genuine work, trusted skill, honest pricing.</p>
       </div>
       <div class="col"><h5>The Shop</h5><a href="#services">Workshop</a><a href="#gallery">Gallery</a><a href="#about">Heritage</a><a href="#reviews">Word of Mouth</a><a href="#inquiry">Get a Quote</a><a href="#visit">Visit</a></div>
