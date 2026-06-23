@@ -415,7 +415,6 @@
     </a>
     <nav class="nav-links" id="navlinks">
       <a href="#services">Workshop</a>
-      <a href="#brands">Marques</a>
       <a href="#gallery">Gallery</a>
       <a href="#about">Heritage</a>
       <a href="#reviews">Word of Mouth</a>
@@ -473,17 +472,6 @@
   </div>
 </section>
 
-<!-- marques (badges) -->
-<section class="band" id="brands" style="padding:84px 0">
-  <div class="wrap center" style="margin-bottom:46px">
-    <span class="eyebrow two reveal">The marques we know by heart</span>
-    <h2 class="reveal d1" style="font-size:clamp(30px,4.6vw,46px);margin-top:14px">From Coventry to Modena</h2>
-    <p class="reveal d2" style="color:rgba(239,230,209,.78);font-style:italic;margin-top:14px;max-width:620px;margin-left:auto;margin-right:auto">British grit and Italian soul — restored, serviced and sent back out singing.</p>
-  </div>
-  <div class="marquee row1"><div class="track" id="track1"></div></div>
-  <div class="marquee row2"><div class="track" id="track2"></div></div>
-  <p class="marq-cap reveal">Marque names &amp; emblems shown to indicate vehicles serviced. Silk Cat Automotive is an independent specialist, not affiliated with any manufacturer.</p>
-</section>
 
 <!-- workshop / services -->
 <section class="sec" id="services">
@@ -732,7 +720,7 @@
           <span class="name"><b>Silk Cat</b><span>Automotive Specialists</span></span></a>
         <p>North Vancouver's home for fine British &amp; Italian motoring since 1990. Genuine work, trusted skill, honest pricing.</p>
       </div>
-      <div class="col"><h5>The Shop</h5><a href="#services">Workshop</a><a href="#brands">Marques</a><a href="#about">Heritage</a><a href="#reviews">Word of Mouth</a><a href="#visit">Visit</a></div>
+      <div class="col"><h5>The Shop</h5><a href="#services">Workshop</a><a href="#gallery">Gallery</a><a href="#about">Heritage</a><a href="#reviews">Word of Mouth</a><a href="#inquiry">Get a Quote</a><a href="#visit">Visit</a></div>
       <div class="col"><h5>Contact</h5><a href="tel:+16049878228">(604) 987-8228</a><a href="https://maps.google.com/?q=1053+Churchill+Crescent+North+Vancouver+BC+V7P+1P9" target="_blank" rel="noopener">1053 Churchill Crescent<br>North Vancouver, BC V7P 1P9</a><p>Mon – Fri · 8 AM – 5 PM</p></div>
     </div>
     <div class="foot-bottom"><span>© <span id="yr"></span> Silk Cat Automotive Specialists Ltd.</span><span>British &amp; Italian · North Vancouver, BC</span></div>
@@ -740,89 +728,6 @@
 </footer>
 
 <script>
-/* ---- vintage marque badges (stylized engravings) ---- */
-const WING=`<path d="M0 0 Q34 -12 88 -14"/><path d="M0 6 Q30 -2 76 -3"/><path d="M0 12 Q26 7 64 10"/><path d="M0 18 Q22 17 52 23"/>`;
-const winged=(label,fs=14,sp=2)=>`<svg class="bsvg" viewBox="0 0 250 64"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g transform="translate(146,22)">${WING}</g><g transform="translate(104,22) scale(-1,1)">${WING}</g></g><text class="bword" x="125" y="54" text-anchor="middle" font-size="${fs}" letter-spacing="${sp}">${label}</text></svg>`;
-const word=(label,fs=21,sp=4,it='')=>`<svg class="bsvg" viewBox="0 0 250 64"><text class="bword" x="125" y="42" text-anchor="middle" font-size="${fs}" letter-spacing="${sp}" ${it?'font-style="italic"':''}>${label}</text></svg>`;
-const shield=(inner)=>`<svg class="bsvg" viewBox="0 0 120 130"><path d="M60 8 L104 22 L104 64 Q104 100 60 122 Q16 100 16 64 L16 22 Z" fill="none" stroke="currentColor" stroke-width="3"/>${inner}</svg>`;
-const octagon=(inner)=>`<svg class="bsvg" viewBox="0 0 120 120"><path d="M40 16 L80 16 L104 40 L104 80 L80 104 L40 104 L16 80 L16 40 Z" fill="none" stroke="currentColor" stroke-width="3"/>${inner}</svg>`;
-const oval=(label,fs=15,sp=2.5)=>`<svg class="bsvg" viewBox="0 0 130 80"><ellipse cx="65" cy="40" rx="60" ry="32" fill="none" stroke="currentColor" stroke-width="3"/><ellipse cx="65" cy="40" rx="54" ry="26" fill="none" stroke="currentColor" stroke-width="1"/><text class="bword" x="65" y="46" text-anchor="middle" font-size="${fs}" letter-spacing="${sp}">${label}</text></svg>`;
-
-const BRANDS=[
-  /* ---- British ---- */
-  {n:'Jaguar',svg:word('JAGUAR',20,5)},
-  {n:'Aston Martin',svg:winged('ASTON MARTIN',12,2)},
-  {n:'Land Rover',svg:`<svg class="bsvg" viewBox="0 0 250 64"><rect x="20" y="14" width="210" height="36" rx="18" fill="none" stroke="currentColor" stroke-width="2.6"/><text class="bword" x="125" y="39" text-anchor="middle" font-size="15" letter-spacing="3">LAND ROVER</text></svg>`},
-  {n:'MG',svg:octagon(`<text class="bword" x="60" y="72" text-anchor="middle" font-size="36" font-weight="700" letter-spacing="1">MG</text>`)},
-  {n:'Triumph',svg:`<svg class="bsvg" viewBox="0 0 250 64"><circle cx="125" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="2"/><path d="M103 30 H147 M125 8 V52" stroke="currentColor" stroke-width="1.4"/><rect x="40" y="44" width="170" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><text class="bword" x="125" y="58" text-anchor="middle" font-size="12" letter-spacing="3">TRIUMPH</text></svg>`},
-  {n:'Lotus',svg:`<svg class="bsvg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="3"/><path d="M60 28 Q40 40 38 64 Q60 60 82 64 Q80 40 60 28 Z" fill="none" stroke="currentColor" stroke-width="2"/><text class="bword" x="60" y="92" text-anchor="middle" font-size="14" letter-spacing="1" font-style="italic">Lotus</text></svg>`},
-  {n:'MINI',svg:winged('MINI',16,3)},
-  {n:'Bentley',svg:`<svg class="bsvg" viewBox="0 0 250 64"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><g transform="translate(150,30)">${WING}</g><g transform="translate(100,30) scale(-1,1)">${WING}</g></g><text class="bword" x="125" y="40" text-anchor="middle" font-size="26" font-weight="700">B</text></svg>`},
-  {n:'Rolls-Royce',svg:`<svg class="bsvg" viewBox="0 0 130 90"><rect x="42" y="8" width="46" height="74" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/><text class="bword" x="65" y="23" text-anchor="middle" font-size="8.5" letter-spacing="1">ROLLS</text><text class="bword" x="65" y="55" text-anchor="middle" font-size="22" font-weight="700" letter-spacing="-3">RR</text><text class="bword" x="65" y="76" text-anchor="middle" font-size="8.5" letter-spacing="1">ROYCE</text></svg>`},
-  {n:'Austin-Healey',svg:oval('A·H',22,2)},
-  /* ---- Italian ---- */
-  {n:'Ferrari',svg:shield(`<path d="M60 36 Q50 30 46 40 Q44 50 54 52 L52 64 L60 58 L68 64 L66 52 Q76 50 74 40 Q70 30 60 36 Z" fill="currentColor"/><text class="bword" x="60" y="98" text-anchor="middle" font-size="13" letter-spacing="1">Ferrari</text>`)},
-  {n:'Maserati',svg:`<svg class="bsvg" viewBox="0 0 120 120"><g fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M26 54 Q60 38 94 54"/><path d="M26 54 L26 26"/><path d="M94 54 L94 26"/><path d="M60 47 L60 22"/><path d="M60 54 L60 96"/><path d="M60 96 Q74 100 70 112"/></g></svg>`},
-  {n:'Alfa Romeo',svg:`<svg class="bsvg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="60" cy="60" r="44" fill="none" stroke="currentColor" stroke-width="1"/><line x1="60" y1="16" x2="60" y2="104" stroke="currentColor" stroke-width="1.4"/><path d="M40 50 V40 H50" fill="none" stroke="currentColor" stroke-width="3"/><path d="M70 78 Q74 64 70 50 Q66 64 70 78 Z" fill="currentColor"/><text class="bword" x="35" y="64" text-anchor="middle" font-size="8" letter-spacing="1">ALFA</text><text class="bword" x="85" y="64" text-anchor="middle" font-size="7" letter-spacing="1">ROMEO</text></svg>`},
-  {n:'Lancia',svg:shield(`<path d="M60 30 V96 M30 56 H90" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="60" cy="56" r="20" fill="none" stroke="currentColor" stroke-width="2"/><text class="bword" x="60" y="116" text-anchor="middle" font-size="11" letter-spacing="2">LANCIA</text>`)},
-  {n:'Fiat',svg:`<svg class="bsvg" viewBox="0 0 200 80"><g transform="skewX(-8)"><rect x="34" y="16" width="150" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><text class="bword" x="112" y="50" text-anchor="middle" font-size="26" font-weight="700" letter-spacing="3">FIAT</text></g></svg>`},
-  /* ---- and every fine European marque ---- */
-  {n:'Porsche',svg:word('PORSCHE',18,3)},
-  {n:'Mercedes-Benz',svg:`<svg class="bsvg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="4"/><g stroke="currentColor" stroke-width="4" stroke-linecap="round"><line x1="60" y1="60" x2="60" y2="10"/><line x1="60" y1="60" x2="17" y2="84"/><line x1="60" y1="60" x2="103" y2="84"/></g><circle cx="60" cy="60" r="4.5" fill="currentColor"/></svg>`},
-  {n:'BMW',svg:`<svg class="bsvg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="60" cy="60" r="38" fill="none" stroke="currentColor" stroke-width="3"/><path d="M60 22 A38 38 0 0 0 22 60 L60 60 Z" fill="currentColor"/><path d="M60 98 A38 38 0 0 0 98 60 L60 60 Z" fill="currentColor"/></svg>`},
-  {n:'Audi',svg:`<svg class="bsvg" viewBox="0 0 210 64"><g fill="none" stroke="currentColor" stroke-width="5"><circle cx="30" cy="32" r="24"/><circle cx="70" cy="32" r="24"/><circle cx="110" cy="32" r="24"/><circle cx="150" cy="32" r="24"/></g></svg>`},
-];
-
-/* ---- workshop gallery, grouped by marque ---- */
-const GALLERY={
-  Jaguar:[
-    {src:'photos/jaguar-etype-01.jpeg',cap:'Jaguar E-Type 4.2 — long-bonnet profile'},
-    {src:'photos/jaguar-etype-02.jpeg',cap:'Jaguar E-Type — headlamp & wire wheel'},
-    {src:'photos/jaguar-etype-03.jpeg',cap:'Jaguar E-Type 4.2 — bootlid script'},
-    {src:'photos/jaguar-etype-05.jpeg',cap:'Jaguar E-Type — cockpit & wood-rim wheel'},
-    {src:'photos/jaguar-etype-04.jpeg',cap:'Jaguar E-Type — chrome bumper & wires'},
-    {src:'photos/jaguar-etype-06.jpeg',cap:'Jaguar E-Type — wire-wheel detail'},
-    {src:'photos/jaguar-etype-07.jpeg',cap:'Jaguar E-Type — chrome wire wheel'},
-    {src:'photos/jaguar-xkr-01.jpeg',cap:'Jaguar XKR — supercharged nose'},
-    {src:'photos/jaguar-xkr-02.jpeg',cap:'Jaguar XKR — twin-pipe rear'},
-    {src:'photos/jaguar-xkr-03.jpeg',cap:'Jaguar XKR — black alloy on Michelin'},
-    {src:'photos/jaguar-xkr-04.jpeg',cap:'Jaguar XKR — wheel & brake detail'},
-    {src:'photos/jaguar-xtype-01.jpeg',cap:'Jaguar X-Type — mesh grille & growler'},
-    {src:'photos/jaguar-xtype-02.jpeg',cap:'Jaguar X-Type — rear badge'},
-    {src:'photos/jaguar-xtype-03.jpeg',cap:'Jaguar X-Type — alloy & growler cap'},
-  ],
-  Ferrari:[
-    {src:'photos/ferrari-01.jpeg',cap:'Ferrari 348 Spider — front three-quarter'},
-    {src:'photos/ferrari-02.jpeg',cap:'Ferrari 348 — the Cavallino up front'},
-    {src:'photos/ferrari-03.jpeg',cap:'Ferrari 348 Spider — nose'},
-    {src:'photos/ferrari-04.jpeg',cap:'Ferrari 348 — decklid Cavallino'},
-    {src:'photos/ferrari-05.jpeg',cap:'Ferrari 348 Spider — quad-pipe rear'},
-    {src:'photos/ferrari-06.jpeg',cap:'Ferrari 348 Spider — rear three-quarter'},
-    {src:'photos/ferrari-07.jpeg',cap:'Ferrari 348 — tan leather cockpit'},
-    {src:'photos/ferrari-08.jpeg',cap:'Ferrari 348 — five-spoke alloy'},
-  ],
-  Maserati:[
-    {src:'photos/maserati-01.jpeg',cap:'Maserati — Trident in the grille'},
-    {src:'photos/maserati-02.jpeg',cap:'Maserati — rear three-quarter & badge'},
-    {src:'photos/maserati-03.jpeg',cap:'Maserati — Trident-capped alloy'},
-  ],
-};
-const GAL_ORDER=['Ferrari','Jaguar','Maserati'];
-/* flat list with brand tag */
-const PHOTOS=[];GAL_ORDER.forEach(b=>GALLERY[b].forEach(p=>PHOTOS.push({...p,brand:b})));
-const hasPhotos=(n)=>!!GALLERY[n];
-
-/* brands with a real logo file in photos/logos/ — shown when the file exists,
-   otherwise the stylized emblem is used automatically as a fallback */
-const LOGOS={'Jaguar':'jaguar','Bentley':'bentley','Rolls-Royce':'rolls-royce','MINI':'mini',
-  'Land Rover':'land-rover','BMW':'bmw','Audi':'audi','Mercedes-Benz':'mercedes-benz'};
-function fill(id,arr){document.getElementById(id).innerHTML=arr.concat(arr).map(b=>{
-  const f=LOGOS[b.n];
-  const img=f?`<img class="blogo" src="photos/logos/${f}.png" alt="${b.n} logo" loading="lazy" onerror="this.closest('.badge').classList.add('logo-missing')">`:'';
-  return `<div class="badge${f?' has-logo':''}" title="${b.n}" aria-label="${b.n}">${img}${b.svg}</div>`;
-}).join('');}
-fill('track1',BRANDS);
-fill('track2',BRANDS.slice().reverse());
 
 /* ---- gallery render + filter ---- */
 let curFilter='All',curList=PHOTOS.slice();
