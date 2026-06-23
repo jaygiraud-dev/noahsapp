@@ -85,31 +85,43 @@
   .hamb{display:none;flex-direction:column;gap:5px;background:none;border:0;cursor:pointer;padding:8px}
   .hamb span{width:26px;height:2px;background:var(--ink);transition:.3s;border-radius:2px}
 
-  /* ---------- hero (vintage poster) ---------- */
-  .hero{padding:70px 0 40px;text-align:center;position:relative}
-  .hero .plate{display:inline-flex;align-items:center;gap:12px;border:2px solid var(--ink);border-radius:4px;
-    padding:7px 16px;font-family:var(--sign);font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink);background:var(--paper2)}
-  .hero .plate .flag{width:26px;height:17px;border:1px solid var(--ink);border-radius:1px;flex:none}
-  .hero h1{font-size:clamp(44px,8.4vw,108px);margin:26px 0 0;letter-spacing:-.01em}
-  .hero h1 .line2{display:block;color:var(--green)}
-  .hero .lede{font-size:clamp(17px,2.1vw,21px);color:var(--ink2);max-width:660px;margin:24px auto 32px;font-style:italic}
+  /* ---------- hero (cinematic, real-car backdrop) ---------- */
+  .hero{padding:120px 0 96px;text-align:center;position:relative;overflow:hidden;
+    min-height:90vh;display:flex;align-items:center;justify-content:center;border-bottom:4px solid var(--brass)}
+  .hero-bg{position:absolute;inset:0;z-index:0}
+  .hero-bg .hb{position:absolute;inset:0;background-size:cover;background-position:center;
+    filter:sepia(.32) contrast(1.05) brightness(.46) saturate(.92);opacity:0;
+    animation:heroFade 32s linear infinite,heroPan 32s ease-in-out infinite}
+  .hero-bg .hb:nth-child(1){animation-delay:0s}
+  .hero-bg .hb:nth-child(2){animation-delay:8s}
+  .hero-bg .hb:nth-child(3){animation-delay:16s}
+  .hero-bg .hb:nth-child(4){animation-delay:24s}
+  @keyframes heroFade{0%{opacity:0}3%{opacity:1}22%{opacity:1}28%{opacity:0}100%{opacity:0}}
+  @keyframes heroPan{0%{transform:scale(1.04)}25%{transform:scale(1.14)}100%{transform:scale(1.14)}}
+  .hero-veil{position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:
+      radial-gradient(120% 80% at 50% 18%,rgba(10,26,18,.30),rgba(10,26,18,.66) 70%,rgba(10,26,18,.82)),
+      linear-gradient(180deg,rgba(14,42,30,.55),rgba(10,20,14,.55));}
+  .hero-veil::after{content:"";position:absolute;inset:0;
+    box-shadow:inset 0 0 160px 30px rgba(0,0,0,.55);
+    background:linear-gradient(180deg,transparent 75%,var(--paper) 100%)}
+  .hero .wrap{position:relative;z-index:2}
+  .hero .plate{display:inline-flex;align-items:center;gap:12px;border:1.5px solid var(--brass-l);border-radius:4px;
+    padding:7px 16px;font-family:var(--sign);font-size:12px;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--paper);background:rgba(10,20,14,.4);backdrop-filter:blur(3px)}
+  .hero .plate .flag{width:26px;height:17px;border:1px solid rgba(255,255,255,.5);border-radius:1px;flex:none}
+  .hero h1{font-size:clamp(44px,8.4vw,108px);margin:26px 0 0;letter-spacing:-.01em;color:var(--paper);
+    text-shadow:0 4px 30px rgba(0,0,0,.55)}
+  .hero h1 .line2{display:block;color:var(--brass-l)}
+  .hero .lede{font-size:clamp(17px,2.1vw,21px);color:rgba(244,240,228,.92);max-width:660px;margin:24px auto 32px;
+    font-style:italic;text-shadow:0 2px 16px rgba(0,0,0,.5)}
   .hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-  .hero-rule{display:flex;align-items:center;justify-content:center;gap:18px;margin:34px 0 6px;color:var(--brass-d)}
-  .hero-rule .ln{height:1px;width:90px;background:var(--brass)}
-  .hero-rule span{font-family:var(--sign);font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--green-l)}
-
-  /* framed roadster illustration */
-  .car-frame{margin:8px auto 0;max-width:880px;border:2px solid var(--ink);border-radius:6px;background:
-    repeating-linear-gradient(0deg,rgba(36,31,23,.025) 0 1px,transparent 1px 26px),var(--paper2);
-    box-shadow:0 24px 50px rgba(36,31,23,.16),inset 0 0 0 6px var(--paper),inset 0 0 0 7px var(--brass);
-    padding:30px 24px 18px;position:relative;overflow:hidden}
-  .car-frame .corner{position:absolute;width:16px;height:16px;border:2px solid var(--brass)}
-  .car-frame .corner.tl{top:14px;left:14px;border-right:0;border-bottom:0}
-  .car-frame .corner.tr{top:14px;right:14px;border-left:0;border-bottom:0}
-  .car-frame .corner.bl{bottom:14px;left:14px;border-right:0;border-top:0}
-  .car-frame .corner.br{bottom:14px;right:14px;border-left:0;border-top:0}
-  .car-frame .car{width:100%;height:auto;color:var(--green)}
-  .car-frame .cap{font-family:var(--sign);font-size:11.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink2);margin-top:6px}
+  .hero .btn-out{color:var(--paper);border-color:var(--paper)}
+  .hero .btn-out:hover{background:var(--paper);color:var(--ink)}
+  .hero-rule{display:flex;align-items:center;justify-content:center;gap:18px;margin:40px 0 0;color:var(--brass-l)}
+  .hero-rule .ln{height:1px;width:90px;background:var(--brass-l);opacity:.7}
+  .hero-rule span{font-family:var(--sign);font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--brass-l)}
+  @media(prefers-reduced-motion:reduce){.hero-bg .hb{animation:none}.hero-bg .hb:first-child{opacity:1}}
 
   /* ---------- crest symbol styling ---------- */
   .crest .ring{fill:none;stroke:var(--brass);stroke-width:3}
@@ -358,6 +370,13 @@
 
 <!-- hero -->
 <section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="hb" style="background-image:url('photos/jaguar-etype-01.jpeg')"></div>
+    <div class="hb" style="background-image:url('photos/ferrari-01.jpeg')"></div>
+    <div class="hb" style="background-image:url('photos/jaguar-etype-04.jpeg')"></div>
+    <div class="hb" style="background-image:url('photos/maserati-01.jpeg')"></div>
+  </div>
+  <div class="hero-veil" aria-hidden="true"></div>
   <div class="wrap">
     <span class="plate reveal">
       <svg class="flag" viewBox="0 0 30 20" aria-label="British"><rect width="30" height="20" fill="#0a2f5e"/><path d="M0 0 30 20M30 0 0 20" stroke="#fff" stroke-width="4"/><path d="M0 0 30 20M30 0 0 20" stroke="#c8102e" stroke-width="1.8"/><rect x="12" width="6" height="20" fill="#fff"/><rect y="7" width="30" height="6" fill="#fff"/><rect x="13" width="4" height="20" fill="#c8102e"/><rect y="8" width="30" height="4" fill="#c8102e"/></svg>
@@ -371,45 +390,6 @@
       <a href="#services" class="btn btn-out">The Workshop</a>
     </div>
     <div class="hero-rule reveal d4"><span class="ln"></span><span>Established MCMXC · North Vancouver</span><span class="ln"></span></div>
-    <div class="car-frame reveal d4">
-      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
-      <svg class="car" viewBox="0 0 680 250" role="img" aria-label="Classic roadster illustration">
-        <g fill="currentColor">
-          <!-- body -->
-          <path d="M36 176
-            C36 156 50 150 80 149 C120 148 138 147 158 140
-            C176 120 206 128 246 132 L356 132
-            C360 112 380 96 416 94 L470 92
-            C500 70 528 66 560 70 C604 76 622 100 632 130
-            C638 148 642 160 642 172 C642 180 636 182 622 182
-            L52 182 C42 182 36 180 36 176 Z"/>
-          <!-- windscreen frame -->
-          <path d="M414 96 L470 94 L452 60 L432 62 Z" opacity=".0"/>
-        </g>
-        <!-- chrome side spear (cream) -->
-        <path d="M120 158 L470 152" stroke="var(--brass-l)" stroke-width="2.4" fill="none" opacity=".7"/>
-        <!-- windscreen post -->
-        <path d="M430 94 L448 62" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round"/>
-        <!-- ground -->
-        <line x1="20" y1="216" x2="660" y2="216" stroke="currentColor" stroke-width="2" opacity=".35"/>
-        <!-- wheels -->
-        <g>
-          <circle cx="196" cy="190" r="40" fill="currentColor"/>
-          <circle cx="196" cy="190" r="24" fill="var(--paper2)"/>
-          <circle cx="196" cy="190" r="5" fill="currentColor"/>
-          <g stroke="currentColor" stroke-width="1.6">
-            <line x1="196" y1="166" x2="196" y2="214"/><line x1="172" y1="190" x2="220" y2="190"/>
-            <line x1="179" y1="173" x2="213" y2="207"/><line x1="213" y1="173" x2="179" y2="207"/></g>
-          <circle cx="522" cy="190" r="40" fill="currentColor"/>
-          <circle cx="522" cy="190" r="24" fill="var(--paper2)"/>
-          <circle cx="522" cy="190" r="5" fill="currentColor"/>
-          <g stroke="currentColor" stroke-width="1.6">
-            <line x1="522" y1="166" x2="522" y2="214"/><line x1="498" y1="190" x2="546" y2="190"/>
-            <line x1="505" y1="173" x2="539" y2="207"/><line x1="539" y1="173" x2="505" y2="207"/></g>
-        </g>
-      </svg>
-      <div class="cap">— A specialist's care, in every detail —</div>
-    </div>
   </div>
 </section>
 
