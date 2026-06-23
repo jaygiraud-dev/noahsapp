@@ -167,6 +167,15 @@
   .badge::after{content:"";position:absolute;top:0;bottom:0;width:50%;left:-80%;background:linear-gradient(105deg,transparent,rgba(255,245,220,.18),transparent);transform:skewX(-18deg);transition:left .7s ease}
   .badge:hover::after{left:130%}
   .bword{fill:currentColor;font-family:var(--disp);font-weight:600}
+  /* real logo image slots (with emblem fallback) */
+  .badge .blogo{display:none}
+  .badge.has-logo{background:#f4f0e6;box-shadow:inset 0 0 0 1px var(--brass-l),inset 0 0 0 5px #f4f0e6,inset 0 0 0 6px rgba(176,138,69,.55)}
+  .badge.has-logo .blogo{display:block;height:58px;width:auto;max-width:150px;object-fit:contain}
+  .badge.has-logo .bsvg{display:none}
+  .badge.has-logo:hover{box-shadow:inset 0 0 0 1px var(--brass-l),inset 0 0 0 5px #f4f0e6,inset 0 0 0 6px var(--brass-l),0 18px 34px rgba(0,0,0,.4)}
+  .badge.has-logo.logo-missing{background:var(--green-d);box-shadow:inset 0 0 0 1px var(--brass-l),inset 0 0 0 5px var(--green-d),inset 0 0 0 6px rgba(216,177,90,.5)}
+  .badge.has-logo.logo-missing .blogo{display:none}
+  .badge.has-logo.logo-missing .bsvg{display:block}
   .marq-cap{text-align:center;margin-top:40px;color:rgba(239,230,209,.6);font-size:13px;font-style:italic}
 
   /* ---------- services ---------- */
@@ -225,6 +234,9 @@
   .info-row .lab{font-family:var(--sign);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--green-l);margin-bottom:3px}
   .info-row .val{font-size:16.5px;font-weight:500}
   .info-row .val a:hover{color:var(--red)}
+  .goodtoknow{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .goodtoknow span{font-family:var(--sign);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);
+    background:rgba(22,61,45,.08);border:1px solid rgba(22,61,45,.22);border-radius:3px;padding:6px 11px}
   .map-card{border:2px solid var(--ink);border-radius:6px;overflow:hidden;position:relative;min-height:430px;background:var(--paper2);box-shadow:6px 6px 0 var(--green)}
   .map-card .mapgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(22,61,45,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(22,61,45,.10) 1px,transparent 1px);background-size:40px 40px}
   .map-card .roads path{stroke:rgba(22,61,45,.22)}
@@ -676,7 +688,10 @@
           <div class="ii"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
           <div><div class="lab">Opening Hours</div><div class="val">Monday – Friday · 8:00 AM – 5:00 PM<br><span style="font-size:13.5px;color:var(--ink2)">Weekends closed · please call to confirm</span></div></div>
         </div>
-        <div style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">
+        <div class="goodtoknow">
+          <span>Onsite &amp; mobile service</span><span>Appointments recommended</span><span>Credit · debit · mobile pay</span><span>Wheelchair accessible</span><span>Language assistance</span><span>LGBTQ+ friendly</span>
+        </div>
+        <div style="margin-top:22px;display:flex;gap:12px;flex-wrap:wrap">
           <a href="tel:+16049878228" class="btn btn-fill">Call the shop</a>
           <a href="https://maps.google.com/?q=1053+Churchill+Crescent+North+Vancouver+BC+V7P+1P9" target="_blank" rel="noopener" class="btn btn-out">Get directions</a>
         </div>
@@ -798,9 +813,15 @@ const GAL_ORDER=['Ferrari','Jaguar','Maserati'];
 const PHOTOS=[];GAL_ORDER.forEach(b=>GALLERY[b].forEach(p=>PHOTOS.push({...p,brand:b})));
 const hasPhotos=(n)=>!!GALLERY[n];
 
-function fill(id,arr){document.getElementById(id).innerHTML=arr.concat(arr).map(b=>
-  `<div class="badge" title="${b.n}" aria-label="${b.n}">${b.svg}</div>`
-).join('');}
+/* brands with a real logo file in photos/logos/ — shown when the file exists,
+   otherwise the stylized emblem is used automatically as a fallback */
+const LOGOS={'Jaguar':'jaguar','Bentley':'bentley','Rolls-Royce':'rolls-royce','MINI':'mini',
+  'Land Rover':'land-rover','BMW':'bmw','Audi':'audi','Mercedes-Benz':'mercedes-benz'};
+function fill(id,arr){document.getElementById(id).innerHTML=arr.concat(arr).map(b=>{
+  const f=LOGOS[b.n];
+  const img=f?`<img class="blogo" src="photos/logos/${f}.png" alt="${b.n} logo" loading="lazy" onerror="this.closest('.badge').classList.add('logo-missing')">`:'';
+  return `<div class="badge${f?' has-logo':''}" title="${b.n}" aria-label="${b.n}">${img}${b.svg}</div>`;
+}).join('');}
 fill('track1',BRANDS);
 fill('track2',BRANDS.slice().reverse());
 
@@ -840,15 +861,15 @@ lb.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Ma
 /* ---- workshop services ---- */
 const ICON=(p)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const SERVICES=[
-  {t:'Full Restoration',d:'Sympathetic, ground-up restoration that honours the way your classic left the factory.',i:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6 2.7 2.7 6-6a4 4 0 0 0 5.4-5.4l-2.3 2.3-1.4-1.4 2.3-2.3Z"/>'},
-  {t:'Computer Diagnostics',d:'Dealer-level scanning to read your car the way the factory does — and find the real fault fast.',i:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4M7 9l2 2-2 2M12 13h4"/>'},
-  {t:'Engine & Rebuilds',d:'From timing and seals to complete rebuilds — keeping fine powertrains running their best.',i:'<path d="M5 13v-2h3l2-2h4l1 2h3v3h2v3h-3l-1 2H9l-2-2H4v-4Z"/><path d="M9 9V6h4v3"/>'},
-  {t:'Brake Systems',d:'Pads, rotors, calipers and fluid — stopping power restored to original spec and beyond.',i:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>'},
-  {t:'Transmission',d:'Automatic and manual service, fluid changes and repairs for smooth, faithful shifting.',i:'<circle cx="7" cy="7" r="2.5"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/><path d="M7 9.5v7M7 12h10M17 12v2.5"/>'},
-  {t:'Performance Tuning',d:'Tuning and upgrades that wake up your motor — more response, more character, more soul.',i:'<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/>'},
-  {t:'Heating & Air-Con',d:'Heating and air-conditioning diagnosis, recharge and repair — comfort in every season.',i:'<path d="M12 3v18M3 12h18M6 6l12 12M18 6 6 18"/>'},
-  {t:'Servicing & Oil',d:'Scheduled maintenance and oil changes that protect your investment for the long road.',i:'<path d="M14 4h3a2 2 0 0 1 2 2v3M8 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8M16 14l3 3 4-4"/><circle cx="9" cy="11" r="3"/>'},
-  {t:'Towing & Recovery',d:'Stuck, stranded or locked out? We help get you and your motor safely back on the road.',i:'<path d="M3 17h2l2-5h7l3 3h2a2 2 0 0 1 2 2v1"/><circle cx="7" cy="18.5" r="1.6"/><circle cx="17" cy="18.5" r="1.6"/><path d="M14 12V7h3l3 3"/>'},
+  {t:'Repairs & Maintenance',d:'From fluids and filters to the fiddly stuff, we keep every corner of your car in check so small issues never become big bills.',i:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6 2.7 2.7 6-6a4 4 0 0 0 5.4-5.4l-2.3 2.3-1.4-1.4 2.3-2.3Z"/>'},
+  {t:'Computer Diagnostics',d:'Our technicians and scanners can read any warning light or fault your vehicle throws — and tell you what it actually means.',i:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4M7 9l2 2-2 2M12 13h4"/>'},
+  {t:'Engine Diagnostics & Repair',d:'Years of experience and certified ability to diagnose and fix any mechanical or electronic problem — the reason customers leave satisfied.',i:'<path d="M5 13v-2h3l2-2h4l1 2h3v3h2v3h-3l-1 2H9l-2-2H4v-4Z"/><path d="M9 9V6h4v3"/>'},
+  {t:'ABS & Brakes',d:'Ceramic, carbon or semi-metallic — we keep your braking system safe and to spec, and can replace any vehicle’s brakes.',i:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>'},
+  {t:'Transmission',d:'Automatic and manual service, fluid changes and repairs for smooth, reliable shifting.',i:'<circle cx="7" cy="7" r="2.5"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/><path d="M7 9.5v7M7 12h10M17 12v2.5"/>'},
+  {t:'Performance Upgrades',d:'Any make or model — we can upgrade or maintain whatever performance parts your vehicle has, or needs.',i:'<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/>'},
+  {t:'Air Conditioning & HVAC',d:'No cold air in summer, or no defrost on a damp day? We find and fix any leak or fault in your A/C and HVAC.',i:'<path d="M12 3v18M3 12h18M6 6l12 12M18 6 6 18"/>'},
+  {t:'Oil, Lube & Tires',d:'Oil changes, tires and proper chassis lubrication — especially on classics — done habitually with every job to save you money down the road.',i:'<path d="M14 4h3a2 2 0 0 1 2 2v3M8 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8M16 14l3 3 4-4"/><circle cx="9" cy="11" r="3"/>'},
+  {t:'Onsite & Mobile Service',d:'Can’t make it in? We offer onsite service — and appointments are quick to book by phone or online.',i:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/>'},
 ];
 document.getElementById('svc').innerHTML=SERVICES.map((s,i)=>`<div class="scard reveal d${i%3}"><span class="no">${String(i+1).padStart(2,'0')}</span><div class="ico">${ICON(s.i)}</div><h3>${s.t}</h3><p>${s.d}</p></div>`).join('');
 
