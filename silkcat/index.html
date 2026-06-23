@@ -292,6 +292,54 @@
   .badge.has-photos{cursor:pointer}
   .badge .cam{position:absolute;top:8px;right:10px;font-size:13px;opacity:.85}
 
+  /* ---------- inquiry / quote form ---------- */
+  .inq{background:var(--paper2);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+  .inq-grid{display:grid;grid-template-columns:.92fr 1.08fr;gap:52px;align-items:start}
+  .inq-pitch h2{font-size:clamp(30px,4.6vw,48px);margin:16px 0 18px}
+  .inq-pitch>p{color:var(--ink2);font-size:17px;font-style:italic;margin-bottom:22px}
+  .inq-points{list-style:none;display:block}
+  .inq-points li{position:relative;padding:14px 0 14px 40px;border-top:1px solid rgba(176,138,69,.4);font-size:15.5px}
+  .inq-points li:last-child{border-bottom:1px solid rgba(176,138,69,.4)}
+  .inq-points li b{font-weight:600}
+  .inq-points li .pi{position:absolute;left:0;top:12px;width:26px;height:26px;border-radius:50%;background:var(--green);
+    color:var(--paper);display:flex;align-items:center;justify-content:center}
+  .inq-points li .pi svg{width:14px;height:14px}
+  .inq-call{margin-top:24px;font-family:var(--sign);letter-spacing:.06em;text-transform:uppercase;font-size:13px;color:var(--ink2)}
+  .inq-call a{color:var(--green);font-weight:600}.inq-call a:hover{color:var(--red)}
+
+  .qform{background:var(--paper);border:2px solid var(--ink);border-radius:6px;box-shadow:7px 7px 0 var(--green);padding:32px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-family:var(--sign);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--green-l);margin-bottom:6px;font-weight:500}
+  .field label .rq{color:var(--red)}
+  .inp{width:100%;font-family:var(--body);font-size:16px;color:var(--ink);background:var(--paper2);
+    border:1.5px solid var(--line);border-radius:4px;padding:12px 14px;transition:border-color .2s,box-shadow .2s,background .2s}
+  .inp:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(22,61,45,.13);background:#fff}
+  select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23534b3c' stroke-width='2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+  textarea.inp{min-height:118px;resize:vertical;font-family:var(--body)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:96px 1fr 1fr;gap:12px}
+
+  .drop{border:2px dashed var(--brass);border-radius:6px;background:rgba(176,138,69,.06);padding:22px;text-align:center;cursor:pointer;transition:.2s}
+  .drop:hover,.drop.over{background:rgba(22,61,45,.07);border-color:var(--green)}
+  .drop .di{width:34px;height:34px;margin:0 auto 8px;color:var(--green)}
+  .drop p{font-size:14.5px;color:var(--ink);font-weight:500}
+  .drop small{display:block;color:var(--ink2);font-size:12.5px;margin-top:3px}
+  .thumbs{display:none;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:10px;margin-top:14px}
+  .thumb{position:relative;aspect-ratio:1;border:1.5px solid var(--ink);border-radius:4px;overflow:hidden;background:var(--paper2)}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb button{position:absolute;top:3px;right:3px;width:21px;height:21px;border:0;border-radius:50%;background:var(--red);color:#fff;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+  .qnote{font-size:12.5px;color:var(--ink2);margin-top:14px;text-align:center}
+  .qerr{display:none;color:var(--red);font-size:14px;margin-top:12px;font-weight:500}
+  .qsuccess{display:none;background:var(--paper);border:2px solid var(--green);border-radius:6px;box-shadow:7px 7px 0 var(--green);padding:44px 32px;text-align:center}
+  .qsuccess.show{display:block}
+  .qsuccess .qs-ico{width:64px;height:64px;margin:0 auto 18px;border-radius:50%;background:var(--green);color:var(--paper);display:flex;align-items:center;justify-content:center}
+  .qsuccess .qs-ico svg{width:32px;height:32px}
+  .qsuccess h3{font-family:var(--disp);font-size:28px;margin-bottom:10px}
+  .qsuccess p{color:var(--ink2);font-size:16px}
+  @media(max-width:880px){.inq-grid{grid-template-columns:1fr;gap:40px}}
+
+  /* ---------- reveal ---------- */
+
   /* ---------- reveal ---------- */
   .reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
   .reveal.in{opacity:1;transform:none}
@@ -358,6 +406,7 @@
       <a href="#gallery">Gallery</a>
       <a href="#about">Heritage</a>
       <a href="#reviews">Word of Mouth</a>
+      <a href="#inquiry">Get a Quote</a>
       <a href="#visit">Visit</a>
     </nav>
     <div class="nav-cta">
@@ -386,8 +435,8 @@
     <h1 class="reveal d1">Fine motoring,<span class="line2 script">restored &amp; perfected.</span></h1>
     <p class="lede reveal d2">Since 1990, North Shore drivers have trusted Silk Cat for the unhurried, honest craftsmanship their British &amp; Italian classics — and every fine European marque — deserve.</p>
     <div class="hero-actions reveal d3">
-      <a href="tel:+16049878228" class="btn btn-fill">Book Your Motor In</a>
-      <a href="#services" class="btn btn-out">The Workshop</a>
+      <a href="#inquiry" class="btn btn-fill">Start Your Project</a>
+      <a href="tel:+16049878228" class="btn btn-out">Call the Shop</a>
     </div>
     <div class="hero-rule reveal d4"><span class="ln"></span><span>Established MCMXC · North Vancouver</span><span class="ln"></span></div>
   </div>
@@ -498,6 +547,105 @@
       <div class="rev reveal"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>Greg and his crew are very knowledgeable and skillful. He doesn't pad his work with non-essential items and always discusses the work fully before starting.</p><div class="who"><b>Long-time customer</b> — North Vancouver</div></div>
       <div class="rev reveal d1"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>Honest, reliable, and the facility is spotless. Exactly what you want when someone's working on your car.</p><div class="who"><b>Verified review</b> — Yelp</div></div>
       <div class="rev reveal d2"><div class="qm">&ldquo;</div><div class="stars">★★★★★</div><p>They don't just fix the car — they make it run better than new, at an honest price. Thirty years of trust well earned.</p><div class="who"><b>Repeat client</b> — North Shore</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- inquiry / quote -->
+<section class="sec inq" id="inquiry">
+  <div class="wrap inq-grid">
+    <div class="inq-pitch reveal">
+      <span class="eyebrow">Start your project</span>
+      <h2>Tell us about<br>your motor.</h2>
+      <p>Send the details and a few photos — we'll come back with honest advice and a no-obligation quote, usually within a business day.</p>
+      <ul class="inq-points">
+        <li><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><b>No-obligation quote</b> — no pressure, no jargon, no padding.</li>
+        <li><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><b>Classics &amp; oddballs welcome</b> — that weird old Triumph? Yes, we do that.</li>
+        <li><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><b>Attach photos</b> — show off the car, or show us the problem.</li>
+        <li><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span><b>After hours?</b> Leave it here — we'll call you back.</li>
+      </ul>
+      <p class="inq-call">Prefer to talk? Call <a href="tel:+16049878228">(604)&nbsp;987-8228</a></p>
+    </div>
+
+    <div class="reveal d1">
+      <form class="qform" id="qform" name="quote" method="POST" data-netlify="true" netlify-honeypot="bot-field" enctype="multipart/form-data" action="?ok=1#inquiry">
+        <input type="hidden" name="form-name" value="quote" />
+        <p hidden><label>Leave this empty: <input name="bot-field" /></label></p>
+
+        <div class="field">
+          <label for="qName">Your name <span class="rq">*</span></label>
+          <input class="inp" id="qName" name="name" type="text" required placeholder="First &amp; last name" />
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="qPhone">Phone</label>
+            <input class="inp" id="qPhone" name="phone" type="tel" placeholder="(604) 000-0000" />
+          </div>
+          <div class="field">
+            <label for="qEmail">Email</label>
+            <input class="inp" id="qEmail" name="email" type="email" placeholder="you@email.com" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Your vehicle <span class="rq">*</span></label>
+          <div class="row3">
+            <input class="inp" name="year" type="text" inputmode="numeric" maxlength="4" placeholder="Year" aria-label="Year" />
+            <input class="inp" id="qMake" name="make" list="makes" type="text" placeholder="Make" aria-label="Make" required />
+            <input class="inp" name="model" type="text" placeholder="Model" aria-label="Model" required />
+          </div>
+          <datalist id="makes">
+            <option value="Jaguar"></option><option value="Aston Martin"></option><option value="Bentley"></option>
+            <option value="MG"></option><option value="Triumph"></option><option value="Lotus"></option>
+            <option value="Mini"></option><option value="Austin-Healey"></option><option value="Rolls-Royce"></option>
+            <option value="Ferrari"></option><option value="Maserati"></option><option value="Alfa Romeo"></option>
+            <option value="Lancia"></option><option value="Fiat"></option><option value="Lamborghini"></option>
+            <option value="Porsche"></option><option value="Mercedes-Benz"></option><option value="BMW"></option>
+            <option value="Audi"></option><option value="Volkswagen"></option><option value="Volvo"></option><option value="Other"></option>
+          </datalist>
+        </div>
+
+        <div class="field">
+          <label for="qService">What do you need?</label>
+          <select class="inp" id="qService" name="service">
+            <option value="">Select one (optional)…</option>
+            <option>Full / partial restoration</option>
+            <option>Repair &amp; service</option>
+            <option>Routine maintenance</option>
+            <option>Diagnostics</option>
+            <option>Performance / tuning</option>
+            <option>Pre-purchase inspection</option>
+            <option>Not sure — need advice</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="qMsg">Describe your project <span class="rq">*</span></label>
+          <textarea class="inp" id="qMsg" name="message" required placeholder="Tell us what you're after — a full restoration, a nagging fault, a noise, an estimate… the more detail the better."></textarea>
+        </div>
+
+        <div class="field">
+          <label>Photos of the car / the problem</label>
+          <div class="drop" id="qDrop" tabindex="0" role="button" aria-label="Add photos">
+            <div class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg></div>
+            <p>Drag photos here, or click to browse</p>
+            <small>Up to 8 images · 12 MB each</small>
+          </div>
+          <input id="qPhotos" name="photos" type="file" accept="image/*" multiple hidden />
+          <div class="thumbs" id="qThumbs"></div>
+        </div>
+
+        <button class="btn btn-fill" type="submit" style="width:100%;justify-content:center">Send Enquiry</button>
+        <p class="qerr" id="qerr"></p>
+        <p class="qnote">No spam, ever — your details are only used to quote your project.</p>
+      </form>
+
+      <div class="qsuccess" id="qsuccess">
+        <div class="qs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></div>
+        <h3>Thank you — enquiry received.</h3>
+        <p>We'll review the details and get back to you, usually within a business day. For anything urgent, call <a href="tel:+16049878228" style="color:var(--green);font-weight:600">(604) 987-8228</a>.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -719,6 +867,73 @@ const hamb=document.getElementById('hamb'),links=document.getElementById('navlin
 hamb.addEventListener('click',()=>{hamb.classList.toggle('active');links.classList.toggle('open');});
 links.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{hamb.classList.remove('active');links.classList.remove('open');}));
 document.getElementById('yr').textContent=new Date().getFullYear();
+
+/* ---- inquiry / quote form ---- */
+(function(){
+  const form=document.getElementById('qform');if(!form)return;
+  const fileInput=document.getElementById('qPhotos'),drop=document.getElementById('qDrop'),
+        thumbs=document.getElementById('qThumbs'),errEl=document.getElementById('qerr'),
+        success=document.getElementById('qsuccess');
+  const MAX=8,MAXSZ=12*1024*1024;
+  let store=new DataTransfer(),urls=[];
+  const fld=n=>form.elements[n];
+  function err(m){errEl.textContent=m;errEl.style.display='block';}
+  function clr(){errEl.style.display='none';}
+
+  function ingest(list){
+    clr();
+    for(const f of list){
+      if(!f.type.startsWith('image/')){err('Photos must be image files.');continue;}
+      if(f.size>MAXSZ){err('Each photo must be under 12 MB.');continue;}
+      if([...store.files].some(x=>x.name===f.name&&x.size===f.size))continue;
+      if(store.items.length>=MAX){err('You can attach up to 8 photos.');break;}
+      store.items.add(f);
+    }
+    fileInput.files=store.files;render();
+  }
+  function render(){
+    urls.forEach(u=>URL.revokeObjectURL(u));urls=[];
+    thumbs.innerHTML='';
+    [...store.files].forEach((f,i)=>{
+      const url=URL.createObjectURL(f);urls.push(url);
+      const d=document.createElement('div');d.className='thumb';
+      d.innerHTML='<img src="'+url+'" alt=""><button type="button" aria-label="Remove photo">&times;</button>';
+      d.querySelector('button').addEventListener('click',()=>remove(i));
+      thumbs.appendChild(d);
+    });
+    thumbs.style.display=store.files.length?'grid':'none';
+  }
+  function remove(i){const nd=new DataTransfer();[...store.files].forEach((f,j)=>{if(j!==i)nd.items.add(f);});store=nd;fileInput.files=store.files;render();}
+
+  fileInput.addEventListener('change',()=>ingest(fileInput.files));
+  drop.addEventListener('click',()=>fileInput.click());
+  drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.click();}});
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+  drop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files)ingest(e.dataTransfer.files);});
+
+  function showSuccess(){form.style.display='none';success.classList.add('show');
+    document.getElementById('inquiry').scrollIntoView({behavior:'smooth',block:'center'});}
+
+  form.addEventListener('submit',e=>{
+    clr();
+    const name=(fld('name').value||'').trim(),
+          phone=(fld('phone').value||'').trim(),
+          email=(fld('email').value||'').trim(),
+          make=(fld('make').value||'').trim(),
+          model=(fld('model').value||'').trim(),
+          msg=(fld('message').value||'').trim();
+    if(!name){e.preventDefault();err('Please add your name so we know who we’re quoting.');return;}
+    if(!phone&&!email){e.preventDefault();err('Add a phone or email so we can reach you.');return;}
+    if(!make||!model){e.preventDefault();err('Let us know the make and model of the car.');return;}
+    if(!msg){e.preventDefault();err('Tell us a little about the project.');return;}
+    /* demo mode (opened from a file, not a live host) — show success without a backend */
+    if(location.protocol==='file:'){e.preventDefault();showSuccess();}
+  });
+
+  /* live host: Netlify captures the POST then redirects to ?ok=1 */
+  if(new URLSearchParams(location.search).get('ok')==='1')showSuccess();
+})();
 </script>
 </body>
 </html>
