@@ -729,6 +729,43 @@
 
 <script>
 
+/* ---- gallery data (grouped by marque) ---- */
+const GALLERY={
+  Ferrari:[
+    {src:'photos/ferrari-01.jpeg',cap:'Ferrari 348 Spider — front three-quarter'},
+    {src:'photos/ferrari-02.jpeg',cap:'Ferrari 348 — the Cavallino up front'},
+    {src:'photos/ferrari-03.jpeg',cap:'Ferrari 348 Spider — nose'},
+    {src:'photos/ferrari-04.jpeg',cap:'Ferrari 348 — decklid Cavallino'},
+    {src:'photos/ferrari-05.jpeg',cap:'Ferrari 348 Spider — quad-pipe rear'},
+    {src:'photos/ferrari-06.jpeg',cap:'Ferrari 348 Spider — rear three-quarter'},
+    {src:'photos/ferrari-07.jpeg',cap:'Ferrari 348 — tan leather cockpit'},
+    {src:'photos/ferrari-08.jpeg',cap:'Ferrari 348 — five-spoke alloy'},
+  ],
+  Jaguar:[
+    {src:'photos/jaguar-etype-01.jpeg',cap:'Jaguar E-Type 4.2 — long-bonnet profile'},
+    {src:'photos/jaguar-etype-02.jpeg',cap:'Jaguar E-Type — headlamp & wire wheel'},
+    {src:'photos/jaguar-etype-03.jpeg',cap:'Jaguar E-Type 4.2 — bootlid script'},
+    {src:'photos/jaguar-etype-05.jpeg',cap:'Jaguar E-Type — cockpit & wood-rim wheel'},
+    {src:'photos/jaguar-etype-04.jpeg',cap:'Jaguar E-Type — chrome bumper & wires'},
+    {src:'photos/jaguar-etype-06.jpeg',cap:'Jaguar E-Type — wire-wheel detail'},
+    {src:'photos/jaguar-etype-07.jpeg',cap:'Jaguar E-Type — chrome wire wheel'},
+    {src:'photos/jaguar-xkr-01.jpeg',cap:'Jaguar XKR — supercharged nose'},
+    {src:'photos/jaguar-xkr-02.jpeg',cap:'Jaguar XKR — twin-pipe rear'},
+    {src:'photos/jaguar-xkr-03.jpeg',cap:'Jaguar XKR — black alloy on Michelin'},
+    {src:'photos/jaguar-xkr-04.jpeg',cap:'Jaguar XKR — wheel & brake detail'},
+    {src:'photos/jaguar-xtype-01.jpeg',cap:'Jaguar X-Type — mesh grille & growler'},
+    {src:'photos/jaguar-xtype-02.jpeg',cap:'Jaguar X-Type — rear badge'},
+    {src:'photos/jaguar-xtype-03.jpeg',cap:'Jaguar X-Type — alloy & growler cap'},
+  ],
+  Maserati:[
+    {src:'photos/maserati-01.jpeg',cap:'Maserati — Trident in the grille'},
+    {src:'photos/maserati-02.jpeg',cap:'Maserati — rear three-quarter & badge'},
+    {src:'photos/maserati-03.jpeg',cap:'Maserati — Trident-capped alloy'},
+  ],
+};
+const GAL_ORDER=['Ferrari','Jaguar','Maserati'];
+const PHOTOS=[];GAL_ORDER.forEach(b=>GALLERY[b].forEach(p=>PHOTOS.push({...p,brand:b})));
+
 /* ---- gallery render + filter ---- */
 let curFilter='All',curList=PHOTOS.slice();
 const galGrid=document.getElementById('galGrid'),galFilter=document.getElementById('galFilter');
