@@ -51,10 +51,13 @@ automated fetchers, so lean on web search.
   display), email if public, hours, service list, the brands/products featured,
   owner/staff names (great for testimonials and an "about" voice), star rating
   and review count.
-- If the client sends screenshots of their Google Business profile, mine them
-  for: exact rating + review count, real reviews (name + text), the full service
-  list, attributes (wheelchair access, payments, "appointments recommended"),
-  and the brand logos they actually display.
+- **If the client sends screenshots of their Google Business profile, mine them
+  hard** — they're the richest source: exact rating + review count, real reviews
+  (reviewer name + text → testimonials), the full Services tab list, the About-tab
+  attributes (onsite/mobile service, "appointments recommended", payment types,
+  wheelchair access, language assistance, LGBTQ+ friendly → a "good to know"
+  badge row), and the brand logos they actually display. Use their own service
+  descriptions (paraphrased) so the copy is authentically theirs.
 
 Write the facts into the copy. Use the **real rating** (e.g. 4.7★ / 65 reviews),
 never a fake 5.0.
@@ -202,11 +205,38 @@ honest, safe options, in order of preference:
    rings, stars, tridents, wordmarks in a serif). Legitimate as nominative "brands
    we service" marks; no copyrighted artwork reproduced. This is the default.
 
-Do **not** download/recreate pixel-exact trademarked logos yourself. Keep
-emblems monochrome (brass/cream) for cohesion; size them generously (~60px) so
-the strip doesn't look sparse/"blank". Add the legal line: *"Marque names &
-emblems shown to indicate vehicles serviced; [business] is an independent
-specialist, not affiliated with any manufacturer."*
+Do **not** download/recreate pixel-exact trademarked logos yourself, and don't
+extract them from screenshots (phone-of-screen crops look bad anyway — glare,
+low-res, no transparency). Keep emblems generously sized (~60px) so the strip
+doesn't look sparse/"blank". Add the legal line: *"Marque names & emblems shown
+to indicate vehicles serviced; [business] is an independent specialist, not
+affiliated with any manufacturer."*
+
+**Best pattern — real-logo image slots with automatic emblem fallback.** Build
+the markup so the client's own/official logo files drop straight in, and the
+stylized emblem shows until they do. This turns "use real logos" into a clean
+one-step handoff (the client supplies the licensed files; you place them):
+
+```js
+const LOGOS={'Jaguar':'jaguar','Bentley':'bentley','BMW':'bmw'/* …featured brands */};
+// in the tile render:
+const f=LOGOS[b.n];
+const img=f?`<img class="blogo" src="photos/logos/${f}.png" alt="${b.n} logo"
+   loading="lazy" onerror="this.closest('.badge').classList.add('logo-missing')">`:'';
+return `<div class="badge${f?' has-logo':''}">${img}${b.svg}</div>`;
+```
+```css
+.badge .blogo{display:none}
+.badge.has-logo{background:#f4f0e6}              /* light plate so colour logos pop */
+.badge.has-logo .blogo{display:block;height:58px;object-fit:contain}
+.badge.has-logo .bsvg{display:none}
+.badge.has-logo.logo-missing{background:var(--green-d)} /* fall back to dark plate */
+.badge.has-logo.logo-missing .blogo{display:none}
+.badge.has-logo.logo-missing .bsvg{display:block}       /* …and the emblem */
+```
+Tell the client exactly which files to send (`photos/logos/<brand>.png`,
+transparent PNG preferred); their logos already live on their existing site, so
+they can save them there or upload them to you.
 
 ---
 
@@ -283,9 +313,12 @@ if they want clones slimmed (only with explicit consent — it rewrites history)
   - Watch out: a repo-level `netlify.toml` configured for a *different* app will
     hijack/fail the build and serve a stale deploy. If the live site looks old,
     suspect this first; verify publish dir + "Clear cache and deploy".
-- When a client says "nothing changed," check whether they're looking at a
-  **stale deploy** vs. the committed code — confirm with `grep` on the file and
-  re-send the zip so they can see the true current state.
+- When the repo is connected to the host, **a git push to the deploy branch
+  auto-deploys** — keep pushing each change. If a client says "nothing changed,"
+  check whether they're looking at a **stale deploy** vs. the committed code:
+  confirm with `grep` on the file and re-send the zip so they see the true
+  current state (deploys can lag, or a stray `netlify.toml` for another app can
+  hijack the build).
 
 ## 10. Bonus deliverables
 
