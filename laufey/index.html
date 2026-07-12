@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Laufey — Official Site</title>
+<meta name="description" content="The official home of Laufey — two-time GRAMMY winner. New album A Matter of Time out now. Tickets for the A Matter of Time Tour, music, and merch."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   RESET & TOKENS
+============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1c2e;
+  --midnight:#141629;
+  --periwinkle:#8b93d8;
+  --periwinkle-deep:#5b62b0;
+  --cream:#f6f1e7;
+  --cream-2:#efe7d6;
+  --gold:#c9a24b;
+  --rose:#d9a7b0;
+  --sky:#a9c2e6;
+  --line:rgba(26,28,46,.12);
+  --shadow:0 20px 60px -20px rgba(20,22,41,.35);
+  --serif:'Fraunces',Georgia,serif;
+  --sans:'Jost',system-ui,sans-serif;
+  --maxw:1200px;
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);
+  background:var(--cream);
+  color:var(--ink);
+  line-height:1.6;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+/* subtle paper grain */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+::selection{background:var(--periwinkle);color:#fff}
+::-webkit-scrollbar{width:10px}
+::-webkit-scrollbar-track{background:var(--cream-2)}
+::-webkit-scrollbar-thumb{background:var(--periwinkle);border-radius:6px}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;position:relative;z-index:2}
+section{position:relative;z-index:2}
+
+/* ============================================================
+   TYPOGRAPHY HELPERS
+============================================================ */
+.eyebrow{
+  font-family:var(--sans);font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;
+  font-weight:500;color:var(--periwinkle-deep);display:inline-block;margin-bottom:1rem;
+}
+.eyebrow::before{content:"✦ ";color:var(--gold)}
+h1,h2,h3{font-family:var(--serif);font-weight:400;line-height:1.05;letter-spacing:-.01em}
+.section-title{font-size:clamp(2.1rem,5vw,3.6rem);margin-bottom:.6rem}
+.section-sub{max-width:52ch;color:#4a4d63;font-size:1.02rem}
+
+/* ============================================================
+   NAV
+============================================================ */
+header.nav{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px clamp(20px,5vw,48px);
+  transition:background .4s ease,box-shadow .4s ease,padding .4s ease;
+}
+header.nav.scrolled{
+  background:rgba(246,241,231,.82);backdrop-filter:blur(14px);
+  box-shadow:0 1px 0 var(--line);padding-top:12px;padding-bottom:12px;
+}
+.brand{font-family:var(--serif);font-size:1.5rem;letter-spacing:.02em;font-weight:500}
+.brand span{color:var(--gold)}
+.nav-links{display:flex;gap:34px;align-items:center}
+.nav-links a{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;font-weight:500;position:relative;color:#2a2c40}
+.nav-links a::after{content:"";position:absolute;left:0;bottom:-6px;width:0;height:1.5px;background:var(--periwinkle-deep);transition:width .3s ease}
+.nav-links a:hover::after{width:100%}
+.nav-cart{position:relative;display:flex;align-items:center;gap:7px;padding:9px 16px;border:1.5px solid var(--ink);border-radius:40px;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;font-weight:500;transition:.25s}
+.nav-cart:hover{background:var(--ink);color:var(--cream)}
+.cart-count{background:var(--periwinkle-deep);color:#fff;min-width:19px;height:19px;border-radius:50%;font-size:.68rem;display:flex;align-items:center;justify-content:center;font-family:var(--sans);transition:transform .2s}
+.cart-count.pop{transform:scale(1.4)}
+.burger{display:none;flex-direction:column;gap:5px;padding:6px}
+.burger span{width:24px;height:2px;background:var(--ink);transition:.3s}
+
+/* ============================================================
+   HERO
+============================================================ */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  padding:120px clamp(20px,5vw,48px) 80px;position:relative;overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 78% 15%,rgba(169,194,230,.55),transparent 55%),
+    radial-gradient(90% 80% at 12% 85%,rgba(217,167,176,.4),transparent 55%),
+    linear-gradient(160deg,#eef0fb 0%,#f6f1e7 46%,#f3e9d8 100%);
+}
+.hero-inner{max-width:var(--maxw);margin:0 auto;width:100%;position:relative;z-index:3}
+.hero .kicker{font-size:.8rem;letter-spacing:.34em;text-transform:uppercase;color:var(--periwinkle-deep);font-weight:500;margin-bottom:1.4rem;animation:rise .9s .1s both}
+.hero h1{
+  font-size:clamp(4.5rem,19vw,15rem);line-height:.86;font-weight:300;letter-spacing:-.02em;
+  margin-bottom:1.6rem;color:var(--ink);animation:rise 1s .2s both;
+}
+.hero h1 em{font-style:italic;font-weight:400;color:var(--periwinkle-deep)}
+.hero-tag{font-family:var(--serif);font-style:italic;font-size:clamp(1.15rem,2.6vw,1.7rem);color:#3a3d55;max-width:34ch;margin-bottom:2.4rem;animation:rise 1s .35s both}
+.hero-cta{display:flex;gap:16px;flex-wrap:wrap;animation:rise 1s .5s both}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:44px;
+  font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;transition:.28s cubic-bezier(.2,.8,.3,1);
+}
+.btn-primary{background:var(--ink);color:var(--cream)}
+.btn-primary:hover{background:var(--periwinkle-deep);transform:translateY(-3px);box-shadow:var(--shadow)}
+.btn-ghost{border:1.5px solid var(--ink)}
+.btn-ghost:hover{background:var(--ink);color:var(--cream);transform:translateY(-3px)}
+.btn .arw{transition:transform .28s}
+.btn:hover .arw{transform:translateX(4px)}
+
+/* floating notes / stars */
+.floaty{position:absolute;color:var(--periwinkle-deep);opacity:.3;z-index:2;animation:float 9s ease-in-out infinite}
+.floaty svg{width:100%;height:100%}
+.f1{top:18%;right:12%;width:46px;animation-delay:0s}
+.f2{top:64%;right:26%;width:30px;color:var(--gold);opacity:.5;animation-delay:1.5s}
+.f3{top:38%;right:6%;width:22px;color:var(--rose);opacity:.55;animation-delay:.7s}
+.f4{bottom:16%;left:8%;width:34px;animation-delay:2.2s}
+.f5{top:26%;left:16%;width:18px;color:var(--gold);opacity:.5;animation-delay:3s}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-22px) rotate(8deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+
+.hero-marquee{position:absolute;bottom:0;left:0;right:0;padding:14px 0;border-top:1px solid var(--line);background:rgba(20,22,41,.03);overflow:hidden;white-space:nowrap;z-index:3}
+.hero-marquee .track{display:inline-block;animation:marq 26s linear infinite;font-family:var(--serif);font-style:italic;font-size:1.1rem;color:#4a4d63}
+.hero-marquee .track span{margin:0 26px}
+.hero-marquee .track span::after{content:"✦";margin-left:26px;color:var(--gold);font-style:normal}
+@keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ============================================================
+   ABOUT
+============================================================ */
+.about{padding:clamp(80px,12vw,150px) 0}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(40px,6vw,90px);align-items:center}
+.about-portrait{position:relative;aspect-ratio:4/5;border-radius:6px;overflow:hidden;box-shadow:var(--shadow);
+  background:linear-gradient(150deg,#c3cbee,#8b93d8 45%,#5b62b0);
+}
+.about-portrait .mono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.about-portrait .mono span{font-family:var(--serif);font-size:clamp(5rem,14vw,10rem);color:rgba(255,255,255,.9);font-style:italic;font-weight:300}
+.about-portrait::after{content:"";position:absolute;inset:0;background:radial-gradient(70% 60% at 30% 20%,rgba(255,255,255,.35),transparent 60%)}
+.about-portrait .frame{position:absolute;inset:14px;border:1px solid rgba(255,255,255,.4);border-radius:3px;z-index:2}
+.about-body p{margin-bottom:1.2rem;color:#3d4058;font-size:1.06rem}
+.about-body p.lead{font-family:var(--serif);font-size:clamp(1.35rem,2.6vw,1.9rem);color:var(--ink);line-height:1.35;font-style:italic}
+.stats{display:flex;gap:40px;margin-top:2.4rem;flex-wrap:wrap}
+.stat b{font-family:var(--serif);font-size:2.4rem;color:var(--periwinkle-deep);display:block;font-weight:500}
+.stat span{font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:#5a5d75}
+
+/* ============================================================
+   MUSIC
+============================================================ */
+.music{padding:clamp(80px,12vw,150px) 0;background:linear-gradient(180deg,var(--cream) 0%,#efe9dc 100%)}
+.music-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;margin-bottom:56px}
+.disc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
+.disc{cursor:default}
+.disc .cover{aspect-ratio:1;border-radius:8px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .4s cubic-bezier(.2,.8,.3,1)}
+.disc:hover .cover{transform:translateY(-8px) rotate(-1deg)}
+.disc .cover::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 30% 25%,rgba(255,255,255,.28),transparent 60%)}
+.cover-txt{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;z-index:2}
+.cover-txt .t{font-family:var(--serif);color:#fff;font-size:1.15rem;line-height:1.1;font-style:italic}
+.cover .disc-play{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:3;opacity:0;transform:scale(.8);transition:.3s}
+.disc:hover .disc-play{opacity:1;transform:scale(1)}
+.disc-meta{padding:16px 4px 0}
+.disc-meta h3{font-size:1.15rem;margin-bottom:2px}
+.disc-meta .yr{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:#6a6d84}
+.disc-meta .type{font-size:.72rem;color:var(--periwinkle-deep);letter-spacing:.1em;text-transform:uppercase;margin-top:6px;display:inline-block}
+.cov-amot{background:linear-gradient(155deg,#2c2f52,#5b62b0 60%,#8b93d8)}
+.cov-bew{background:linear-gradient(155deg,#7a3f52,#d9a7b0 55%,#f0c9d0)}
+.cov-eik{background:linear-gradient(155deg,#274060,#4a6a92 55%,#a9c2e6)}
+.cov-typ{background:linear-gradient(155deg,#6b5a2c,#c9a24b 55%,#e6d49a)}
+
+/* ============================================================
+   TOUR
+============================================================ */
+.tour{padding:clamp(80px,12vw,150px) 0;background:var(--midnight);color:var(--cream);position:relative;overflow:hidden}
+.tour::before{content:"";position:absolute;inset:0;opacity:.5;
+  background:radial-gradient(80% 60% at 85% 5%,rgba(139,147,216,.3),transparent 55%),radial-gradient(70% 60% at 5% 95%,rgba(217,167,176,.16),transparent 55%)}
+.tour .eyebrow{color:var(--periwinkle)}
+.tour .section-title{color:var(--cream)}
+.tour .section-sub{color:#b9bcd6}
+.tour-head{margin-bottom:40px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.filter{padding:9px 20px;border-radius:40px;border:1px solid rgba(246,241,231,.25);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;font-weight:500;color:#cfd2ea;transition:.25s}
+.filter:hover{border-color:var(--periwinkle)}
+.filter.active{background:var(--periwinkle);color:var(--midnight);border-color:var(--periwinkle)}
+.shows{margin-top:22px}
+.show{
+  display:grid;grid-template-columns:130px 1fr auto;gap:24px;align-items:center;
+  padding:22px 6px;border-top:1px solid rgba(246,241,231,.14);transition:padding .3s,background .3s;
+}
+.show:last-child{border-bottom:1px solid rgba(246,241,231,.14)}
+.show:hover{background:rgba(246,241,231,.04);padding-left:16px;padding-right:16px}
+.show .date{font-family:var(--serif);font-size:1rem}
+.show .date b{display:block;font-size:1.7rem;font-weight:500;line-height:1;color:var(--periwinkle)}
+.show .date span{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#9fa2c0}
+.show .venue h4{font-family:var(--serif);font-size:1.35rem;font-weight:500;margin-bottom:3px}
+.show .venue p{font-size:.86rem;color:#b0b3d0;letter-spacing:.02em}
+.show .venue .support{font-size:.74rem;color:var(--periwinkle);margin-top:5px;letter-spacing:.04em}
+.show .act{text-align:right}
+.tix{padding:11px 24px;border-radius:40px;background:var(--cream);color:var(--midnight);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;transition:.25s;white-space:nowrap}
+.tix:hover{background:var(--periwinkle);transform:translateY(-2px)}
+.tix.soldout{background:transparent;border:1px solid rgba(246,241,231,.3);color:#8f92b0;cursor:not-allowed}
+.tix.past{background:transparent;border:1px solid rgba(246,241,231,.18);color:#6b6e8c;cursor:default}
+.no-shows{padding:40px 0;color:#9fa2c0;font-style:italic;font-family:var(--serif);font-size:1.2rem}
+
+/* ============================================================
+   MERCH
+============================================================ */
+.merch{padding:clamp(80px,12vw,150px) 0}
+.merch-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;margin-bottom:52px}
+.merch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
+.product{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px -22px rgba(20,22,41,.4);transition:transform .35s,box-shadow .35s;display:flex;flex-direction:column}
+.product:hover{transform:translateY(-6px);box-shadow:0 26px 60px -26px rgba(20,22,41,.5)}
+.product .pimg{aspect-ratio:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.product .pimg .glyph{position:relative;z-index:2}
+.product .pimg::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 30% 25%,rgba(255,255,255,.3),transparent 60%)}
+.tag{position:absolute;top:12px;left:12px;z-index:3;background:var(--midnight);color:var(--cream);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;padding:5px 11px;border-radius:30px;font-weight:600}
+.tag.gold{background:var(--gold);color:#2a2415}
+.pbody{padding:18px 18px 20px;display:flex;flex-direction:column;flex:1}
+.pbody .pcat{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--periwinkle-deep);font-weight:500;margin-bottom:6px}
+.pbody h3{font-family:var(--serif);font-size:1.2rem;margin-bottom:auto;line-height:1.2}
+.prow{display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.price{font-family:var(--serif);font-size:1.35rem;font-weight:500}
+.add{padding:10px 18px;border-radius:40px;background:var(--ink);color:var(--cream);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;transition:.25s}
+.add:hover{background:var(--periwinkle-deep)}
+.add.added{background:var(--gold);color:#2a2415}
+.pv1{background:linear-gradient(150deg,#3a3f6b,#8b93d8)}
+.pv2{background:linear-gradient(150deg,#7a3f52,#d9a7b0)}
+.pv3{background:linear-gradient(150deg,#274060,#a9c2e6)}
+.pv4{background:linear-gradient(150deg,#5b4a24,#c9a24b)}
+.pv5{background:linear-gradient(150deg,#2c2f52,#5b62b0)}
+.pv6{background:linear-gradient(150deg,#4a4d63,#9096b0)}
+.pv7{background:linear-gradient(150deg,#6b3a52,#c98fa8)}
+.pv8{background:linear-gradient(150deg,#2f4a3a,#7fae94)}
+
+/* ============================================================
+   CART DRAWER
+============================================================ */
+.cart-overlay{position:fixed;inset:0;background:rgba(20,22,41,.5);opacity:0;visibility:hidden;transition:.35s;z-index:80;backdrop-filter:blur(3px)}
+.cart-overlay.open{opacity:1;visibility:visible}
+.cart-drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,92vw);background:var(--cream);z-index:90;transform:translateX(100%);transition:transform .4s cubic-bezier(.3,.8,.3,1);display:flex;flex-direction:column;box-shadow:-20px 0 60px -20px rgba(0,0,0,.4)}
+.cart-drawer.open{transform:translateX(0)}
+.cart-top{display:flex;align-items:center;justify-content:space-between;padding:24px;border-bottom:1px solid var(--line)}
+.cart-top h3{font-size:1.5rem}
+.cart-close{font-size:1.4rem;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:.2s}
+.cart-close:hover{background:var(--cream-2)}
+.cart-items{flex:1;overflow-y:auto;padding:10px 24px}
+.cart-empty{text-align:center;padding:60px 20px;color:#6a6d84;font-family:var(--serif);font-style:italic;font-size:1.15rem}
+.citem{display:flex;gap:14px;padding:18px 0;border-bottom:1px solid var(--line);align-items:center}
+.citem .cthumb{width:56px;height:56px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--serif);font-size:1.3rem}
+.citem .cinfo{flex:1;min-width:0}
+.citem .cinfo h4{font-family:var(--serif);font-size:1rem;font-weight:500;line-height:1.2}
+.citem .cinfo .cprice{font-size:.85rem;color:#5a5d75}
+.qty{display:flex;align-items:center;gap:10px;margin-top:6px}
+.qty button{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:1rem;line-height:1;transition:.2s}
+.qty button:hover{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+.qty span{font-size:.9rem;min-width:18px;text-align:center}
+.cremove{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:#a06;opacity:.6;margin-left:auto;align-self:flex-start;transition:.2s}
+.cremove:hover{opacity:1}
+.cart-foot{padding:24px;border-top:1px solid var(--line)}
+.cart-tot{display:flex;justify-content:space-between;font-family:var(--serif);font-size:1.3rem;margin-bottom:16px}
+.checkout{width:100%;padding:16px;border-radius:44px;background:var(--ink);color:var(--cream);font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;transition:.25s}
+.checkout:hover{background:var(--periwinkle-deep)}
+.cart-note{text-align:center;font-size:.72rem;color:#8a8da0;margin-top:12px}
+
+/* ============================================================
+   NEWSLETTER
+============================================================ */
+.news{padding:clamp(80px,12vw,140px) 0;background:linear-gradient(160deg,#8b93d8,#5b62b0);color:#fff;text-align:center;position:relative;overflow:hidden}
+.news::before{content:"";position:absolute;inset:0;opacity:.4;background:radial-gradient(60% 50% at 20% 20%,rgba(255,255,255,.4),transparent 55%)}
+.news h2{font-size:clamp(2.2rem,5vw,3.6rem);margin-bottom:14px;color:#fff}
+.news p{max-width:44ch;margin:0 auto 32px;color:rgba(255,255,255,.9);font-size:1.05rem}
+.news-form{display:flex;gap:10px;max-width:460px;margin:0 auto;flex-wrap:wrap}
+.news-form input{flex:1;min-width:200px;padding:16px 22px;border-radius:44px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;font-size:.95rem}
+.news-form input::placeholder{color:rgba(255,255,255,.75)}
+.news-form input:focus{background:rgba(255,255,255,.24);border-color:#fff}
+.news-form button{padding:16px 30px;border-radius:44px;background:#fff;color:var(--periwinkle-deep);font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;transition:.25s}
+.news-form button:hover{background:var(--midnight);color:#fff}
+.news-ok{margin-top:18px;font-family:var(--serif);font-style:italic;font-size:1.2rem;opacity:0;transition:.4s;height:0}
+.news-ok.show{opacity:1;height:auto}
+
+/* ============================================================
+   FOOTER
+============================================================ */
+footer{background:var(--midnight);color:#b9bcd6;padding:80px 0 40px}
+.foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px;margin-bottom:56px}
+.foot-brand .brand{color:var(--cream);font-size:2rem;margin-bottom:14px}
+.foot-brand p{max-width:34ch;font-size:.95rem}
+.foot-col h5{font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--cream);margin-bottom:18px;font-weight:600}
+.foot-col a{display:block;font-size:.92rem;margin-bottom:11px;color:#a9acca;transition:.2s}
+.foot-col a:hover{color:var(--periwinkle)}
+.socials{display:flex;gap:14px;margin-top:22px}
+.socials a{width:42px;height:42px;border-radius:50%;border:1px solid rgba(246,241,231,.22);display:flex;align-items:center;justify-content:center;transition:.25s}
+.socials a:hover{background:var(--periwinkle);border-color:var(--periwinkle);color:var(--midnight);transform:translateY(-3px)}
+.socials svg{width:18px;height:18px}
+.foot-bottom{border-top:1px solid rgba(246,241,231,.12);padding-top:26px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:.8rem;color:#7c7fa0}
+.foot-bottom a{color:#9fa2c0}
+
+/* ============================================================
+   REVEAL ANIMATION
+============================================================ */
+.reveal{opacity:0;transform:translateY(34px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.3,1)}
+.reveal.in{opacity:1;transform:none}
+[data-delay="1"]{transition-delay:.08s}
+[data-delay="2"]{transition-delay:.16s}
+[data-delay="3"]{transition-delay:.24s}
+[data-delay="4"]{transition-delay:.32s}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media(max-width:1000px){
+  .disc-grid,.merch-grid{grid-template-columns:repeat(2,1fr)}
+  .about-grid{grid-template-columns:1fr}
+  .about-portrait{max-width:420px}
+  .foot-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:720px){
+  .nav-links{
+    position:fixed;top:0;right:0;bottom:0;width:min(300px,82vw);background:var(--cream);
+    flex-direction:column;justify-content:center;gap:30px;padding:40px;transform:translateX(100%);
+    transition:transform .4s cubic-bezier(.3,.8,.3,1);box-shadow:-16px 0 50px -18px rgba(0,0,0,.35);z-index:60;
+  }
+  .nav-links.open{transform:translateX(0)}
+  .nav-links a{font-size:1rem}
+  .burger{display:flex}
+  .show{grid-template-columns:70px 1fr;grid-template-areas:"date venue" "date act";gap:6px 16px}
+  .show .date{grid-area:date}.show .venue{grid-area:venue}.show .act{grid-area:act;text-align:left;margin-top:6px}
+  .show .date b{font-size:1.3rem}
+  .foot-grid{grid-template-columns:1fr}
+  .hero-marquee{display:none}
+}
+@media(max-width:440px){
+  .disc-grid,.merch-grid{grid-template-columns:1fr 1fr;gap:16px}
+  .stats{gap:26px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav" id="nav">
+  <a href="#top" class="brand">Laufey<span>.</span></a>
+  <nav class="nav-links" id="navLinks">
+    <a href="#about">About</a>
+    <a href="#music">Music</a>
+    <a href="#tour">Tour</a>
+    <a href="#merch">Shop</a>
+    <a href="#newsletter">Join</a>
+  </nav>
+  <div style="display:flex;align-items:center;gap:14px">
+    <button class="nav-cart" id="openCart">
+      Bag <span class="cart-count" id="cartCount">0</span>
+    </button>
+    <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="floaty f1"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg></div>
+  <div class="floaty f2"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.9L21.5 9l-5.5 4.3 2 7L12 16.9 6 20.3l2-7L2.5 9l7.1-.1z"/></svg></div>
+  <div class="floaty f3"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg></div>
+  <div class="floaty f4"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.9L21.5 9l-5.5 4.3 2 7L12 16.9 6 20.3l2-7L2.5 9l7.1-.1z"/></svg></div>
+  <div class="floaty f5"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v12.26A4 4 0 1 0 11 19V8.5l8-2V13a4 4 0 1 0 2 3.46V3L9 3z"/></svg></div>
+  <div class="hero-inner">
+    <p class="kicker">New Album · A Matter of Time · Out Now</p>
+    <h1>Lauf<em>ey</em></h1>
+    <p class="hero-tag">Jazz-soaked, classically-schooled songwriting for the modern romantic. Two-time GRAMMY winner.</p>
+    <div class="hero-cta">
+      <a href="#tour" class="btn btn-primary">Find Tickets <span class="arw">→</span></a>
+      <a href="#music" class="btn btn-ghost">Listen Now <span class="arw">♪</span></a>
+    </div>
+  </div>
+  <div class="hero-marquee"><div class="track" id="marqTrack"></div></div>
+</section>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="wrap">
+    <div class="about-grid">
+      <div class="about-portrait reveal">
+        <div class="frame"></div>
+        <div class="mono"><span>L</span></div>
+      </div>
+      <div class="about-body reveal" data-delay="1">
+        <span class="eyebrow">The Artist</span>
+        <p class="lead">Icelandic-Chinese, conservatory-trained, and quietly rewriting what a pop star can be.</p>
+        <p>Laufey Lín Bing Jónsdóttir grew up between Reykjavík, Washington D.C., and her grandparents' home in China — a cellist and pianist raised on Ella Fitzgerald and Chopin in equal measure. Out of that came a sound all her own: the warmth of mid-century jazz, the poise of classical music, and the intimacy of a bedroom pop confessional.</p>
+        <p>Since her 2021 debut EP <em>Typical of Me</em>, she has become a generational voice — landing back-to-back GRAMMY wins, selling out concert halls and now arenas across the globe, and proving that gentleness and virtuosity can top the charts.</p>
+        <div class="stats">
+          <div class="stat"><b>2×</b><span>GRAMMY Wins</span></div>
+          <div class="stat"><b>4</b><span>Studio Releases</span></div>
+          <div class="stat"><b>70</b><span>Shows · World Tour</span></div>
+          <div class="stat"><b>#1</b><span>Album, Iceland</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MUSIC -->
+<section class="music" id="music">
+  <div class="wrap">
+    <div class="music-head">
+      <div class="reveal">
+        <span class="eyebrow">Discography</span>
+        <h2 class="section-title">The Records</h2>
+      </div>
+      <a href="#" class="btn btn-ghost reveal" data-delay="1">All Streaming Links <span class="arw">→</span></a>
+    </div>
+    <div class="disc-grid" id="discGrid"></div>
+  </div>
+</section>
+
+<!-- TOUR -->
+<section class="tour" id="tour">
+  <div class="wrap">
+    <div class="tour-head">
+      <span class="eyebrow reveal">On The Road</span>
+      <h2 class="section-title reveal" data-delay="1">A Matter of Time Tour</h2>
+      <p class="section-sub reveal" data-delay="2">Laufey's first all-arena world tour — 70 nights across five continents, with a full band and string section. Filter by region to find a night near you.</p>
+    </div>
+    <div class="filters reveal" data-delay="2" id="filters"></div>
+    <div class="shows" id="shows"></div>
+  </div>
+</section>
+
+<!-- MERCH -->
+<section class="merch" id="merch">
+  <div class="wrap">
+    <div class="merch-head">
+      <div class="reveal">
+        <span class="eyebrow">Official Store</span>
+        <h2 class="section-title">Merch &amp; Vinyl</h2>
+      </div>
+      <p class="section-sub reveal" data-delay="1">Everything ships worldwide from the official Laufey store. Add to your bag below.</p>
+    </div>
+    <div class="merch-grid" id="merchGrid"></div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="news" id="newsletter">
+  <div class="wrap">
+    <span class="eyebrow reveal" style="color:rgba(255,255,255,.85)">Laufeyland</span>
+    <h2 class="reveal" data-delay="1">Join the inner circle</h2>
+    <p class="reveal" data-delay="2">Presale codes, new music before anyone else, and letters from Laufey. No noise — just the good stuff.</p>
+    <form class="news-form reveal" data-delay="2" id="newsForm">
+      <input type="email" id="newsEmail" placeholder="your@email.com" required/>
+      <button type="submit">Sign Up</button>
+    </form>
+    <p class="news-ok" id="newsOk">Welcome to Laufeyland ✦ check your inbox.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <div class="brand" style="color:var(--cream)">Laufey<span style="color:var(--gold)">.</span></div>
+        <p>The official home of Laufey. Music, tour dates, and merch — all in one place.</p>
+        <div class="socials">
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          <a href="#" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 3c.3 2.3 1.7 3.9 4 4.2v3c-1.5.1-2.9-.3-4.1-1v6.3A6 6 0 1 1 10 9.7v3.1a3 3 0 1 0 2.1 2.9V3H16z"/></svg></a>
+          <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 8.2a3 3 0 0 0-2.1-2.1C18 5.6 12 5.6 12 5.6s-6 0-7.9.5A3 3 0 0 0 2 8.2 31 31 0 0 0 2 12a31 31 0 0 0 .1 3.8 3 3 0 0 0 2.1 2.1c1.9.5 7.8.5 7.8.5s6 0 7.9-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 22 12a31 31 0 0 0-.1-3.8zM10 15V9l5.2 3L10 15z"/></svg></a>
+          <a href="#" aria-label="Spotify"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.4c-.2.3-.5.4-.8.2-2.3-1.4-5.2-1.7-8.6-.9-.3.1-.6-.1-.7-.4-.1-.3.1-.6.4-.7 3.7-.8 6.9-.5 9.5 1.1.3.2.4.5.2.7zm1.2-2.7c-.2.4-.7.5-1 .3-2.6-1.6-6.6-2.1-9.7-1.1-.4.1-.8-.1-.9-.5-.1-.4.1-.8.5-.9 3.5-1.1 7.9-.5 10.9 1.3.3.2.5.6.2 1zm.1-2.8C14.8 9 9.3 8.8 6.2 9.8c-.5.1-1-.1-1.1-.6-.1-.5.1-1 .6-1.1 3.6-1.1 9.6-.9 13.3 1.3.4.3.6.8.3 1.2-.2.4-.8.6-1.2.3z"/></svg></a>
+        </div>
+      </div>
+      <div class="foot-col">
+        <h5>Explore</h5>
+        <a href="#about">About</a>
+        <a href="#music">Music</a>
+        <a href="#tour">Tour Dates</a>
+        <a href="#merch">Shop</a>
+      </div>
+      <div class="foot-col">
+        <h5>More</h5>
+        <a href="#newsletter">Newsletter</a>
+        <a href="#">Press</a>
+        <a href="#">Contact</a>
+        <a href="#">Shipping &amp; Returns</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="year"></span> Laufey. A fan-built redesign concept.</span>
+      <span>Made with <a href="#">♪</a> for the Laufeyland community.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- CART -->
+<div class="cart-overlay" id="cartOverlay"></div>
+<aside class="cart-drawer" id="cartDrawer" aria-label="Shopping bag">
+  <div class="cart-top">
+    <h3>Your Bag</h3>
+    <button class="cart-close" id="closeCart" aria-label="Close">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-foot" id="cartFoot" style="display:none">
+    <div class="cart-tot"><span>Subtotal</span><span id="cartTotal">$0</span></div>
+    <button class="checkout" id="checkout">Checkout</button>
+    <p class="cart-note">Shipping &amp; taxes calculated at checkout · Free shipping over $75</p>
+  </div>
+</aside>
+
+<script>
+/* ============================================================
+   DATA
+============================================================ */
+const RELEASES = [
+  {t:"A Matter of Time", yr:"2025", type:"Studio Album", cls:"cov-amot"},
+  {t:"Bewitched", yr:"2023", type:"Studio Album", cls:"cov-bew"},
+  {t:"Everything I Know About Love", yr:"2022", type:"Studio Album", cls:"cov-eik"},
+  {t:"Typical of Me", yr:"2021", type:"Debut EP", cls:"cov-typ"},
+];
+
+const SHOWS = [
+  // Asia & Oceania — mid 2026 (upcoming)
+  {region:"Asia & Oceania", d:"18", m:"Jul", y:"2026", venue:"Tokyo Garden Theater", city:"Tokyo, Japan", support:"", status:"tix"},
+  {region:"Asia & Oceania", d:"22", m:"Jul", y:"2026", venue:"KSPO Dome", city:"Seoul, South Korea", support:"", status:"soldout"},
+  {region:"Asia & Oceania", d:"26", m:"Jul", y:"2026", venue:"The Star Theatre", city:"Singapore", support:"", status:"tix"},
+  {region:"Asia & Oceania", d:"29", m:"Jul", y:"2026", venue:"Araneta Coliseum", city:"Manila, Philippines", support:"", status:"tix"},
+  {region:"Asia & Oceania", d:"05", m:"Aug", y:"2026", venue:"Qudos Bank Arena", city:"Sydney, Australia", support:"", status:"tix"},
+  {region:"Asia & Oceania", d:"08", m:"Aug", y:"2026", venue:"Rod Laver Arena", city:"Melbourne, Australia", support:"", status:"soldout"},
+  {region:"Asia & Oceania", d:"12", m:"Aug", y:"2026", venue:"Spark Arena", city:"Auckland, New Zealand", support:"", status:"tix"},
+  // Latin America — Sept 2026 (finale)
+  {region:"Latin America", d:"01", m:"Sep", y:"2026", venue:"Espaço Unimed", city:"São Paulo, Brazil", support:"", status:"tix"},
+  {region:"Latin America", d:"04", m:"Sep", y:"2026", venue:"Movistar Arena", city:"Buenos Aires, Argentina", support:"", status:"tix"},
+  {region:"Latin America", d:"07", m:"Sep", y:"2026", venue:"Movistar Arena", city:"Santiago, Chile", support:"", status:"tix"},
+  {region:"Latin America", d:"09", m:"Sep", y:"2026", venue:"Movistar Arena", city:"Bogotá, Colombia", support:"", status:"tix"},
+  {region:"Latin America", d:"12", m:"Sep", y:"2026", venue:"Palacio de los Deportes", city:"Mexico City, Mexico", support:"Tour Finale ✦", status:"tix"},
+  // Europe — spring 2026 (completed)
+  {region:"Europe", d:"14", m:"Mar", y:"2026", venue:"Ziggo Dome", city:"Amsterdam, Netherlands", support:"w/ Alice Phoebe Lou", status:"past"},
+  {region:"Europe", d:"17", m:"Mar", y:"2026", venue:"Adidas Arena", city:"Paris, France", support:"w/ Alice Phoebe Lou", status:"past"},
+  {region:"Europe", d:"21", m:"Mar", y:"2026", venue:"Co-op Live", city:"Manchester, UK", support:"w/ Alice Phoebe Lou", status:"past"},
+  {region:"Europe", d:"24", m:"Mar", y:"2026", venue:"The O2 Arena", city:"London, UK", support:"w/ Alice Phoebe Lou", status:"past"},
+  {region:"Europe", d:"27", m:"Mar", y:"2026", venue:"3Arena", city:"Dublin, Ireland", support:"w/ Alice Phoebe Lou", status:"past"},
+  {region:"Europe", d:"30", m:"Mar", y:"2026", venue:"Korinn Arena", city:"Kópavogur, Iceland", support:"w/ Elín Hall", status:"past"},
+  // North America — late 2025 (completed)
+  {region:"North America", d:"15", m:"Sep", y:"2025", venue:"Kia Center", city:"Orlando, USA", support:"w/ Suki Waterhouse", status:"past"},
+  {region:"North America", d:"20", m:"Sep", y:"2025", venue:"Toyota Center", city:"Houston, USA", support:"w/ Suki Waterhouse", status:"past"},
+  {region:"North America", d:"03", m:"Oct", y:"2025", venue:"Madison Square Garden", city:"New York, USA", support:"w/ Suki Waterhouse", status:"past"},
+  {region:"North America", d:"11", m:"Oct", y:"2025", venue:"Kia Forum", city:"Los Angeles, USA", support:"w/ Suki Waterhouse", status:"past"},
+  {region:"North America", d:"18", m:"Oct", y:"2025", venue:"Scotiabank Arena", city:"Toronto, Canada", support:"w/ Suki Waterhouse", status:"past"},
+  {region:"North America", d:"24", m:"Oct", y:"2025", venue:"Rogers Arena", city:"Vancouver, Canada", support:"w/ Suki Waterhouse", status:"past"},
+];
+
+const PRODUCTS = [
+  {id:"p1", cat:"Vinyl", name:"A Matter of Time — Periwinkle Feather LP", price:42, pv:"pv1", glyph:"⏳", tag:"Limited"},
+  {id:"p2", cat:"Vinyl", name:"Bewitched — Deluxe Double LP", price:38, pv:"pv2", glyph:"♪", tag:""},
+  {id:"p3", cat:"Apparel", name:"A Matter of Time Hoodie — Black", price:65, pv:"pv3", glyph:"✦", tag:""},
+  {id:"p4", cat:"Apparel", name:"Tour Tee — Cream", price:35, pv:"pv4", glyph:"★", tag:""},
+  {id:"p5", cat:"Vinyl", name:"Everything I Know About Love — Blue LP", price:36, pv:"pv5", glyph:"❋", tag:""},
+  {id:"p6", cat:"Accessories", name:"Laufeyland Tote Bag", price:24, pv:"pv6", glyph:"♬", tag:""},
+  {id:"p7", cat:"Apparel", name:"Embroidered Cardigan", price:78, pv:"pv7", glyph:"❀", tag:"New"},
+  {id:"p8", cat:"Accessories", name:"Signed Songbook + Print", price:48, pv:"pv8", glyph:"✎", tag:"Limited"},
+];
+
+/* ============================================================
+   RENDER: MARQUEE
+============================================================ */
+const marqItems = ["A Matter of Time — Out Now","2× GRAMMY Winner","World Tour 2026","New Music","Reykjavík · London · Tokyo · Mexico City"];
+document.getElementById("marqTrack").innerHTML =
+  [...marqItems, ...marqItems].map(x=>`<span>${x}</span>`).join("");
+
+/* ============================================================
+   RENDER: DISCOGRAPHY
+============================================================ */
+document.getElementById("discGrid").innerHTML = RELEASES.map((r,i)=>`
+  <div class="disc reveal" data-delay="${i%4}">
+    <div class="cover ${r.cls}">
+      <div class="disc-play">▶</div>
+      <div class="cover-txt"><span class="t">${r.t}</span></div>
+    </div>
+    <div class="disc-meta">
+      <h3>${r.t}</h3>
+      <span class="yr">${r.yr}</span>
+      <span class="type">${r.type}</span>
+    </div>
+  </div>`).join("");
+
+/* ============================================================
+   RENDER: TOUR + FILTERS
+============================================================ */
+const regions = ["All", ...new Set(SHOWS.map(s=>s.region))];
+let activeRegion = "All";
+const filtersEl = document.getElementById("filters");
+const showsEl = document.getElementById("shows");
+
+function renderFilters(){
+  filtersEl.innerHTML = regions.map(r=>
+    `<button class="filter ${r===activeRegion?'active':''}" data-r="${r}">${r}</button>`).join("");
+  filtersEl.querySelectorAll(".filter").forEach(b=>{
+    b.onclick=()=>{activeRegion=b.dataset.r;renderFilters();renderShows();};
+  });
+}
+function renderShows(){
+  const list = SHOWS.filter(s=>activeRegion==="All"||s.region===activeRegion);
+  if(!list.length){showsEl.innerHTML=`<div class="no-shows">No dates in this region yet — more to be announced.</div>`;return;}
+  showsEl.innerHTML = list.map(s=>{
+    let btn;
+    if(s.status==="soldout") btn=`<button class="tix soldout" disabled>Sold Out</button>`;
+    else if(s.status==="past") btn=`<button class="tix past" disabled>Completed</button>`;
+    else btn=`<a href="#" class="tix">Tickets</a>`;
+    return `<div class="show">
+      <div class="date"><b>${s.d}</b><span>${s.m} ${s.y}</span></div>
+      <div class="venue">
+        <h4>${s.venue}</h4>
+        <p>${s.city}</p>
+        ${s.support?`<p class="support">${s.support}</p>`:""}
+      </div>
+      <div class="act">${btn}</div>
+    </div>`;
+  }).join("");
+}
+renderFilters();renderShows();
+
+/* ============================================================
+   RENDER: MERCH
+============================================================ */
+document.getElementById("merchGrid").innerHTML = PRODUCTS.map((p,i)=>`
+  <div class="product reveal" data-delay="${i%4}">
+    <div class="pimg ${p.pv}">
+      ${p.tag?`<span class="tag ${p.tag==='Limited'?'gold':''}">${p.tag}</span>`:""}
+      <span class="glyph" style="font-size:3.4rem;color:rgba(255,255,255,.9)">${p.glyph}</span>
+    </div>
+    <div class="pbody">
+      <span class="pcat">${p.cat}</span>
+      <h3>${p.name}</h3>
+      <div class="prow">
+        <span class="price">$${p.price}</span>
+        <button class="add" data-id="${p.id}">Add +</button>
+      </div>
+    </div>
+  </div>`).join("");
+
+/* ============================================================
+   CART LOGIC
+============================================================ */
+let cart = {}; // id -> qty
+const cartCountEl = document.getElementById("cartCount");
+const cartItemsEl = document.getElementById("cartItems");
+const cartFootEl = document.getElementById("cartFoot");
+const cartTotalEl = document.getElementById("cartTotal");
+const overlay = document.getElementById("cartOverlay");
+const drawer = document.getElementById("cartDrawer");
+
+function prod(id){return PRODUCTS.find(p=>p.id===id);}
+function totalCount(){return Object.values(cart).reduce((a,b)=>a+b,0);}
+function totalPrice(){return Object.entries(cart).reduce((a,[id,q])=>a+prod(id).price*q,0);}
+
+function updateCount(){
+  cartCountEl.textContent = totalCount();
+  cartCountEl.classList.add("pop");
+  setTimeout(()=>cartCountEl.classList.remove("pop"),200);
+}
+function renderCart(){
+  const ids = Object.keys(cart);
+  if(!ids.length){
+    cartItemsEl.innerHTML = `<div class="cart-empty">Your bag is empty.<br/>Find something lovely below ♪</div>`;
+    cartFootEl.style.display="none";return;
+  }
+  cartItemsEl.innerHTML = ids.map(id=>{
+    const p=prod(id),q=cart[id];
+    return `<div class="citem">
+      <div class="cthumb ${p.pv}">${p.glyph}</div>
+      <div class="cinfo">
+        <h4>${p.name}</h4>
+        <span class="cprice">$${p.price}</span>
+        <div class="qty">
+          <button data-dec="${id}">−</button><span>${q}</span><button data-inc="${id}">+</button>
+        </div>
+      </div>
+      <button class="cremove" data-rm="${id}">Remove</button>
+    </div>`;
+  }).join("");
+  cartFootEl.style.display="block";
+  cartTotalEl.textContent = "$"+totalPrice();
+  cartItemsEl.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>{cart[b.dataset.inc]++;updateCount();renderCart();});
+  cartItemsEl.querySelectorAll("[data-dec]").forEach(b=>b.onclick=()=>{const id=b.dataset.dec;cart[id]--;if(cart[id]<=0)delete cart[id];updateCount();renderCart();});
+  cartItemsEl.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{delete cart[b.dataset.rm];updateCount();renderCart();});
+}
+function openCart(){overlay.classList.add("open");drawer.classList.add("open");document.body.style.overflow="hidden";}
+function closeCart(){overlay.classList.remove("open");drawer.classList.remove("open");document.body.style.overflow="";}
+
+document.getElementById("merchGrid").querySelectorAll(".add").forEach(btn=>{
+  btn.onclick=()=>{
+    const id=btn.dataset.id;
+    cart[id]=(cart[id]||0)+1;
+    updateCount();renderCart();
+    btn.textContent="Added ✓";btn.classList.add("added");
+    setTimeout(()=>{btn.textContent="Add +";btn.classList.remove("added");},1100);
+  };
+});
+document.getElementById("openCart").onclick=()=>{renderCart();openCart();};
+document.getElementById("closeCart").onclick=closeCart;
+overlay.onclick=closeCart;
+document.getElementById("checkout").onclick=()=>{
+  cartItemsEl.innerHTML=`<div class="cart-empty">Thank you ✦<br/>This is a concept — no real checkout here.</div>`;
+  cartFootEl.style.display="none";cart={};updateCount();
+};
+
+/* ============================================================
+   NAV: scroll state + mobile menu
+============================================================ */
+const nav=document.getElementById("nav");
+addEventListener("scroll",()=>nav.classList.toggle("scrolled",scrollY>40));
+const burger=document.getElementById("burger"),navLinks=document.getElementById("navLinks");
+burger.onclick=()=>navLinks.classList.toggle("open");
+navLinks.querySelectorAll("a").forEach(a=>a.onclick=()=>navLinks.classList.remove("open"));
+
+/* ============================================================
+   NEWSLETTER
+============================================================ */
+document.getElementById("newsForm").onsubmit=e=>{
+  e.preventDefault();
+  document.getElementById("newsOk").classList.add("show");
+  document.getElementById("newsEmail").value="";
+};
+
+/* ============================================================
+   REVEAL ON SCROLL
+============================================================ */
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(en=>{if(en.isIntersecting){en.target.classList.add("in");io.unobserve(en.target);}});
+},{threshold:.12});
+document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+
+document.getElementById("year").textContent=new Date().getFullYear();
+</script>
+</body>
+</html>
