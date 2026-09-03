@@ -62,9 +62,9 @@ function NewsTicker({ theme }: any) {
   const [live, setLive] = useState(false);
 
   useEffect(() => {
-    fetchGoodNews().then((items) => {
+    fetchGoodNews().then(({ items, live: isLive }) => {
       setNews(items);
-      setLive(true);
+      setLive(isLive);
     }).catch(() => {});
   }, []);
 
@@ -290,6 +290,7 @@ export default function TodayScreen() {
   const [hwSheetOpen, setHwSheetOpen] = useState(false);
   const [showEvSheet, setShowEvSheet] = useState(false);
   const [hwDetail, setHwDetail] = useState<Homework | null>(null);
+  const [hwEdit, setHwEdit] = useState<Homework | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
   const fabRotate = useRef(new Animated.Value(0)).current;
   const [showReminder, setShowReminder] = useState(false);
@@ -546,10 +547,11 @@ export default function TodayScreen() {
       </View>
 
       <AddHomeworkSheet
-        visible={!!hwSheetClass || hwSheetOpen}
-        onClose={() => { setHwSheetClass(null); setHwSheetOpen(false); }}
+        visible={!!hwSheetClass || hwSheetOpen || !!hwEdit}
+        onClose={() => { setHwSheetClass(null); setHwSheetOpen(false); setHwEdit(null); }}
         defaultDate={selectedDate}
         defaultClass={hwSheetClass}
+        editHw={hwEdit}
       />
       <AddEventSheet visible={showEvSheet} onClose={() => setShowEvSheet(false)} defaultDate={selectedDate} />
       <HomeworkDetailSheet
@@ -557,6 +559,7 @@ export default function TodayScreen() {
         visible={!!hwDetail}
         onClose={() => setHwDetail(null)}
         onToggle={() => hwDetail && toggleHomework(hwDetail.id)}
+        onEdit={(hw) => setHwEdit(hw)}
       />
     </SafeAreaView>
   );

@@ -54,7 +54,11 @@ export default function App() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        setPhase('auth');
+        // Demo mode (no account) keeps whatever screen it was on; real
+        // accounts without a session go back to sign-in.
+        const { phase, userId } = useStore.getState();
+        const isDemo = userId === '' && (phase === 'main' || phase === 'parent' || phase === 'onboarding');
+        if (!isDemo) setPhase('auth');
         setSessionReady(true);
         return;
       }

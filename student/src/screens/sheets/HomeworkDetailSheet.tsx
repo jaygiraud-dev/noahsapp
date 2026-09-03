@@ -11,13 +11,14 @@ import {
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { Homework } from '../../types';
-import AddHomeworkSheet from './AddHomeworkSheet';
 
 interface Props {
   hw: Homework | null;
   visible: boolean;
   onClose: () => void;
   onToggle: () => void;
+  /** Parent opens the edit sheet — this component unmounts when hw is cleared, so it can't own that state. */
+  onEdit: (hw: Homework) => void;
 }
 
 function ImagePreviewModal({ uri, onClose }: { uri: string; onClose: () => void }) {
@@ -33,9 +34,8 @@ function ImagePreviewModal({ uri, onClose }: { uri: string; onClose: () => void 
   );
 }
 
-export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle }: Props) {
+export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle, onEdit }: Props) {
   const [previewUri, setPreviewUri] = useState<string | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -50,7 +50,6 @@ export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle }: 
   return (
     <>
       {previewUri && <ImagePreviewModal uri={previewUri} onClose={() => setPreviewUri(null)} />}
-      <AddHomeworkSheet visible={editOpen} onClose={() => setEditOpen(false)} editHw={hw} />
       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <View style={styles.backdrop}>
           <TouchableOpacity style={styles.backdropDismiss} activeOpacity={1} onPress={onClose} />
@@ -117,7 +116,7 @@ export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle }: 
               {/* Actions */}
               <TouchableOpacity
                 style={[styles.editBtn, { backgroundColor: theme.surface, borderColor: theme.line }]}
-                onPress={() => { onClose(); setTimeout(() => setEditOpen(true), 300); }}
+                onPress={() => { const target = hw; onClose(); setTimeout(() => onEdit(target), 300); }}
                 activeOpacity={0.8}
               >
                 <Text style={[styles.toggleBtnText, { fontFamily: theme.fMono, color: theme.ink }]}>

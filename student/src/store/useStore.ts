@@ -15,6 +15,8 @@ function generatePairingCode(): string {
   return code;
 }
 
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
 export type AppPhase = 'auth' | 'onboarding' | 'main' | 'parent';
 
 interface AppState {
@@ -63,6 +65,8 @@ interface AppState {
   addFriendByCode: (code: string) => Promise<'added' | 'already' | 'not_found' | 'self'>;
   pushNotification: (n: ActivityNotif) => void;
   loadDataFromSupabase: () => Promise<void>;
+  applyProfileState: (p: Awaited<ReturnType<typeof fetchProfileState>>) => void;
+  syncProfileState: () => void;
 }
 
 const SAMPLE_CLASSES: Class[] = [
@@ -159,8 +163,8 @@ export const useStore = create<AppState>()(
     reward: null,
     phase: role === 'parent' ? 'parent' : 'onboarding',
   }),
-  setSchool: (school) => set({ school }),
-  setClasses: (classes) => set({ classes }),
+  setSchool: (school) => { set({ school }); get().syncProfileState(); },
+  setClasses: (classes) => { set({ classes }); get().syncProfileState(); },
   setUseClassTimes: (v) => set({ useClassTimes: v }),
   setParentPaired: (v) => set({ parentPaired: v }),
 
@@ -187,6 +191,7 @@ export const useStore = create<AppState>()(
       get().pushNotification({ type: 'done', who: get().displayName, what: hw.title, cls: cls?.name, when: 'just now', clr: cls?.color });
     }
     if (userId) upsertHomework(userId, updated).catch(() => {});
+    get().syncProfileState();
     // Fire-and-forget parent push notification when homework is marked done
     if (newDone && userId) {
       getParentPushToken(userId).then((token) => {
@@ -222,6 +227,7 @@ export const useStore = create<AppState>()(
     const cls = classes.find(c => c.id === data.classId);
     get().pushNotification({ type: 'add', who: get().displayName, what: data.title, cls: cls?.name, when: 'just now', clr: cls?.color });
     if (userId) upsertHomework(userId, newHw).catch(() => {});
+    get().syncProfileState();
   },
 
   toggleEvent: (id) => {
@@ -239,8 +245,9 @@ export const useStore = create<AppState>()(
       const { streak, lastActivityDate } = calcStreak(s.lastActivityDate, s.streak);
       return { events: [...s.events, newEv], streak, lastActivityDate };
     });
-    get().pushNotification({ type: 'event', who: 'Alex', what: `${data.title} · ${data.time}`, when: 'just now' });
+    get().pushNotification({ type: 'event', who: get().displayName, what: `${data.title} · ${data.time}`, when: 'just now' });
     if (userId) upsertEvent(userId, newEv).catch(() => {});
+    get().syncProfileState();
   },
 
   setVibe: (vibe) => set({
@@ -290,7 +297,11 @@ export const useStore = create<AppState>()(
   loadDataFromSupabase: async () => {
     const { userId, homework: localHw, events: localEv } = get();
     if (!userId) return;
-    const [sbHw, sbEv] = await Promise.all([fetchHomework(userId), fetchEvents(userId)]);
+    const [sbHw, sbEv, profile, linkCount] = await Promise.all([
+      fetchHomework(userId), fetchEvents(userId), fetchProfileState(userId), fetchStudentParentLinks(userId),
+    ]);
+    if (profile) get().applyProfileState(profile);
+    set({ parentPaired: linkCount > 0 });
     if (sbHw.length > 0 || sbEv.length > 0) {
       // Supabase is source of truth — merge with local (keep local images)
       const merged = sbHw.map(sh => {
@@ -304,7 +315,40 @@ export const useStore = create<AppState>()(
         ...localHw.map(hw => upsertHomework(userId, hw)),
         ...localEv.map(ev => upsertEvent(userId, ev)),
       ]);
+      get().syncProfileState();
     }
+  },
+
+  // Restore classes / points / streak / pairing code saved on another device.
+  applyProfileState: (p) => {
+    if (!p) return;
+    set(s => ({
+      classes: p.classes && p.classes.length > 0 ? p.classes : s.classes,
+      points: p.points ?? s.points,
+      streak: p.streak ?? s.streak,
+      lastActivityDate: p.lastActivityDate ?? s.lastActivityDate,
+      pairingCode: p.pairingCode ?? s.pairingCode,
+      school: {
+        name: p.schoolName ?? s.school.name,
+        city: p.schoolCity ?? s.school.city,
+      },
+      // A returning student who already set up classes shouldn't see onboarding again
+      phase: s.phase === 'onboarding' && p.classes && p.classes.length > 0 ? 'main' : s.phase,
+    }));
+  },
+
+  // Debounced push of local-only state (classes, points, streak) to the profile row.
+  syncProfileState: () => {
+    const { userId, userRole } = get();
+    if (!userId || userRole !== 'student') return;
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      const { classes, points, streak, lastActivityDate, pairingCode, school } = get();
+      saveProfileState(userId, {
+        classes, points, streak, lastActivityDate, pairingCode,
+        schoolName: school.name, schoolCity: school.city,
+      }).catch(() => {});
+    }, 800);
   },
     }),
     {
@@ -322,6 +366,8 @@ export const useStore = create<AppState>()(
         parentPaired: state.parentPaired,
         points: state.points,
         streak: state.streak,
+        lastActivityDate: state.lastActivityDate,
+        displayName: state.displayName,
         homework: state.homework,
         events: state.events,
         friends: state.friends,

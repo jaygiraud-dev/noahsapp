@@ -70,22 +70,26 @@ function timeToMinutes(t: string) {
   return h * 60 + m;
 }
 
-function fmt12h(t: string) {
-  const [h, m] = t.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-}
-
 function parseTimeToMinutes(t: string): number | null {
-  const match = t.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+  const match = t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
   if (!match) return null;
   let h = parseInt(match[1]);
-  const m = parseInt(match[2]);
+  const m = match[2] ? parseInt(match[2]) : 0;
   const ampm = match[3]?.toLowerCase();
   if (ampm === 'pm' && h !== 12) h += 12;
   if (ampm === 'am' && h === 12) h = 0;
   return h * 60 + m;
+}
+
+// Accepts "08:45", "15:30", "3:30 pm", "4 PM" — anything parseTimeToMinutes understands
+function fmt12h(t: string) {
+  const total = parseTimeToMinutes(t);
+  if (total === null) return t;
+  const h = Math.floor(total / 60) % 24;
+  const m = total % 60;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
 export default function WeekScreen() {

@@ -55,7 +55,7 @@ export default function ParentPairScreen({ navigation }: any) {
             </Text>
           </LinearGradient>
           <Text style={[styles.codeHint, { fontFamily: theme.fBody, color: theme.soft }]}>
-            Code expires in 48 hours
+            You can always find this code under Me → Pair with Parent
           </Text>
         </View>
 

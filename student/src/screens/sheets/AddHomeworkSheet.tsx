@@ -38,6 +38,7 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
   const [tag, setTag] = useState<string>(HW_TAGS[0].label);
   const [due, setDue] = useState<string>(DUE_OPTIONS[0].label);
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [pickedDate, setPickedDate] = useState<Date>(new Date());
   const addHomework = useStore((s) => s.addHomework);
   const editHomework = useStore((s) => s.editHomework);
   const classes = useStore((s) => s.classes);
@@ -53,7 +54,9 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
         setTag(editHw.tag ?? HW_TAGS[0].label);
         setDue(editHw.due ?? DUE_OPTIONS[0].label);
         setAttachedImages(editHw.attachedImages ?? []);
+        setPickedDate(editHw.dueDate ? new Date(editHw.dueDate) : new Date());
       } else {
+        setPickedDate(defaultDate ? new Date(defaultDate) : new Date());
         setSubject(defaultClass?.name ?? '');
         setTitle('');
         setTag(HW_TAGS[0].label);
@@ -113,10 +116,22 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
     setAttachedImages((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  function computeDueDate(): Date {
+    if (due === 'Pick a day') return new Date(pickedDate);
+    const base = editHw ? new Date() : defaultDate ? new Date(defaultDate) : new Date();
+    if (due === 'Tomorrow') base.setDate(base.getDate() + 1);
+    else if (due === 'In 3 days') base.setDate(base.getDate() + 3);
+    else if (due === 'Next week') base.setDate(base.getDate() + 7);
+    return base;
+  }
+
   function handleAdd() {
     if (!title.trim()) return;
     const matchedClass = classes.find((c) => c.name === subject);
+    const dueDate = computeDueDate();
     if (editHw) {
+      // Only move the due date when the user actually changed the due option
+      const dueChanged = due !== (editHw.due ?? DUE_OPTIONS[0].label) || due === 'Pick a day';
       editHomework(editHw.id, {
         title: title.trim(),
         subject: subject || 'General',
@@ -124,13 +139,10 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
         classColor: matchedClass?.color,
         tag,
         due,
+        ...(dueChanged ? { dueDate: dueDate.toISOString() } : {}),
         attachedImages: attachedImages.length > 0 ? attachedImages : undefined,
       });
     } else {
-      const dueDate = defaultDate ? new Date(defaultDate) : new Date();
-      if (due === 'Tomorrow') dueDate.setDate(dueDate.getDate() + 1);
-      else if (due === 'In 3 days') dueDate.setDate(dueDate.getDate() + 3);
-      else if (due === 'Next week') dueDate.setDate(dueDate.getDate() + 7);
       addHomework({
         classId: matchedClass?.id,
         subject: subject || 'General',
@@ -145,6 +157,12 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
     }
     onClose();
   }
+
+  // 14 upcoming days for the "Pick a day" option
+  const pickDays = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + i); return d;
+  });
+  const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
   const canAddMore = attachedImages.length < MAX_PHOTOS;
 
@@ -210,6 +228,27 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
                   </TouchableOpacity>
                 ))}
               </View>
+              {due === 'Pick a day' && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickRow}>
+                  {pickDays.map((d) => {
+                    const active = sameDay(d, pickedDate);
+                    return (
+                      <TouchableOpacity
+                        key={d.toISOString()}
+                        style={[styles.pickDay, { backgroundColor: active ? theme.accent : theme.surface, borderColor: active ? theme.accent : theme.line }]}
+                        onPress={() => setPickedDate(d)}
+                      >
+                        <Text style={[styles.pickDayName, { fontFamily: theme.fMono, color: active ? '#fff' : theme.soft }]}>
+                          {d.toLocaleDateString('en-CA', { weekday: 'short' })}
+                        </Text>
+                        <Text style={[styles.pickDayNum, { fontFamily: theme.fBodySemiBold, color: active ? '#fff' : theme.ink }]}>
+                          {d.getDate()}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              )}
             </View>
 
             {/* Photo attachments — up to 3 */}
@@ -271,6 +310,10 @@ const styles = StyleSheet.create({
   dueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   dueBtn: { borderRadius: 28, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
   dueBtnText: { fontSize: 12, letterSpacing: 0.5 },
+  pickRow: { gap: 8, flexDirection: 'row', paddingTop: 10 },
+  pickDay: { width: 48, height: 56, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  pickDayName: { fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase' },
+  pickDayNum: { fontSize: 16 },
   photoLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   photoCount: { fontSize: 10, letterSpacing: 0.5 },
   photoRow: { flexDirection: 'row', gap: 10 },

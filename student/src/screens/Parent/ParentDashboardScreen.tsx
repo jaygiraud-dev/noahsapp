@@ -17,7 +17,7 @@ import FloatingParticles from '../../components/FloatingParticles';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { supabase } from '../../lib/supabase';
-import { lookupStudentByCode, createParentLink, fetchLinkedStudents, fetchStudentData, sendNudge, WeekStats } from '../../lib/db';
+import { lookupStudentByCode, createParentLink, fetchLinkedStudents, fetchStudentData, sendNudge, deleteParentLink, WeekStats } from '../../lib/db';
 import { Homework, CalEvent } from '../../types';
 
 function isSameDay(a: Date, b: Date) {
@@ -299,10 +299,11 @@ export default function ParentDashboardScreen({ navigation }: any) {
     const name = snap?.name ?? kid.name;
     const weekStats = snap?.weekStats;
 
-    // Upcoming homework: next 7 days, sorted by due date
-    const sevenDaysOut = new Date(today); sevenDaysOut.setDate(today.getDate() + 7);
+    // Upcoming homework: from the start of today through the next 7 days, sorted by due date
+    const startOfToday = new Date(today); startOfToday.setHours(0, 0, 0, 0);
+    const sevenDaysOut = new Date(startOfToday); sevenDaysOut.setDate(startOfToday.getDate() + 8);
     const upcomingHw = hw
-      .filter((h) => h.dueDate && new Date(h.dueDate) >= today && new Date(h.dueDate) <= sevenDaysOut)
+      .filter((h) => h.dueDate && new Date(h.dueDate) >= startOfToday && new Date(h.dueDate) < sevenDaysOut)
       .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
     // Group by day label
@@ -334,7 +335,13 @@ export default function ParentDashboardScreen({ navigation }: any) {
             </Text>
           </View>
           {isReal && snap === undefined && <ActivityIndicator size="small" color={theme.soft} />}
-          <TouchableOpacity onPress={() => removeLinkedKid(kid.id)} style={styles.unlinkBtn}>
+          <TouchableOpacity
+            onPress={() => {
+              removeLinkedKid(kid.id);
+              if (parentUserId && kid.studentUserId) deleteParentLink(parentUserId, kid.studentUserId).catch(() => {});
+            }}
+            style={styles.unlinkBtn}
+          >
             <Text style={[styles.unlinkText, { color: theme.soft }]}>×</Text>
           </TouchableOpacity>
         </View>

@@ -57,6 +57,37 @@ export const SCHOOL_CLOSED: ClosedDay[] = [
   // May 2026
   { date: '2026-05-15', label: 'Pro-D Day' },
   { date: '2026-05-18', label: 'Victoria Day' },
+
+  // ── 2026-2027 ──
+  // Statutory holidays and the standard BC breaks. SD44 Pro-D days for this
+  // year are not published here yet — add them when the district calendar is out.
+  { date: '2026-09-07', label: 'Labour Day' },
+  { date: '2026-09-30', label: 'Truth & Reconciliation' },
+  { date: '2026-10-12', label: 'Thanksgiving' },
+  { date: '2026-11-11', label: 'Remembrance Day' },
+  { date: '2026-12-21', label: 'Winter Break' },
+  { date: '2026-12-22', label: 'Winter Break' },
+  { date: '2026-12-23', label: 'Winter Break' },
+  { date: '2026-12-24', label: 'Winter Break' },
+  { date: '2026-12-25', label: 'Christmas Day' },
+  { date: '2026-12-28', label: 'Boxing Day' },
+  { date: '2026-12-29', label: 'Winter Break' },
+  { date: '2026-12-30', label: 'Winter Break' },
+  { date: '2026-12-31', label: 'Winter Break' },
+  { date: '2027-01-01', label: "New Year's Day" },
+  { date: '2027-02-15', label: 'Family Day' },
+  { date: '2027-03-15', label: 'Spring Break' },
+  { date: '2027-03-16', label: 'Spring Break' },
+  { date: '2027-03-17', label: 'Spring Break' },
+  { date: '2027-03-18', label: 'Spring Break' },
+  { date: '2027-03-19', label: 'Spring Break' },
+  { date: '2027-03-22', label: 'Spring Break' },
+  { date: '2027-03-23', label: 'Spring Break' },
+  { date: '2027-03-24', label: 'Spring Break' },
+  { date: '2027-03-25', label: 'Spring Break' },
+  { date: '2027-03-26', label: 'Good Friday' },
+  { date: '2027-03-29', label: 'Easter Monday' },
+  { date: '2027-05-24', label: 'Victoria Day' },
 ];
 
 export function getClosedReason(date: Date): string | null {

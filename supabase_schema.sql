@@ -13,6 +13,13 @@ create table if not exists public.profiles (
   updated_at    timestamptz default now()
 );
 
+-- Columns added later (safe to re-run)
+alter table public.profiles add column if not exists push_token         text;
+alter table public.profiles add column if not exists classes            jsonb;
+alter table public.profiles add column if not exists points             integer default 0;
+alter table public.profiles add column if not exists streak             integer default 0;
+alter table public.profiles add column if not exists last_activity_date text;
+
 alter table public.profiles enable row level security;
 
 -- Any authenticated user can read profiles (needed for pairing-code lookup)
@@ -139,3 +146,23 @@ create policy "Students read own nudges" on public.nudges for select
 drop policy if exists "Students mark nudge seen" on public.nudges;
 create policy "Students mark nudge seen" on public.nudges for update
   using (auth.uid() = student_id);
+
+-- ─── REALTIME ────────────────────────────────────────────────────────────────
+-- The app listens for new nudges (student) and homework changes (parent) over
+-- Supabase Realtime. Tables must be in the supabase_realtime publication for
+-- those subscriptions to receive anything.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'nudges'
+  ) then
+    alter publication supabase_realtime add table public.nudges;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'homework'
+  ) then
+    alter publication supabase_realtime add table public.homework;
+  end if;
+end $$;

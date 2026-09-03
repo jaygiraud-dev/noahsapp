@@ -53,9 +53,10 @@ function Petal({ p, color }: { p: Particle; color: string }) {
     return () => clearTimeout(t);
   }, []);
 
+  // Element is anchored at the bottom edge; start just below it and rise past the top
   const translateY = prog.interpolate({
     inputRange: [0, 1],
-    outputRange: [H + p.size, -150],
+    outputRange: [p.size * 2, -(H + 150)],
   });
 
   // Smooth S-curve horizontal drift

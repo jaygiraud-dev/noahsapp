@@ -15,7 +15,15 @@ let cachedNews: NewsItem[] | null = null;
 let cacheTime = 0;
 const CACHE_TTL = 30 * 60 * 1000; // refresh every 30 min
 
-export async function fetchGoodNews(): Promise<NewsItem[]> {
+export interface GoodNewsResult { items: NewsItem[]; live: boolean; }
+
+/** Returns live headlines when a feed responds, otherwise the built-in list with live=false. */
+export async function fetchGoodNews(): Promise<GoodNewsResult> {
+  const items = await fetchLiveOrFallback();
+  return { items, live: items !== POSITIVE_NEWS };
+}
+
+async function fetchLiveOrFallback(): Promise<NewsItem[]> {
   if (cachedNews && Date.now() - cacheTime < CACHE_TTL) return cachedNews;
 
   for (const feed of FEEDS) {

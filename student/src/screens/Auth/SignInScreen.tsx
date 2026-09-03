@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { supabase } from '../../lib/supabase';
-import { upsertProfile } from '../../lib/db';
+import { upsertProfile, fetchProfileState } from '../../lib/db';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import MicroLabel from '../../components/MicroLabel';
 import FloatingParticles from '../../components/FloatingParticles';
@@ -37,6 +37,7 @@ export default function SignInScreen({ navigation }: any) {
   const school = useStore((s) => s.school);
   const resetForUser = useStore((s) => s.resetForUser);
   const loadDataFromSupabase = useStore((s) => s.loadDataFromSupabase);
+  const applyProfileState = useStore((s) => s.applyProfileState);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -95,15 +96,26 @@ export default function SignInScreen({ navigation }: any) {
     const displayName = emailAddr.split('@')[0];
 
     if (uid !== storedUserId) {
+      // New device (or a different user was here last). Start clean, then pull
+      // back whatever this account already saved: pairing code, classes, points…
       resetForUser(uid, role, displayName);
+      if (role === 'student') {
+        const existing = await fetchProfileState(uid).catch(() => null);
+        if (existing) applyProfileState(existing);
+      }
     } else {
       setUserRole(role);
       setPhase(role === 'parent' ? 'parent' : 'main');
-      if (role === 'student') loadDataFromSupabase().catch(() => {});
     }
 
-    const currentCode = useStore.getState().pairingCode;
-    upsertProfile(uid, role, role === 'student' ? currentCode : undefined, role === 'student' ? school.name : undefined, displayName).catch(() => {});
+    const st = useStore.getState();
+    await upsertProfile(
+      uid, role,
+      role === 'student' ? st.pairingCode : undefined,
+      role === 'student' ? st.school.name : undefined,
+      displayName
+    ).catch(() => {});
+    if (role === 'student') loadDataFromSupabase().catch(() => {});
   }
 
   const isStudent = accountType === 'student';

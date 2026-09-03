@@ -20,7 +20,7 @@ import AddFriendSheet from '../sheets/AddFriendSheet';
 
 type SquadTab = 'friends' | 'groups';
 
-function FriendRow({ friend, theme, cardSurface, onChat }: any) {
+function FriendRow({ friend, theme, cardSurface }: any) {
   return (
     <ShineCard style={[styles.friendRow, { backgroundColor: cardSurface }]}>
       <View style={[styles.avatar, { backgroundColor: friend.color + '33' }]}>
@@ -36,13 +36,6 @@ function FriendRow({ friend, theme, cardSurface, onChat }: any) {
           {friend.pts?.toLocaleString() ?? '0'} pts · {friend.streak ?? 0}🔥
         </Text>
       </View>
-      <TouchableOpacity
-        style={[styles.chatBtn, { backgroundColor: theme.accent + '22', borderColor: theme.accent + '44' }]}
-        onPress={() => onChat(friend)}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.chatBtnText, { fontFamily: theme.fMono, color: theme.accent }]}>💬</Text>
-      </TouchableOpacity>
     </ShineCard>
   );
 }
@@ -94,10 +87,6 @@ export default function SquadScreen() {
   const theme = makeTheme(vibe, darkMode);
   const hasBg = bgImageUri !== '';
   const cardSurface = hasBg ? 'rgba(20,20,20,0.78)' : theme.surface;
-
-  function handleChatWithFriend(_friend: any) {
-    // Group chat feature coming — for now just open AddFriend to acknowledge
-  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
@@ -170,7 +159,7 @@ export default function SquadScreen() {
             />
           ) : (
             friends.map((f) => (
-              <FriendRow key={f.id} friend={f} theme={theme} cardSurface={cardSurface} onChat={handleChatWithFriend} />
+              <FriendRow key={f.id} friend={f} theme={theme} cardSurface={cardSurface} />
             ))
           )}
         </ScrollView>
@@ -180,20 +169,10 @@ export default function SquadScreen() {
         <ScrollView contentContainerStyle={styles.listContent}>
           <EmptyState
             icon="💬"
-            title="No groups yet."
-            sub="Add friends first, then tap 💬 on a friend to start a group chat."
+            title="Group chats are coming soon."
+            sub="For now, add friends by pairing code so you're ready when chat lands."
             theme={theme}
           />
-          {friends.length > 0 && (
-            <TouchableOpacity
-              style={[styles.createGroupBtn, { backgroundColor: theme.accent }]}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.createGroupText, { fontFamily: theme.fMono, color: '#fff' }]}>
-                + Create group chat
-              </Text>
-            </TouchableOpacity>
-          )}
         </ScrollView>
       )}
 

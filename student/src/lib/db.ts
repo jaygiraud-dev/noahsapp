@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Homework, CalEvent } from '../types';
+import { Homework, CalEvent, Class } from '../types';
 
 export async function upsertProfile(
   userId: string,
@@ -178,6 +178,79 @@ export async function fetchStudentData(studentId: string): Promise<{
     profile: profileRes.data ?? null,
     weekStats: { completedThisWeek, totalThisWeek, pointsThisWeek, upcomingTests },
   };
+}
+
+// ─── Profile state sync (classes, points, streak) so a student can sign in on any device ───
+export interface ProfileState {
+  classes?: Class[];
+  points?: number;
+  streak?: number;
+  lastActivityDate?: string;
+  pairingCode?: string;
+  schoolName?: string;
+  schoolCity?: string;
+}
+
+export async function saveProfileState(userId: string, state: ProfileState): Promise<void> {
+  const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (state.classes !== undefined) row.classes = state.classes;
+  if (state.points !== undefined) row.points = state.points;
+  if (state.streak !== undefined) row.streak = state.streak;
+  if (state.lastActivityDate !== undefined) row.last_activity_date = state.lastActivityDate;
+  if (state.pairingCode !== undefined) row.pairing_code = state.pairingCode;
+  if (state.schoolName !== undefined) row.school_name = state.schoolName;
+  if (state.schoolCity !== undefined) row.school_city = state.schoolCity;
+  const { error } = await supabase.from('profiles').update(row).eq('id', userId);
+  if (error) console.warn('[db] saveProfileState:', error.message);
+}
+
+export async function fetchProfileState(userId: string): Promise<{
+  classes: Class[] | null;
+  points: number | null;
+  streak: number | null;
+  lastActivityDate: string | null;
+  pairingCode: string | null;
+  schoolName: string | null;
+  schoolCity: string | null;
+  displayName: string | null;
+} | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('classes, points, streak, last_activity_date, pairing_code, school_name, school_city, display_name')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) { console.warn('[db] fetchProfileState:', error.message); return null; }
+  if (!data) return null;
+  const d = data as any;
+  return {
+    classes: Array.isArray(d.classes) ? (d.classes as Class[]) : null,
+    points: typeof d.points === 'number' ? d.points : null,
+    streak: typeof d.streak === 'number' ? d.streak : null,
+    lastActivityDate: d.last_activity_date ?? null,
+    pairingCode: d.pairing_code ?? null,
+    schoolName: d.school_name ?? null,
+    schoolCity: d.school_city ?? null,
+    displayName: d.display_name ?? null,
+  };
+}
+
+/** Students can read their own links — used to know whether a parent is connected. */
+export async function fetchStudentParentLinks(studentId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('parent_student_links')
+    .select('id')
+    .eq('student_id', studentId);
+  if (error) { console.warn('[db] fetchStudentParentLinks:', error.message); return 0; }
+  return (data ?? []).length;
+}
+
+export async function deleteParentLink(parentId: string, studentId: string): Promise<void> {
+  const { error } = await supabase
+    .from('parent_student_links')
+    .delete()
+    .eq('parent_id', parentId)
+    .eq('student_id', studentId);
+  if (error) console.warn('[db] deleteParentLink:', error.message);
 }
 
 export async function savePushToken(userId: string, token: string): Promise<void> {

@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   Clipboard,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -38,6 +39,12 @@ const VIBES: { id: Vibe; label: string; emoji: string; bg: string; card: string;
     bg: '#f3eee3', card: 'rgba(255,255,255,0.7)',
     dot1: '#ec4899', dot2: '#d97706', dot3: '#3d6b41',
     textColor: '#1c1917',
+  },
+  {
+    id: 'mono', label: 'Mono', emoji: '⬛',
+    bg: '#0a0a0a', card: '#161616',
+    dot1: '#fafafa', dot2: '#a3a3a3', dot3: '#525252',
+    textColor: '#fafafa',
   },
 ];
 
@@ -150,29 +157,29 @@ export default function MeScreen({ navigation }: any) {
     }
   }
 
+  async function doDisconnectParent() {
+    setParentPaired(false);
+    if (userId) {
+      await supabase
+        .from('parent_student_links')
+        .delete()
+        .eq('student_id', userId);
+    }
+    setDisconnected(true);
+    setTimeout(() => setDisconnected(false), 2000);
+  }
+
   function handleDisconnectParent() {
-    Alert.alert(
-      'Disconnect parent',
-      'Are you sure? Your parent will no longer be able to see your activity.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Disconnect',
-          style: 'destructive',
-          onPress: async () => {
-            setParentPaired(false);
-            if (userId) {
-              await supabase
-                .from('parent_student_links')
-                .delete()
-                .eq('student_id', userId);
-            }
-            setDisconnected(true);
-            setTimeout(() => setDisconnected(false), 2000);
-          },
-        },
-      ]
-    );
+    const msg = 'Are you sure? Your parent will no longer be able to see your activity.';
+    // Alert.alert is a no-op on web, so use the browser confirm there
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(msg)) doDisconnectParent();
+      return;
+    }
+    Alert.alert('Disconnect parent', msg, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Disconnect', style: 'destructive', onPress: doDisconnectParent },
+    ]);
   }
 
   return (
@@ -457,7 +464,7 @@ export default function MeScreen({ navigation }: any) {
           {/* Today background photo */}
           <View style={[styles.bgPhotoRow, { borderColor: theme.line, backgroundColor: theme.surface }]}>
             <View style={styles.bgPhotoInfo}>
-              <Text style={[styles.bgPhotoLabel, { fontFamily: theme.fBody, color: theme.ink }]}>Today background</Text>
+              <Text style={[styles.bgPhotoLabel, { fontFamily: theme.fBody, color: theme.ink }]}>Background photo</Text>
               <Text style={[styles.bgPhotoHint, { fontFamily: theme.fMono, color: theme.soft }]}>
                 {bgImageUri ? 'Photo set ✓' : 'No photo set'}
               </Text>
