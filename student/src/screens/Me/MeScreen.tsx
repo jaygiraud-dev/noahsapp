@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import ShineCard from '../../components/ShineCard';
-import { useStore } from '../../store/useStore';
+import { useStore, GRADES } from '../../store/useStore';
 import { makeTheme, Vibe } from '../../theme';
 import MicroLabel from '../../components/MicroLabel';
 import { supabase } from '../../lib/supabase';
@@ -58,6 +58,8 @@ export default function MeScreen({ navigation }: any) {
   const setPhase = useStore((s) => s.setPhase);
   const school = useStore((s) => s.school);
   const setSchool = useStore((s) => s.setSchool);
+  const grade = useStore((s) => s.grade);
+  const setGrade = useStore((s) => s.setGrade);
   const classes = useStore((s) => s.classes);
   const pairingCode = useStore((s) => s.pairingCode);
   const parentPaired = useStore((s) => s.parentPaired);
@@ -266,6 +268,24 @@ export default function MeScreen({ navigation }: any) {
                 </View>
               )}
             </TouchableOpacity>
+            <View style={[styles.infoRow, { borderBottomColor: 'transparent' }]}>
+              <Text style={[styles.infoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>GRADE</Text>
+              <View style={styles.gradeRow}>
+                {GRADES.map((g) => {
+                  const active = g === grade;
+                  return (
+                    <TouchableOpacity
+                      key={g}
+                      style={[styles.gradePill, { backgroundColor: active ? theme.accent : 'transparent', borderColor: active ? theme.accent : theme.line }]}
+                      onPress={() => setGrade(g)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.gradeText, { fontFamily: theme.fBodySemiBold, color: active ? '#fff' : theme.ink }]}>{g}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
           </ShineCard>
         </View>
 
@@ -611,6 +631,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   signOutText: { fontSize: 13, letterSpacing: 1.5 },
+  gradeRow: { flexDirection: 'row', gap: 6 },
+  gradePill: { width: 32, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  gradeText: { fontSize: 13 },
   infoValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'flex-end' },
   editPencil: { fontSize: 13 },
   infoValueInput: {

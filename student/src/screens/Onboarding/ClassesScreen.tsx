@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStore } from '../../store/useStore';
+import { useStore, GRADES, sampleClassesForGrade } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { Class } from '../../types';
 import { CLASS_COLORS } from '../../data/constants';
@@ -117,7 +117,26 @@ export default function ClassesScreen({ navigation }: any) {
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
 
-  const [classes, setLocalClasses] = useState<Class[]>(storeClasses);
+  const grade = useStore((s) => s.grade);
+  const setGrade = useStore((s) => s.setGrade);
+
+  // Fresh accounts have no classes yet — start them from the suggestions for their grade
+  const [classes, setLocalClasses] = useState<Class[]>(
+    storeClasses.length > 0 ? storeClasses : sampleClassesForGrade(grade)
+  );
+
+  function changeGrade(g: number) {
+    setGrade(g);
+    setLocalClasses((prev) => {
+      const suggested = sampleClassesForGrade(g);
+      return prev.map((c) => {
+        // Untouched suggestion rows swap wholesale; custom rows just get their grade number updated
+        const fresh = suggested.find((s) => s.id === c.id);
+        if (fresh) return { ...c, name: fresh.name };
+        return { ...c, name: c.name.replace(/\b(8|9|10|11|12)\s*$/, String(g)) };
+      });
+    });
+  }
 
   function addNewClass() {
     const newCls: Class = {
@@ -150,8 +169,24 @@ export default function ClassesScreen({ navigation }: any) {
           Set up your classes.
         </SerifTitle>
         <Text style={[styles.subtitle, { fontFamily: theme.fBody, color: theme.sub }]}>
-          We've pre-filled some examples — edit them to match your real timetable, or add your own.
+          Pick your grade, then edit these to match your real timetable or add your own.
         </Text>
+        <View style={styles.gradeRow}>
+          <Text style={[styles.gradeLabel, { fontFamily: theme.fMono, color: theme.soft }]}>GRADE</Text>
+          {GRADES.map((g) => {
+            const active = g === grade;
+            return (
+              <TouchableOpacity
+                key={g}
+                style={[styles.gradePill, { backgroundColor: active ? theme.accent : theme.surface, borderColor: active ? theme.accent : theme.line }]}
+                onPress={() => changeGrade(g)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.gradeText, { fontFamily: theme.fBodySemiBold, color: active ? '#fff' : theme.ink }]}>{g}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       <FlatList
@@ -200,6 +235,10 @@ const styles = StyleSheet.create({
   back: { fontSize: 13, letterSpacing: 0.5, marginBottom: 8 },
   title: {},
   subtitle: { fontSize: 14, lineHeight: 20 },
+  gradeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  gradeLabel: { fontSize: 10, letterSpacing: 1.2, marginRight: 4 },
+  gradePill: { width: 40, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  gradeText: { fontSize: 15 },
   list: { flex: 1 },
   listContent: { paddingHorizontal: 24, gap: 10, paddingBottom: 8 },
   card: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },

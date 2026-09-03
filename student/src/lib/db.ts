@@ -189,6 +189,7 @@ export interface ProfileState {
   pairingCode?: string;
   schoolName?: string;
   schoolCity?: string;
+  grade?: number;
 }
 
 export async function saveProfileState(userId: string, state: ProfileState): Promise<void> {
@@ -200,6 +201,7 @@ export async function saveProfileState(userId: string, state: ProfileState): Pro
   if (state.pairingCode !== undefined) row.pairing_code = state.pairingCode;
   if (state.schoolName !== undefined) row.school_name = state.schoolName;
   if (state.schoolCity !== undefined) row.school_city = state.schoolCity;
+  if (state.grade !== undefined) row.grade = state.grade;
   const { error } = await supabase.from('profiles').update(row).eq('id', userId);
   if (error) console.warn('[db] saveProfileState:', error.message);
 }
@@ -212,11 +214,12 @@ export async function fetchProfileState(userId: string): Promise<{
   pairingCode: string | null;
   schoolName: string | null;
   schoolCity: string | null;
+  grade: number | null;
   displayName: string | null;
 } | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('classes, points, streak, last_activity_date, pairing_code, school_name, school_city, display_name')
+    .select('classes, points, streak, last_activity_date, pairing_code, school_name, school_city, grade, display_name')
     .eq('id', userId)
     .maybeSingle();
   if (error) { console.warn('[db] fetchProfileState:', error.message); return null; }
@@ -230,6 +233,7 @@ export async function fetchProfileState(userId: string): Promise<{
     pairingCode: d.pairing_code ?? null,
     schoolName: d.school_name ?? null,
     schoolCity: d.school_city ?? null,
+    grade: typeof d.grade === 'number' ? d.grade : null,
     displayName: d.display_name ?? null,
   };
 }

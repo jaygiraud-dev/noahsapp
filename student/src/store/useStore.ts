@@ -22,6 +22,7 @@ export type AppPhase = 'auth' | 'onboarding' | 'main' | 'parent';
 interface AppState {
   phase: AppPhase;
   school: School;
+  grade: number;
   classes: Class[];
   useClassTimes: boolean;
   pairingCode: string;
@@ -48,6 +49,7 @@ interface AppState {
   setUserRole: (role: 'student' | 'parent') => void;
   resetForUser: (uid: string, role: 'student' | 'parent', name?: string) => void;
   setSchool: (school: School) => void;
+  setGrade: (grade: number) => void;
   setClasses: (classes: Class[]) => void;
   setUseClassTimes: (v: boolean) => void;
   setParentPaired: (v: boolean) => void;
@@ -69,13 +71,25 @@ interface AppState {
   syncProfileState: () => void;
 }
 
-const SAMPLE_CLASSES: Class[] = [
-  { id: 'c1', name: 'English 11',   teacher: 'Ms. Tran',   start: '08:45', end: '09:55', color: '#ec4899', emoji: '📖' },
-  { id: 'c2', name: 'Pre-Calc 11',  teacher: 'Mr. Chen',   start: '10:00', end: '11:10', color: '#a78bfa', emoji: '🧭' },
-  { id: 'c3', name: 'Chemistry 11', teacher: 'Mr. Singh',  start: '11:15', end: '12:25', color: '#06d6e0', emoji: '🧪' },
-  { id: 'c4', name: 'Socials 11',   teacher: 'Mme. Côté', start: '13:10', end: '14:20', color: '#fbbf24', emoji: '🌎' },
-  { id: 'c5', name: 'PE / Athletics', teacher: 'Coach Patel', start: '14:25', end: '15:25', color: '#34d399', emoji: '🏐' },
-];
+export const GRADES = [8, 9, 10, 11, 12];
+
+/** Suggested timetable for a grade — the names follow BC course naming (Math 9, Pre-Calc 11, …). */
+export function sampleClassesForGrade(g: number): Class[] {
+  const math = g >= 11 ? `Pre-Calc ${g}` : `Math ${g}`;
+  const science = g === 11 ? 'Chemistry 11' : g === 12 ? 'Physics 12' : `Science ${g}`;
+  return [
+    { id: 'c1', name: `English ${g}`,  teacher: '', start: '08:45', end: '09:55', color: '#ec4899', emoji: '📖' },
+    { id: 'c2', name: math,            teacher: '', start: '10:00', end: '11:10', color: '#a78bfa', emoji: '🧭' },
+    { id: 'c3', name: science,         teacher: '', start: '11:15', end: '12:25', color: '#06d6e0', emoji: '🧪' },
+    { id: 'c4', name: `Socials ${g}`,  teacher: '', start: '13:10', end: '14:20', color: '#fbbf24', emoji: '🌎' },
+    { id: 'c5', name: `PE ${g}`,       teacher: '', start: '14:25', end: '15:25', color: '#34d399', emoji: '🏐' },
+  ];
+}
+
+const SAMPLE_CLASSES: Class[] = sampleClassesForGrade(11).map((c, i) => ({
+  ...c,
+  teacher: ['Ms. Tran', 'Mr. Chen', 'Mr. Singh', 'Mme. Côté', 'Coach Patel'][i],
+}));
 
 function todayStr() {
   const d = new Date();
@@ -115,6 +129,7 @@ export const useStore = create<AppState>()(
     (set, get) => ({
   phase: 'auth',
   school: { city: 'Vancouver', name: 'Eric Hamber Secondary' },
+  grade: 11,
   classes: SAMPLE_CLASSES,
   useClassTimes: true,
   pairingCode: '7K4M2D',
@@ -164,6 +179,7 @@ export const useStore = create<AppState>()(
     phase: role === 'parent' ? 'parent' : 'onboarding',
   }),
   setSchool: (school) => { set({ school }); get().syncProfileState(); },
+  setGrade: (grade) => { set({ grade }); get().syncProfileState(); },
   setClasses: (classes) => { set({ classes }); get().syncProfileState(); },
   setUseClassTimes: (v) => set({ useClassTimes: v }),
   setParentPaired: (v) => set({ parentPaired: v }),
@@ -328,6 +344,7 @@ export const useStore = create<AppState>()(
       streak: p.streak ?? s.streak,
       lastActivityDate: p.lastActivityDate ?? s.lastActivityDate,
       pairingCode: p.pairingCode ?? s.pairingCode,
+      grade: p.grade ?? s.grade,
       school: {
         name: p.schoolName ?? s.school.name,
         city: p.schoolCity ?? s.school.city,
@@ -343,9 +360,9 @@ export const useStore = create<AppState>()(
     if (!userId || userRole !== 'student') return;
     if (syncTimer) clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
-      const { classes, points, streak, lastActivityDate, pairingCode, school } = get();
+      const { classes, points, streak, lastActivityDate, pairingCode, school, grade } = get();
       saveProfileState(userId, {
-        classes, points, streak, lastActivityDate, pairingCode,
+        classes, points, streak, lastActivityDate, pairingCode, grade,
         schoolName: school.name, schoolCity: school.city,
       }).catch(() => {});
     }, 800);
@@ -360,6 +377,7 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         phase: state.phase,
         school: state.school,
+        grade: state.grade,
         classes: state.classes,
         useClassTimes: state.useClassTimes,
         pairingCode: state.pairingCode,

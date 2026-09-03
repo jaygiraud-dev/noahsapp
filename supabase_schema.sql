@@ -19,6 +19,7 @@ alter table public.profiles add column if not exists classes            jsonb;
 alter table public.profiles add column if not exists points             integer default 0;
 alter table public.profiles add column if not exists streak             integer default 0;
 alter table public.profiles add column if not exists last_activity_date text;
+alter table public.profiles add column if not exists grade              integer;
 
 alter table public.profiles enable row level security;
 
