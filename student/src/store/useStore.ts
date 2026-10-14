@@ -198,7 +198,7 @@ export const useStore = create<AppState>()(
   pairingCode: '',
   points: 120,
   streak: 4,
-  lastActivityDate: '',
+  lastActivityDate: dateKey(new Date()),
   homework: demoHomework(),
   events: DEMO_EVENTS,
   friends: [],
