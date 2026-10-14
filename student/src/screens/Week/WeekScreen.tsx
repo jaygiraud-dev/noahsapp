@@ -3,7 +3,6 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, ImageBackg
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
-import FloatingParticles from '../../components/FloatingParticles';
 import { makeTheme } from '../../theme';
 import { getClosedReason, closedDaysInMonth, getDaySchedule, hasSchoolCalendar } from '../../data/schoolCalendars';
 import { Class, CalEvent, Homework } from '../../types';
@@ -219,7 +218,6 @@ export default function WeekScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
       {!hasBg && <LinearGradient colors={[theme.accent + '38', 'transparent']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.65 }} style={StyleSheet.absoluteFillObject} pointerEvents="none" />}
-      <FloatingParticles color={theme.accent} />
       {hasBg && (
         <ImageBackground source={{ uri: bgImageUri }} style={StyleSheet.absoluteFillObject} resizeMode="cover">
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.62)' }]} />

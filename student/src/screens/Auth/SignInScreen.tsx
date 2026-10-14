@@ -18,7 +18,6 @@ import { supabase, authRedirectUrl } from '../../lib/supabase';
 import { enterApp } from '../../lib/session';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import MicroLabel from '../../components/MicroLabel';
-import FloatingParticles from '../../components/FloatingParticles';
 
 type AccountType = 'student' | 'parent';
 type Mode = 'signin' | 'signup';
@@ -151,7 +150,6 @@ export default function SignInScreen({ navigation, route }: any) {
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
-      <FloatingParticles color={theme.accent} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>

@@ -15,7 +15,6 @@ import { eventIcon, tagIcon } from '../../data/constants';
 import { classesOnDate, ScheduledClass } from '../../lib/timetable';
 import DayPicker from '../../components/DayPicker';
 import ShineCard from '../../components/ShineCard';
-import FloatingParticles from '../../components/FloatingParticles';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
 import AddEventSheet from '../sheets/AddEventSheet';
 import HomeworkDetailSheet from '../sheets/HomeworkDetailSheet';
@@ -300,7 +299,6 @@ export default function TodayScreen() {
       {!hasBg && (
         <LinearGradient colors={[theme.accent + '38', 'transparent']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.65 }} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
       )}
-      <FloatingParticles color={theme.accent} />
       {hasBg && (
         <ImageBackground source={{ uri: bgImageUri }} style={StyleSheet.absoluteFillObject} resizeMode="cover">
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.62)' }]} />
