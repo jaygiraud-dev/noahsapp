@@ -1,5 +1,9 @@
--- Run this entire file in your Supabase SQL Editor (supabase.com → project → SQL Editor)
--- It is safe to re-run; all statements use IF NOT EXISTS / OR REPLACE.
+-- ════════════════════════════════════════════════════════════════════════════
+--  my agenda — Supabase schema
+--  Run this whole file in Supabase → SQL Editor → New query → Run.
+--  It is safe to re-run: every statement is idempotent.
+-- ════════════════════════════════════════════════════════════════════════════
+
 
 -- ─── PROFILES ────────────────────────────────────────────────────────────────
 create table if not exists public.profiles (
@@ -13,28 +17,141 @@ create table if not exists public.profiles (
   updated_at    timestamptz default now()
 );
 
--- Columns added later (safe to re-run)
 alter table public.profiles add column if not exists push_token         text;
 alter table public.profiles add column if not exists classes            jsonb;
 alter table public.profiles add column if not exists points             integer default 0;
 alter table public.profiles add column if not exists streak             integer default 0;
 alter table public.profiles add column if not exists last_activity_date text;
 alter table public.profiles add column if not exists grade              integer;
+alter table public.profiles add column if not exists avatar             text;     -- small data: URI
+alter table public.profiles add column if not exists onboarded          boolean default false;
+alter table public.profiles add column if not exists timetable          jsonb;     -- slots + weekday rotation
+
+-- Pairing codes must be unique so a code always points at exactly one student
+do $$
+begin
+  create unique index if not exists profiles_pairing_code_key
+    on public.profiles (pairing_code) where pairing_code is not null;
+exception when unique_violation then
+  raise notice 'Duplicate pairing codes exist; unique index skipped';
+end $$;
 
 alter table public.profiles enable row level security;
 
--- Any authenticated user can read profiles (needed for pairing-code lookup)
-drop policy if exists "Auth users read profiles" on public.profiles;
-create policy "Auth users read profiles" on public.profiles
-  for select to authenticated using (true);
+-- Old policy let every signed-in user read every profile (and every pairing code).
+drop policy if exists "Auth users read profiles"      on public.profiles;
+drop policy if exists "Users read own profile"        on public.profiles;
+drop policy if exists "Parents read linked profiles"  on public.profiles;
+drop policy if exists "Users insert own profile"      on public.profiles;
+drop policy if exists "Users update own profile"      on public.profiles;
 
-drop policy if exists "Users insert own profile" on public.profiles;
+create policy "Users read own profile" on public.profiles
+  for select to authenticated using (auth.uid() = id);
+
 create policy "Users insert own profile" on public.profiles
-  for insert with check (auth.uid() = id);
+  for insert to authenticated with check (auth.uid() = id);
 
-drop policy if exists "Users update own profile" on public.profiles;
 create policy "Users update own profile" on public.profiles
-  for update using (auth.uid() = id);
+  for update to authenticated using (auth.uid() = id) with check (auth.uid() = id);
+
+
+-- ─── PAIRING-CODE GENERATOR + NEW-USER TRIGGER ───────────────────────────────
+create or replace function public.generate_pairing_code()
+returns text language plpgsql as $$
+declare
+  chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  code  text;
+begin
+  loop
+    code := '';
+    for i in 1..6 loop
+      code := code || substr(chars, 1 + floor(random() * length(chars))::int, 1);
+    end loop;
+    exit when not exists (select 1 from public.profiles where pairing_code = code);
+  end loop;
+  return code;
+end $$;
+
+-- Every new auth user gets a profile immediately — even before they confirm
+-- their email — with the role and name they picked on the sign-up screen.
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  r text := coalesce(new.raw_user_meta_data->>'role', 'student');
+begin
+  if r not in ('student', 'parent') then r := 'student'; end if;
+  insert into public.profiles (id, role, display_name, pairing_code)
+  values (
+    new.id,
+    r,
+    nullif(trim(coalesce(new.raw_user_meta_data->>'display_name', '')), ''),
+    case when r = 'student' then public.generate_pairing_code() end
+  )
+  on conflict (id) do nothing;
+  return new;
+end $$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Backfill: accounts created before this trigger existed
+insert into public.profiles (id, role, display_name, pairing_code)
+select u.id,
+       case when u.raw_user_meta_data->>'role' = 'parent' then 'parent' else 'student' end,
+       nullif(split_part(coalesce(u.email, ''), '@', 1), ''),
+       case when coalesce(u.raw_user_meta_data->>'role', 'student') <> 'parent'
+            then public.generate_pairing_code() end
+from auth.users u
+where not exists (select 1 from public.profiles p where p.id = u.id);
+
+-- Students who existed before pairing codes were server-generated
+update public.profiles set pairing_code = public.generate_pairing_code()
+where role = 'student' and pairing_code is null;
+
+
+-- ─── PARENT-STUDENT LINKS ────────────────────────────────────────────────────
+create table if not exists public.parent_student_links (
+  id           uuid default gen_random_uuid() primary key,
+  parent_id    uuid references auth.users(id) on delete cascade not null,
+  student_id   uuid references auth.users(id) on delete cascade not null,
+  pairing_code text not null,
+  student_name text,
+  linked_at    timestamptz default now(),
+  unique(parent_id, student_id)
+);
+
+alter table public.parent_student_links enable row level security;
+
+-- Links are only ever created by link_student_by_code(), which checks the code.
+-- Only the parent can remove a link; students cannot disconnect a parent.
+drop policy if exists "Parents manage own links"     on public.parent_student_links;
+drop policy if exists "Parents read own links"       on public.parent_student_links;
+drop policy if exists "Parents delete own links"     on public.parent_student_links;
+drop policy if exists "Students read own links"      on public.parent_student_links;
+drop policy if exists "Students delete own links"    on public.parent_student_links;
+
+create policy "Parents read own links" on public.parent_student_links
+  for select to authenticated using (auth.uid() = parent_id);
+create policy "Parents delete own links" on public.parent_student_links
+  for delete to authenticated using (auth.uid() = parent_id);
+create policy "Students read own links" on public.parent_student_links
+  for select to authenticated using (auth.uid() = student_id);
+
+-- Helper used by the policies below
+create or replace function public.is_parent_of(student uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.parent_student_links
+    where parent_id = auth.uid() and student_id = student
+  );
+$$;
+
+-- Parents can read the profile (points, streak, classes…) of a linked student
+create policy "Parents read linked profiles" on public.profiles
+  for select to authenticated using (public.is_parent_of(id));
+
 
 -- ─── HOMEWORK ────────────────────────────────────────────────────────────────
 create table if not exists public.homework (
@@ -55,22 +172,18 @@ create table if not exists public.homework (
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );
+alter table public.homework add column if not exists photos  text[] default '{}';
+alter table public.homework add column if not exists done_at timestamptz;
 
 alter table public.homework enable row level security;
 
-drop policy if exists "Students CRUD own homework" on public.homework;
-create policy "Students CRUD own homework" on public.homework for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-
+drop policy if exists "Students CRUD own homework"   on public.homework;
 drop policy if exists "Parents read linked homework" on public.homework;
-create policy "Parents read linked homework" on public.homework for select
-  using (
-    exists (
-      select 1 from public.parent_student_links psl
-      where psl.parent_id = auth.uid() and psl.student_id = public.homework.user_id
-    )
-  );
+create policy "Students CRUD own homework" on public.homework for all to authenticated
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Parents read linked homework" on public.homework for select to authenticated
+  using (public.is_parent_of(user_id));
+
 
 -- ─── EVENTS ──────────────────────────────────────────────────────────────────
 create table if not exists public.events (
@@ -92,41 +205,38 @@ create table if not exists public.events (
 
 alter table public.events enable row level security;
 
-drop policy if exists "Students CRUD own events" on public.events;
-create policy "Students CRUD own events" on public.events for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-
+drop policy if exists "Students CRUD own events"   on public.events;
 drop policy if exists "Parents read linked events" on public.events;
-create policy "Parents read linked events" on public.events for select
-  using (
-    exists (
-      select 1 from public.parent_student_links psl
-      where psl.parent_id = auth.uid() and psl.student_id = public.events.user_id
-    )
-  );
+create policy "Students CRUD own events" on public.events for all to authenticated
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Parents read linked events" on public.events for select to authenticated
+  using (public.is_parent_of(user_id));
 
--- ─── PARENT-STUDENT LINKS ────────────────────────────────────────────────────
-create table if not exists public.parent_student_links (
-  id           uuid default gen_random_uuid() primary key,
-  parent_id    uuid references auth.users(id) on delete cascade not null,
-  student_id   uuid references auth.users(id) on delete cascade not null,
-  pairing_code text not null,
-  student_name text,
-  linked_at    timestamptz default now(),
-  unique(parent_id, student_id)
+
+-- ─── ACTIVITY (what the parent's feed shows) ─────────────────────────────────
+create table if not exists public.activity (
+  id         uuid default gen_random_uuid() primary key,
+  student_id uuid references auth.users(id) on delete cascade not null,
+  type       text not null,          -- hw_added | hw_done | event_added | streak
+  text       text not null,
+  subject    text,
+  color      text,
+  created_at timestamptz default now()
 );
+create index if not exists activity_student_created on public.activity (student_id, created_at desc);
 
-alter table public.parent_student_links enable row level security;
+alter table public.activity enable row level security;
 
-drop policy if exists "Parents manage own links" on public.parent_student_links;
-create policy "Parents manage own links" on public.parent_student_links for all
-  using (auth.uid() = parent_id)
-  with check (auth.uid() = parent_id);
-
-drop policy if exists "Students read own links" on public.parent_student_links;
-create policy "Students read own links" on public.parent_student_links for select
+drop policy if exists "Students write own activity"   on public.activity;
+drop policy if exists "Students read own activity"    on public.activity;
+drop policy if exists "Parents read linked activity"  on public.activity;
+create policy "Students write own activity" on public.activity for insert to authenticated
+  with check (auth.uid() = student_id);
+create policy "Students read own activity" on public.activity for select to authenticated
   using (auth.uid() = student_id);
+create policy "Parents read linked activity" on public.activity for select to authenticated
+  using (public.is_parent_of(student_id));
+
 
 -- ─── NUDGES ──────────────────────────────────────────────────────────────────
 create table if not exists public.nudges (
@@ -138,32 +248,171 @@ create table if not exists public.nudges (
   seen         boolean default false
 );
 alter table public.nudges enable row level security;
-drop policy if exists "Parents insert nudges" on public.nudges;
-create policy "Parents insert nudges" on public.nudges for insert
-  with check (auth.uid() = parent_id);
+
+drop policy if exists "Parents insert nudges"    on public.nudges;
+drop policy if exists "Parents read own nudges"  on public.nudges;
 drop policy if exists "Students read own nudges" on public.nudges;
-create policy "Students read own nudges" on public.nudges for select
-  using (auth.uid() = student_id);
 drop policy if exists "Students mark nudge seen" on public.nudges;
-create policy "Students mark nudge seen" on public.nudges for update
+create policy "Parents insert nudges" on public.nudges for insert to authenticated
+  with check (auth.uid() = parent_id and public.is_parent_of(student_id));
+create policy "Parents read own nudges" on public.nudges for select to authenticated
+  using (auth.uid() = parent_id);
+create policy "Students read own nudges" on public.nudges for select to authenticated
   using (auth.uid() = student_id);
+create policy "Students mark nudge seen" on public.nudges for update to authenticated
+  using (auth.uid() = student_id) with check (auth.uid() = student_id);
+
+
+-- ─── FRIENDSHIPS (mutual — one row per direction) ────────────────────────────
+create table if not exists public.friendships (
+  user_id    uuid references auth.users(id) on delete cascade not null,
+  friend_id  uuid references auth.users(id) on delete cascade not null,
+  created_at timestamptz default now(),
+  primary key (user_id, friend_id)
+);
+alter table public.friendships enable row level security;
+
+drop policy if exists "Users read own friendships" on public.friendships;
+create policy "Users read own friendships" on public.friendships for select to authenticated
+  using (auth.uid() = user_id);
+
+
+-- ─── RPC FUNCTIONS (the only way to use a pairing code) ──────────────────────
+
+-- Parent enters a kid's code → link is created. Never reveals other students.
+create or replace function public.link_student_by_code(p_code text)
+returns table (student_id uuid, display_name text, school_name text)
+language plpgsql security definer set search_path = public as $$
+#variable_conflict use_column
+declare
+  me uuid := auth.uid();
+  s  public.profiles;
+begin
+  if me is null then raise exception 'not_signed_in'; end if;
+  if not exists (select 1 from public.profiles where id = me and role = 'parent') then
+    raise exception 'not_a_parent';
+  end if;
+  select * into s from public.profiles
+   where pairing_code = upper(trim(p_code)) and role = 'student';
+  if not found then raise exception 'code_not_found'; end if;
+
+  insert into public.parent_student_links (parent_id, student_id, pairing_code, student_name)
+  values (me, s.id, s.pairing_code, s.display_name)
+  on conflict (parent_id, student_id) do nothing;
+
+  return query select s.id, s.display_name, s.school_name;
+end $$;
+
+-- Student's view of who is connected to them
+create or replace function public.get_my_parents()
+returns table (parent_id uuid, display_name text, linked_at timestamptz)
+language sql stable security definer set search_path = public as $$
+  select l.parent_id, p.display_name, l.linked_at
+  from public.parent_student_links l
+  join public.profiles p on p.id = l.parent_id
+  where l.student_id = auth.uid()
+  order by l.linked_at;
+$$;
+
+-- Push tokens of every parent linked to the calling student
+create or replace function public.get_parent_push_tokens()
+returns setof text
+language sql stable security definer set search_path = public as $$
+  select p.push_token
+  from public.parent_student_links l
+  join public.profiles p on p.id = l.parent_id
+  where l.student_id = auth.uid() and p.push_token is not null;
+$$;
+
+-- Student adds a friend by their code. Friendship is mutual.
+create or replace function public.add_friend_by_code(p_code text)
+returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  f  public.profiles;
+begin
+  if me is null then return 'not_signed_in'; end if;
+  select * into f from public.profiles
+   where pairing_code = upper(trim(p_code)) and role = 'student';
+  if not found then return 'not_found'; end if;
+  if f.id = me then return 'self'; end if;
+  if exists (select 1 from public.friendships where user_id = me and friend_id = f.id) then
+    return 'already';
+  end if;
+  insert into public.friendships (user_id, friend_id) values (me, f.id), (f.id, me)
+  on conflict do nothing;
+  return 'added';
+end $$;
+
+create or replace function public.remove_friend(p_friend uuid)
+returns void
+language sql security definer set search_path = public as $$
+  delete from public.friendships
+  where (user_id = auth.uid() and friend_id = p_friend)
+     or (user_id = p_friend and friend_id = auth.uid());
+$$;
+
+-- Friends list with only the fields friends are allowed to see
+create or replace function public.get_friends()
+returns table (id uuid, display_name text, school_name text, grade integer,
+               points integer, streak integer, last_activity_date text, avatar text)
+language sql stable security definer set search_path = public as $$
+  select p.id, p.display_name, p.school_name, p.grade,
+         coalesce(p.points, 0), coalesce(p.streak, 0), p.last_activity_date, p.avatar
+  from public.friendships f
+  join public.profiles p on p.id = f.friend_id
+  where f.user_id = auth.uid();
+$$;
+
+revoke all on function public.link_student_by_code(text)  from public, anon;
+revoke all on function public.get_my_parents()            from public, anon;
+revoke all on function public.get_parent_push_tokens()    from public, anon;
+revoke all on function public.add_friend_by_code(text)    from public, anon;
+revoke all on function public.remove_friend(uuid)         from public, anon;
+revoke all on function public.get_friends()               from public, anon;
+grant execute on function public.link_student_by_code(text)  to authenticated;
+grant execute on function public.get_my_parents()            to authenticated;
+grant execute on function public.get_parent_push_tokens()    to authenticated;
+grant execute on function public.add_friend_by_code(text)    to authenticated;
+grant execute on function public.remove_friend(uuid)         to authenticated;
+grant execute on function public.get_friends()               to authenticated;
+
+
+-- ─── HOMEWORK PHOTOS (private storage bucket) ────────────────────────────────
+-- Files live at  <student id>/<homework id>/<n>.jpg
+insert into storage.buckets (id, name, public)
+values ('homework-photos', 'homework-photos', false)
+on conflict (id) do nothing;
+
+drop policy if exists "Students upload own photos"  on storage.objects;
+drop policy if exists "Students read own photos"    on storage.objects;
+drop policy if exists "Students delete own photos"  on storage.objects;
+drop policy if exists "Parents read linked photos"  on storage.objects;
+
+create policy "Students upload own photos" on storage.objects for insert to authenticated
+  with check (bucket_id = 'homework-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "Students read own photos" on storage.objects for select to authenticated
+  using (bucket_id = 'homework-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "Students delete own photos" on storage.objects for delete to authenticated
+  using (bucket_id = 'homework-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "Parents read linked photos" on storage.objects for select to authenticated
+  using (bucket_id = 'homework-photos'
+         and public.is_parent_of(((storage.foldername(name))[1])::uuid));
+
 
 -- ─── REALTIME ────────────────────────────────────────────────────────────────
--- The app listens for new nudges (student) and homework changes (parent) over
--- Supabase Realtime. Tables must be in the supabase_realtime publication for
--- those subscriptions to receive anything.
+-- Live updates: nudges → student, homework/events/activity → parent,
+-- links → student ("parent connected" on the pairing screen).
 do $$
+declare t text;
 begin
-  if not exists (
-    select 1 from pg_publication_tables
-    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'nudges'
-  ) then
-    alter publication supabase_realtime add table public.nudges;
-  end if;
-  if not exists (
-    select 1 from pg_publication_tables
-    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'homework'
-  ) then
-    alter publication supabase_realtime add table public.homework;
-  end if;
+  foreach t in array array['nudges', 'homework', 'events', 'activity', 'parent_student_links'] loop
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
 end $$;

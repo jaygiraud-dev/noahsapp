@@ -1,16 +1,37 @@
 export interface School {
   city: string;
   name: string;
+  district?: string;
 }
 
 export interface Class {
   id: string;
   name: string;
   teacher?: string;
-  start?: string;
-  end?: string;
+  start?: string;   // "HH:MM" 24-hour
+  end?: string;     // "HH:MM" 24-hour
   color: string;
   emoji?: string;
+  /** The block this class is usually in (0-based), set during setup */
+  slot?: number | null;
+}
+
+/** One class slot in the school day ("Block 1", 9:15–10:25). */
+export interface Period {
+  id: string;
+  label: string;
+  start: string;   // "HH:MM"
+  end: string;     // "HH:MM"
+}
+
+/**
+ * Which class sits in each slot on each weekday. Keys are 1–5 (Mon–Fri);
+ * each value has one class id (or null for a free block) per period.
+ */
+export interface Timetable {
+  periods: Period[];
+  sameEveryDay: boolean;
+  days: Record<'1' | '2' | '3' | '4' | '5', Array<string | null>>;
 }
 
 export interface Homework {
@@ -27,6 +48,10 @@ export interface Homework {
   reminder?: string | null;
   points: number;
   done: boolean;
+  doneAt?: string;
+  /** Storage paths of uploaded photos (signed-in students) */
+  photos?: string[];
+  /** Displayable URIs, same order as photos. Never persisted. */
   attachedImages?: string[];
 }
 
@@ -48,45 +73,25 @@ export interface Friend {
   id: string;
   name: string;
   school: string;
+  grade?: number | null;
   pts: number;
   streak: number;
-  avatar: string;
+  avatar?: string | null;
   color: string;
 }
 
-export interface FriendRequest {
+export interface ParentConnection {
+  parentId: string;
+  name: string;
+  linkedAt: string;
+}
+
+export interface ActivityItem {
   id: string;
-  name: string;
-  school: string;
-  mutual: number;
-  color: string;
-  avatar: string;
-  when: string;
-}
-
-export interface FriendSuggestion {
-  id: string;
-  name: string;
-  school: string;
-  mutual: number;
-  color: string;
-  avatar: string;
-}
-
-export interface ActivityNotif {
-  type: 'done' | 'add' | 'event' | 'streak';
-  who: string;
-  what: string;
-  cls?: string;
-  when: string;
-  clr?: string;
-}
-
-export interface SchoolBoardEntry {
-  rank: number;
-  name: string;
-  pts: number;
-  school: string;
-  friend?: boolean;
-  isMe?: boolean;
+  studentId: string;
+  type: 'hw_added' | 'hw_done' | 'event_added' | 'streak' | string;
+  text: string;
+  subject?: string | null;
+  color?: string | null;
+  createdAt: string;
 }

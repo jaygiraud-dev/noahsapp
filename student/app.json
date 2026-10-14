@@ -19,8 +19,12 @@
       "package": "dev.jaygiraud.myagenda"
     },
     "plugins": [
-      "expo-av",
-      ["expo-font", { "fonts": [] }]
+      [
+        "expo-font",
+        {
+          "fonts": []
+        }
+      ]
     ]
   }
 }

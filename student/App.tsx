@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
@@ -6,34 +7,20 @@ import {
   InstrumentSerif_400Regular,
   InstrumentSerif_400Regular_Italic,
 } from '@expo-google-fonts/instrument-serif';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-} from '@expo-google-fonts/inter';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { Caveat_500Medium } from '@expo-google-fonts/caveat';
-import {
-  JetBrainsMono_400Regular,
-  JetBrainsMono_500Medium,
-} from '@expo-google-fonts/jetbrains-mono';
+import { JetBrainsMono_400Regular, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useStore } from './src/store/useStore';
 import { supabase } from './src/lib/supabase';
-import { upsertProfile, savePushToken } from './src/lib/db';
-import { registerForPushNotificationsAsync } from './src/lib/pushNotifications';
+import { enterApp } from './src/lib/session';
 import { scheduleClassNotifications } from './src/lib/classNotifications';
 
 export default function App() {
   const setPhase = useStore((s) => s.setPhase);
-  const storedUserId = useStore((s) => s.userId);
-  const storedUserRole = useStore((s) => s.userRole);
   const hasHydrated = useStore((s) => s._hasHydrated);
-  const resetForUser = useStore((s) => s.resetForUser);
-  const setUserRole = useStore((s) => s.setUserRole);
-  const loadDataFromSupabase = useStore((s) => s.loadDataFromSupabase);
-  const pairingCode = useStore((s) => s.pairingCode);
-  const school = useStore((s) => s.school);
+  const setPasswordRecovery = useStore((s) => s.setPasswordRecovery);
   const [sessionReady, setSessionReady] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -47,81 +34,53 @@ export default function App() {
     JetBrainsMono_500Medium,
   });
 
-  // Wait for the Zustand store to rehydrate from AsyncStorage before checking the
-  // Supabase session — otherwise storedUserId is always '' and resetForUser fires.
+  // Wait for local state to load before checking the session, otherwise the
+  // stored user id is always empty and every launch looks like a new account.
   useEffect(() => {
     if (!hasHydrated) return;
+    const recovery = Platform.OS === 'web' && typeof window !== 'undefined'
+      && window.location.hash.includes('type=recovery');
+    if (recovery) setPasswordRecovery(true);
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        // Demo mode (no account) keeps whatever screen it was on; real
-        // accounts without a session go back to sign-in.
-        const { phase, userId } = useStore.getState();
-        const isDemo = userId === '' && (phase === 'main' || phase === 'parent' || phase === 'onboarding');
-        if (!isDemo) setPhase('auth');
-        setSessionReady(true);
-        return;
-      }
-
-      const role = (session.user.user_metadata?.role ?? storedUserRole) as 'student' | 'parent';
-
-      if (session.user.id !== storedUserId) {
-        // New or different user — wipe previous data
-        resetForUser(session.user.id, role);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session && !recovery) {
+        await enterApp(session.user);
+      } else if (recovery) {
+        setPhase('auth');
       } else {
-        // Same returning user — trust persisted role and go straight to app
-        setUserRole(role);
-        setPhase(storedUserRole === 'parent' ? 'parent' : 'main');
-        // Re-upsert profile on every load so pairing code is always in Supabase
-        const displayName = session.user.email?.split('@')[0] ?? '';
-        upsertProfile(
-          session.user.id,
-          storedUserRole,
-          storedUserRole === 'student' ? pairingCode : undefined,
-          storedUserRole === 'student' ? school.name : undefined,
-          displayName
-        ).catch(() => {});
-        // Sync latest data from Supabase in background
-        if (storedUserRole === 'student') {
-          loadDataFromSupabase().catch(() => {});
-        }
+        // No account session. Demo mode keeps its screen; real accounts go to sign-in.
+        const { phase, userId } = useStore.getState();
+        const isDemo = userId === '' && phase !== 'auth';
+        if (!isDemo) setPhase('auth');
       }
-      // Register push token for students (fire-and-forget)
-      if (role === 'student') {
-        registerForPushNotificationsAsync().then((token) => {
-          if (token) savePushToken(session.user.id, token).catch(() => {});
-        }).catch(() => {});
-
-        // Schedule class bell notifications for the current classes
-        const classes = useStore.getState().classes;
-        scheduleClassNotifications(classes).catch(() => {});
+      // Tidy the address bar after an email link
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+        window.history.replaceState(null, '', window.location.pathname);
       }
-
       setSessionReady(true);
+    }).catch(() => setSessionReady(true));
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') setPhase('auth');
+      if (event === 'PASSWORD_RECOVERY') { setPasswordRecovery(true); setPhase('auth'); }
     });
+    return () => sub.subscription.unsubscribe();
   }, [hasHydrated]);
 
-  // Re-schedule notifications whenever classes change in the store
+  // Re-schedule class bells whenever the timetable changes (phone only)
   useEffect(() => {
-    const unsub = useStore.subscribe((state, prevState) => {
-      if (state.classes !== prevState.classes && state.userRole === 'student') {
-        scheduleClassNotifications(state.classes).catch(() => {});
+    const unsub = useStore.subscribe((state, prev) => {
+      if ((state.classes !== prev.classes || state.timetable !== prev.timetable) && state.userRole === 'student') {
+        scheduleClassNotifications(state.classes, state.timetable).catch(() => {});
       }
     });
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') setPhase('auth');
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
   if (!fontsLoaded || !sessionReady) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#a78bfa" />
+        <ActivityIndicator size="large" color="#e8453a" />
       </View>
     );
   }
@@ -137,5 +96,5 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0c0820' },
+  loader: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0d0d0d' },
 });

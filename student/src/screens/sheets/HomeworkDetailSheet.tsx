@@ -1,23 +1,17 @@
 import React, { useState } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Image,
-} from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { Homework } from '../../types';
+import { tagIcon } from '../../data/constants';
+import { confirmAction } from '../../lib/confirm';
+import { startOfDay } from '../../lib/time';
 
 interface Props {
   hw: Homework | null;
   visible: boolean;
   onClose: () => void;
-  onToggle: () => void;
-  /** Parent opens the edit sheet — this component unmounts when hw is cleared, so it can't own that state. */
+  /** The parent screen opens the edit sheet (this one closes first) */
   onEdit: (hw: Homework) => void;
 }
 
@@ -26,7 +20,7 @@ function ImagePreviewModal({ uri, onClose }: { uri: string; onClose: () => void 
     <Modal visible animationType="fade" transparent onRequestClose={onClose}>
       <TouchableOpacity style={styles.imgBackdrop} activeOpacity={1} onPress={onClose}>
         <Image source={{ uri }} style={styles.imgFull} resizeMode="contain" />
-        <TouchableOpacity style={styles.imgClose} onPress={onClose}>
+        <TouchableOpacity style={styles.imgClose} onPress={onClose} accessibilityLabel="Close photo">
           <Text style={styles.imgCloseText}>×</Text>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -34,8 +28,10 @@ function ImagePreviewModal({ uri, onClose }: { uri: string; onClose: () => void 
   );
 }
 
-export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle, onEdit }: Props) {
+export default function HomeworkDetailSheet({ hw, visible, onClose, onEdit }: Props) {
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const toggleHomework = useStore((s) => s.toggleHomework);
+  const deleteHomework = useStore((s) => s.deleteHomework);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -43,9 +39,17 @@ export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle, on
   if (!hw) return null;
 
   const color = hw.classColor ?? theme.accent;
-  const dueDateFormatted = hw.dueDate
-    ? new Date(hw.dueDate).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })
-    : hw.due ?? null;
+  const due = hw.dueDate ? new Date(hw.dueDate) : null;
+  const overdue = !hw.done && !!due && due < startOfDay(new Date());
+  const dueText = due ? due.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' }) : hw.due ?? '';
+
+  function handleDelete() {
+    const target = hw!;
+    confirmAction('Delete homework?', `“${target.title}” will be removed for good.`, 'Delete', () => {
+      onClose();
+      deleteHomework(target.id);
+    });
+  }
 
   return (
     <>
@@ -55,54 +59,52 @@ export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle, on
           <TouchableOpacity style={styles.backdropDismiss} activeOpacity={1} onPress={onClose} />
           <View style={[styles.sheet, { backgroundColor: theme.bg }]}>
             <View style={[styles.handle, { backgroundColor: theme.line }]} />
-
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-              {/* Header */}
               <View style={styles.headerRow}>
                 <View style={[styles.colorBar, { backgroundColor: color }]} />
                 <View style={styles.headerText}>
-                  <Text style={[styles.title, { fontFamily: theme.fDisplayItalic, color: theme.ink, textDecorationLine: hw.done ? 'line-through' : 'none', opacity: hw.done ? 0.5 : 1 }]}>
+                  <Text style={[styles.title, { fontFamily: theme.fDisplayItalic, color: theme.ink, textDecorationLine: hw.done ? 'line-through' : 'none', opacity: hw.done ? 0.55 : 1 }]}>
                     {hw.title}
                   </Text>
-                  {hw.subject && (
-                    <Text style={[styles.subject, { fontFamily: theme.fMono, color }]}>
-                      {hw.subject}
-                    </Text>
-                  )}
+                  {hw.subject && <Text style={[styles.subject, { fontFamily: theme.fMono, color }]}>{hw.subject}</Text>}
                 </View>
-                <TouchableOpacity onPress={onClose}>
+                <TouchableOpacity onPress={onClose} accessibilityLabel="Close">
                   <Text style={[styles.closeBtn, { color: theme.soft }]}>×</Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Meta row */}
               <View style={styles.metaRow}>
                 {hw.tag && (
                   <View style={[styles.tagBadge, { backgroundColor: color + '22', borderColor: color + '44' }]}>
-                    <Text style={[styles.tagText, { fontFamily: theme.fMono, color }]}>{hw.tag}</Text>
+                    <Text style={[styles.tagText, { fontFamily: theme.fMono, color }]}>{tagIcon(hw.tag)} {hw.tag}</Text>
                   </View>
                 )}
-                {dueDateFormatted && (
-                  <View style={[styles.tagBadge, { backgroundColor: hw.dueUrgent ? theme.amber + '22' : theme.surface, borderColor: hw.dueUrgent ? theme.amber + '66' : theme.line }]}>
-                    <Text style={[styles.tagText, { fontFamily: theme.fMono, color: hw.dueUrgent ? theme.amber : theme.soft }]}>
-                      {hw.dueUrgent ? '△ ' : ''}Due {dueDateFormatted}
+                {dueText !== '' && (
+                  <View style={[styles.tagBadge, { backgroundColor: overdue ? theme.red + '22' : theme.surface, borderColor: overdue ? theme.red : theme.line }]}>
+                    <Text style={[styles.tagText, { fontFamily: theme.fMono, color: overdue ? theme.red : theme.sub }]}>
+                      {overdue ? '⚠ Overdue · ' : 'Due '}{dueText}
                     </Text>
                   </View>
                 )}
+                {hw.reminder && hw.reminder !== 'None' && (
+                  <View style={[styles.tagBadge, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+                    <Text style={[styles.tagText, { fontFamily: theme.fMono, color: theme.sub }]}>⏰ {hw.reminder}</Text>
+                  </View>
+                )}
               </View>
 
-              {/* Points */}
+              {hw.notes ? <Text style={[styles.notes, { fontFamily: theme.fBody, color: theme.sub }]}>{hw.notes}</Text> : null}
+
               <View style={[styles.pointsRow, { borderColor: theme.line }]}>
-                <Text style={[styles.pointsLabel, { fontFamily: theme.fMono, color: theme.soft }]}>POINTS</Text>
-                <Text style={[styles.pointsVal, { fontFamily: theme.fMono, color: theme.accent }]}>+{hw.points}</Text>
+                <Text style={[styles.pointsLabel, { fontFamily: theme.fMono, color: theme.soft }]}>{hw.done ? 'FINISHED' : 'POINTS FOR FINISHING'}</Text>
+                <Text style={[styles.pointsVal, { fontFamily: theme.fMono, color: hw.done ? theme.mint : theme.accent }]}>
+                  {hw.done ? `✓ ${hw.doneAt ? new Date(hw.doneAt).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' }) : ''}` : `+${hw.points}`}
+                </Text>
               </View>
 
-              {/* Photos */}
               {(hw.attachedImages ?? []).length > 0 && (
                 <View style={styles.photosSection}>
-                  <Text style={[styles.sectionLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
-                    PHOTOS · {hw.attachedImages!.length}
-                  </Text>
+                  <Text style={[styles.sectionLabel, { fontFamily: theme.fMono, color: theme.soft }]}>PHOTOS · {hw.attachedImages!.length}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photosRow}>
                     {hw.attachedImages!.map((uri, i) => (
                       <TouchableOpacity key={i} onPress={() => setPreviewUri(uri)} activeOpacity={0.8}>
@@ -113,25 +115,27 @@ export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle, on
                 </View>
               )}
 
-              {/* Actions */}
-              <TouchableOpacity
-                style={[styles.editBtn, { backgroundColor: theme.surface, borderColor: theme.line }]}
-                onPress={() => { const target = hw; onClose(); setTimeout(() => onEdit(target), 300); }}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.toggleBtnText, { fontFamily: theme.fMono, color: theme.ink }]}>
-                  ✎  Edit
-                </Text>
-              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.toggleBtn, { backgroundColor: hw.done ? theme.surface : color, borderColor: hw.done ? theme.line : color }]}
-                onPress={() => { onToggle(); onClose(); }}
+                onPress={() => { toggleHomework(hw.id); onClose(); }}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.toggleBtnText, { fontFamily: theme.fMono, color: hw.done ? theme.soft : '#fff' }]}>
+                <Text style={[styles.btnText, { fontFamily: theme.fMono, color: hw.done ? theme.soft : '#fff' }]}>
                   {hw.done ? '○  Mark as not done' : '✓  Mark as done'}
                 </Text>
               </TouchableOpacity>
+              <View style={styles.btnRow}>
+                <TouchableOpacity
+                  style={[styles.halfBtn, { backgroundColor: theme.surface, borderColor: theme.line }]}
+                  onPress={() => { const t = hw; onClose(); setTimeout(() => onEdit(t), 250); }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.btnText, { fontFamily: theme.fMono, color: theme.ink }]}>✎  Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.halfBtn, { borderColor: theme.red + '66' }]} onPress={handleDelete} activeOpacity={0.8}>
+                  <Text style={[styles.btnText, { fontFamily: theme.fMono, color: theme.red }]}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </ScrollView>
           </View>
         </View>
@@ -143,9 +147,9 @@ export default function HomeworkDetailSheet({ hw, visible, onClose, onToggle, on
 const styles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: 'flex-end' },
   backdropDismiss: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-  sheet: { borderTopLeftRadius: 36, borderTopRightRadius: 36, maxHeight: '85%' },
+  sheet: { borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: '88%' },
   handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 4 },
-  content: { padding: 20, gap: 20, paddingBottom: 36 },
+  content: { padding: 20, gap: 16, paddingBottom: 36 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   colorBar: { width: 4, borderRadius: 2, alignSelf: 'stretch', minHeight: 40 },
   headerText: { flex: 1, gap: 4 },
@@ -154,17 +158,19 @@ const styles = StyleSheet.create({
   closeBtn: { fontSize: 28, lineHeight: 32 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tagBadge: { borderRadius: 34, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 },
-  tagText: { fontSize: 11, letterSpacing: 0.5 },
+  tagText: { fontSize: 11, letterSpacing: 0.3 },
+  notes: { fontSize: 15, lineHeight: 22 },
   pointsRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderBottomWidth: 1, paddingVertical: 12 },
   pointsLabel: { fontSize: 10, letterSpacing: 1 },
-  pointsVal: { fontSize: 16, letterSpacing: 0.5 },
+  pointsVal: { fontSize: 15, letterSpacing: 0.5 },
   photosSection: { gap: 10 },
   sectionLabel: { fontSize: 10, letterSpacing: 1 },
   photosRow: { gap: 10 },
-  photoThumb: { width: 120, height: 120, borderRadius: 32 },
-  editBtn: { borderRadius: 34, borderWidth: 1, paddingVertical: 16, alignItems: 'center' },
+  photoThumb: { width: 120, height: 120, borderRadius: 20 },
   toggleBtn: { borderRadius: 34, borderWidth: 1, paddingVertical: 16, alignItems: 'center' },
-  toggleBtnText: { fontSize: 15, letterSpacing: 0.5 },
+  btnRow: { flexDirection: 'row', gap: 10 },
+  halfBtn: { flex: 1, borderRadius: 34, borderWidth: 1, paddingVertical: 14, alignItems: 'center' },
+  btnText: { fontSize: 14, letterSpacing: 0.5 },
   imgBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
   imgFull: { width: '100%', height: '80%' },
   imgClose: { position: 'absolute', top: 50, right: 20, width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },

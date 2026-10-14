@@ -9,19 +9,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
-import { supabase } from '../../lib/supabase';
+import { supabase, authRedirectUrl } from '../../lib/supabase';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import SerifTitle from '../../components/SerifTitle';
 import MicroLabel from '../../components/MicroLabel';
 
-export default function ResetPasswordScreen({ navigation }: any) {
-  const [email, setEmail] = useState('');
+export default function ResetPasswordScreen({ navigation, route }: any) {
+  const [email, setEmail] = useState(route?.params?.email ?? '');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Recovery flow — shown when user clicks the link in their email
-  const [isRecovery, setIsRecovery] = useState(false);
+  const passwordRecovery = useStore((s) => s.passwordRecovery);
+  const setPasswordRecovery = useStore((s) => s.setPasswordRecovery);
+  const [isRecovery, setIsRecovery] = useState(passwordRecovery);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordUpdated, setPasswordUpdated] = useState(false);
@@ -46,7 +48,7 @@ export default function ResetPasswordScreen({ navigation }: any) {
     if (!trimmed) return;
     setLoading(true);
     setError('');
-    const { error: err } = await supabase.auth.resetPasswordForEmail(trimmed);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(trimmed.toLowerCase(), { redirectTo: authRedirectUrl() });
     setLoading(false);
     if (err) {
       setError(err.message);
@@ -72,7 +74,11 @@ export default function ResetPasswordScreen({ navigation }: any) {
       setError(err.message);
     } else {
       setPasswordUpdated(true);
-      setTimeout(() => navigation.navigate('SignIn'), 2500);
+      // Sign out of the recovery session so they sign in fresh with the new password
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        setPasswordRecovery(false);
+      }, 2500);
     }
   }
 

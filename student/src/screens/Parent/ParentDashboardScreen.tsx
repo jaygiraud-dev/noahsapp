@@ -1,549 +1,288 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-  ImageBackground,
+  View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useParentStore } from '../../store/useParentStore';
-import FloatingParticles from '../../components/FloatingParticles';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { supabase } from '../../lib/supabase';
-import { lookupStudentByCode, createParentLink, fetchLinkedStudents, fetchStudentData, sendNudge, deleteParentLink, WeekStats } from '../../lib/db';
-import { Homework, CalEvent } from '../../types';
+import { linkStudentByCode } from '../../lib/db';
+import { useParentData, Kid } from '../../lib/parentData';
+import { isSameDay, startOfDay, effectiveStreak, fmt12, parseTime } from '../../lib/time';
+import { classesOnDate } from '../../lib/timetable';
+import { getClosedReason } from '../../data/schoolCalendars';
+import { eventIcon } from '../../data/constants';
+import Avatar from '../../components/Avatar';
+import NudgeSheet from './NudgeSheet';
 
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
+type Theme = ReturnType<typeof makeTheme>;
 
-function dayLabel(dateStr: string, today: Date): string {
-  const d = new Date(dateStr);
-  if (isSameDay(d, today)) return 'Today';
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-  if (isSameDay(d, tomorrow)) return 'Tomorrow';
-  return d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
-}
-
-function formatDueDate(dateStr: string, today: Date): string {
-  const d = new Date(dateStr);
-  const diff = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  if (diff <= 0) return 'today';
-  if (diff === 1) return 'tomorrow';
-  return `in ${diff} days`;
-}
-
-interface StudentSnapshot {
-  studentUserId: string;
-  name: string;
-  school: string;
-  homework: Homework[];
-  events: CalEvent[];
-  weekStats: WeekStats;
-}
-
-function PairKidCard({
-  theme,
-  cardSurface,
-  hasLinked,
-  parentUserId,
-  onLinked,
-}: {
-  theme: ReturnType<typeof makeTheme>;
-  cardSurface: string;
-  hasLinked: boolean;
-  parentUserId: string;
-  onLinked: () => void;
-}) {
-  const addLinkedKid = useParentStore((s) => s.addLinkedKid);
+function LinkKidCard({ theme, hasKids, isDemo, onLinked }: { theme: Theme; hasKids: boolean; isDemo: boolean; onLinked: () => void }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [ok, setOk] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handlePair() {
+  async function handleLink() {
     const trimmed = code.trim().toUpperCase();
-    if (!trimmed) return;
-    if (!parentUserId) {
-      setError('You must be signed in to link a student.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-
-    const student = await lookupStudentByCode(trimmed);
+    if (trimmed.length < 6) { setError('Codes are 6 letters and numbers.'); return; }
+    if (isDemo) { setError('This is the parent demo. Create a parent account to link your kid.'); return; }
+    setLoading(true); setError(''); setOk('');
+    const res = await linkStudentByCode(trimmed);
     setLoading(false);
-    if (!student) {
-      setError('Code not found. Ask your child to check their pairing code in Me → Pair with Parent.');
+    if (!res.ok) {
+      setError(
+        res.reason === 'code_not_found' ? 'No student has that code. Ask your kid to open Me in their app and read it to you.'
+        : res.reason === 'not_a_parent' ? 'This account is a student account. Sign up for a separate parent account to link a kid.'
+        : res.reason === 'not_signed_in' ? 'Sign in again, then try the code.'
+        : 'Couldn’t reach the server. Check your connection and try again.'
+      );
       return;
     }
-    const displayName = student.display_name ?? 'Student';
-    await createParentLink(parentUserId, student.id, trimmed, displayName);
-    addLinkedKid({
-      id: student.id,
-      studentUserId: student.id,
-      name: displayName,
-      pairingCode: trimmed,
-      school: student.school_name ?? '',
-      grade: '',
-      points: 0,
-      streak: 0,
-      homeworkDue: 0,
-      homeworkDone: 0,
-      eventsToday: 0,
-      lastActive: 'just now',
-    });
     setCode('');
+    setOk(`✓ Linked to ${res.name ?? 'your kid'}`);
     onLinked();
   }
 
   return (
-    <View style={[styles.pairCard, { backgroundColor: cardSurface, borderColor: theme.line }]}>
-      <Text style={[styles.pairTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
-        {hasLinked ? 'Link another student' : 'Link a student'}
+    <View style={[styles.linkCard, { backgroundColor: theme.surface }]}>
+      <Text style={[styles.linkTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{hasKids ? 'Link another kid' : 'Link your kid'}</Text>
+      <Text style={[styles.linkHint, { fontFamily: theme.fBody, color: theme.sub }]}>
+        Your kid finds their 6-character code in their app under Me → Parents (or on the last setup step).
       </Text>
-      <Text style={[styles.pairHint, { fontFamily: theme.fBody, color: theme.sub }]}>
-        Ask your child for their 6-digit pairing code. They can find it in the app under Me → Pair with Parent.
-      </Text>
-      <View style={styles.pairRow}>
+      <View style={styles.linkRow}>
         <TextInput
-          style={[styles.pairInput, { backgroundColor: theme.surfaceHi, borderColor: error ? theme.red : theme.line, color: theme.ink, fontFamily: theme.fMono }]}
+          style={[styles.linkInput, { backgroundColor: theme.surfaceHi, borderColor: error ? theme.red : theme.line, color: theme.ink, fontFamily: theme.fMono }]}
           value={code}
-          onChangeText={(v) => { setCode(v.toUpperCase()); setError(''); }}
-          placeholder="e.g. 7K4M2D"
+          onChangeText={(v) => { setCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '')); setError(''); setOk(''); }}
+          placeholder="ABC234"
           placeholderTextColor={theme.soft}
           autoCapitalize="characters"
+          autoCorrect={false}
           maxLength={6}
+          onSubmitEditing={handleLink}
+          accessibilityLabel="Your kid's code"
         />
-        <TouchableOpacity
-          style={[styles.pairBtn, { backgroundColor: theme.accent }]}
-          onPress={handlePair}
-          disabled={loading}
-        >
-          {loading
-            ? <ActivityIndicator size="small" color="#fff" />
-            : <Text style={[styles.pairBtnText, { fontFamily: theme.fMono }]}>Link</Text>}
+        <TouchableOpacity style={[styles.linkBtn, { backgroundColor: theme.accent }]} onPress={handleLink} disabled={loading}>
+          {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.linkBtnText, { fontFamily: theme.fMono }]}>Link</Text>}
         </TouchableOpacity>
       </View>
-      {error !== '' && (
-        <Text style={[styles.pairError, { fontFamily: theme.fBody, color: theme.red }]}>{error}</Text>
+      {error !== '' && <Text style={[styles.linkMsg, { fontFamily: theme.fBody, color: theme.red }]}>{error}</Text>}
+      {ok !== '' && <Text style={[styles.linkMsg, { fontFamily: theme.fBody, color: theme.mint }]}>{ok}</Text>}
+    </View>
+  );
+}
+
+function KidCard({ kid, theme, onOpen, onNudge }: { kid: Kid; theme: Theme; onOpen: (view: 'day' | 'week') => void; onNudge: () => void }) {
+  const snap = kid.snap;
+  const p = snap?.profile;
+  const today = new Date();
+  const sod = startOfDay(today);
+  const tom = new Date(sod); tom.setDate(sod.getDate() + 1);
+  const hw = snap?.homework ?? [];
+  const overdue = hw.filter((h) => !h.done && h.dueDate && new Date(h.dueDate) < sod);
+  const dueToday = hw.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), today));
+  const dueTomorrow = hw.filter((h) => !h.done && h.dueDate && isSameDay(new Date(h.dueDate), tom));
+  const plansToday = (snap?.events ?? []).filter((e) => e.date && isSameDay(new Date(e.date), today))
+    .sort((a, b) => (parseTime(a.time) ?? 0) - (parseTime(b.time) ?? 0));
+  const closed = getClosedReason(today, p?.school_name ?? undefined);
+  const classesToday = closed ? [] : classesOnDate(today, p?.classes ?? [], p?.timetable, p?.school_name ?? undefined);
+  const nowMin = today.getHours() * 60 + today.getMinutes();
+  const inClass = classesToday.find((c) => nowMin >= parseTime(c.start)! && nowMin < parseTime(c.end)!);
+  const ws = snap?.weekStats;
+  const doneToday = dueToday.filter((h) => h.done).length;
+
+  return (
+    <View style={[styles.kidCard, { backgroundColor: theme.surface }]}>
+      <View style={styles.kidHeader}>
+        <Avatar uri={p?.avatar} name={kid.name} size={52} colors={theme.accentGrad} fontFamily={theme.fDisplayItalic} />
+        <View style={styles.kidInfo}>
+          <Text style={[styles.kidName, { fontFamily: theme.fBodySemiBold, color: theme.ink }]}>{kid.name}</Text>
+          <Text style={[styles.kidSchool, { fontFamily: theme.fMono, color: theme.soft }]} numberOfLines={1}>
+            {[p?.school_name, p?.grade ? `Grade ${p.grade}` : ''].filter(Boolean).join(' · ') || 'School not set yet'}
+          </Text>
+        </View>
+        {!snap && <ActivityIndicator size="small" color={theme.soft} />}
+      </View>
+
+      <View style={styles.statsRow}>
+        <View style={styles.statBox}>
+          <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.accent }]}>{(p?.points ?? 0).toLocaleString()}</Text>
+          <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>POINTS</Text>
+        </View>
+        <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
+        <View style={styles.statBox}>
+          <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.amber }]}>🔥{effectiveStreak(p?.streak, p?.last_activity_date)}</Text>
+          <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>STREAK</Text>
+        </View>
+        <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
+        <View style={styles.statBox}>
+          <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.mint }]}>{ws && ws.totalThisWeek > 0 ? `${ws.completedThisWeek}/${ws.totalThisWeek}` : '—'}</Text>
+          <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>DONE THIS WEEK</Text>
+        </View>
+      </View>
+
+      {/* Status lines */}
+      <View style={styles.statusList}>
+        {overdue.length > 0 && (
+          <TouchableOpacity style={[styles.statusRow, { backgroundColor: theme.red + '1a', borderColor: theme.red + '55' }]} onPress={() => onOpen('week')}>
+            <Text style={[styles.statusText, { fontFamily: theme.fBodyMedium, color: theme.red }]}>⚠ {overdue.length} overdue: {overdue.map((h) => h.title).join(', ')}</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={[styles.statusRow, { backgroundColor: theme.surfaceHi, borderColor: theme.line }]} onPress={() => onOpen('day')}>
+          <Text style={[styles.statusText, { fontFamily: theme.fBody, color: theme.ink }]}>
+            {dueToday.length === 0 ? '📚 Nothing due today' : `📚 Due today: ${doneToday} of ${dueToday.length} done`}
+          </Text>
+        </TouchableOpacity>
+        {dueTomorrow.length > 0 && (
+          <TouchableOpacity style={[styles.statusRow, { backgroundColor: theme.amber + '1a', borderColor: theme.amber + '55' }]} onPress={() => onOpen('day')}>
+            <Text style={[styles.statusText, { fontFamily: theme.fBody, color: theme.amber }]}>⏰ Due tomorrow: {dueTomorrow.map((h) => h.title).join(', ')}</Text>
+          </TouchableOpacity>
+        )}
+        {inClass && (
+          <View style={[styles.statusRow, { backgroundColor: inClass.cls.color + '1a', borderColor: inClass.cls.color + '55' }]}>
+            <Text style={[styles.statusText, { fontFamily: theme.fBody, color: theme.ink }]}>🏫 In {inClass.cls.name} until {fmt12(inClass.end)}</Text>
+          </View>
+        )}
+        {closed && (
+          <View style={[styles.statusRow, { backgroundColor: theme.surfaceHi, borderColor: theme.line }]}>
+            <Text style={[styles.statusText, { fontFamily: theme.fBody, color: theme.sub }]}>🏫 No school today · {closed}</Text>
+          </View>
+        )}
+        {plansToday.map((e) => (
+          <View key={e.id} style={[styles.statusRow, { backgroundColor: theme.surfaceHi, borderColor: theme.line }]}>
+            <Text style={[styles.statusText, { fontFamily: theme.fBody, color: theme.ink }]}>
+              {e.icon ?? eventIcon(e.type)} {e.title}{e.time ? ` · ${fmt12(e.time)}${e.endTime ? `–${fmt12(e.endTime)}` : ''}` : ''}{e.location ? ` · ${e.location}` : ''}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {ws && ws.upcomingTests.length > 0 && (
+        <View style={styles.tests}>
+          <Text style={[styles.testsLabel, { fontFamily: theme.fMono, color: theme.amber }]}>TESTS & PROJECTS COMING UP</Text>
+          {ws.upcomingTests.slice(0, 4).map((t, i) => (
+            <Text key={i} style={[styles.testText, { fontFamily: theme.fBody, color: theme.ink }]}>
+              <Text style={{ color: t.classColor ?? theme.amber }}>● </Text>
+              {t.title}{t.subject ? ` · ${t.subject}` : ''}{t.dueDate ? ` · ${new Date(t.dueDate).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })}` : ''}
+            </Text>
+          ))}
+        </View>
       )}
+
+      <View style={styles.actionsRow}>
+        <TouchableOpacity style={[styles.actionPrimary, { backgroundColor: theme.accent }]} onPress={() => onOpen('day')}>
+          <Text style={[styles.actionPrimaryText, { fontFamily: theme.fMono }]}>Homework & schedule →</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.actionSecondary, { borderColor: theme.accent }]} onPress={onNudge}>
+          <Text style={[styles.actionSecondaryText, { fontFamily: theme.fMono, color: theme.accent }]}>Nudge 👋</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 export default function ParentDashboardScreen({ navigation }: any) {
-  const linkedKids = useParentStore((s) => s.linkedKids);
-  const setLinkedKids = useParentStore((s) => s.setLinkedKids);
-  const addLinkedKid = useParentStore((s) => s.addLinkedKid);
-  const removeLinkedKid = useParentStore((s) => s.removeLinkedKid);
-  const addNotifications = useParentStore((s) => s.addNotifications);
-  const notifications = useParentStore((s) => s.notifications);
-  const setPhase = useStore((s) => s.setPhase);
+  const { kids, activity, load, reloadKid, loadActivity, loading, loaded, error, parentId } = useParentData();
+  const lastSeen = useParentStore((s) => s.lastSeenActivityAt);
+  const clearedBefore = useParentStore((s) => s.clearedBefore);
+  const displayName = useStore((s) => s.displayName);
+  const userId = useStore((s) => s.userId);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
-  const bgImageUri = useStore((s) => s.bgImageUri);
   const theme = makeTheme(vibe, darkMode);
-  const hasBg = bgImageUri !== '';
-  const cardSurface = hasBg ? 'rgba(20,20,20,0.78)' : theme.surface;
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const [parentUserId, setParentUserId] = useState('');
-  const [snapshots, setSnapshots] = useState<Record<string, StudentSnapshot>>({});
   const [refreshing, setRefreshing] = useState(false);
-  const [linkVersion, setLinkVersion] = useState(0);
-  const [nudgeSent, setNudgeSent] = useState<Record<string, boolean>>({});
-  const realtimeRef = useRef<any>(null);
+  const [nudgeKid, setNudgeKid] = useState<Kid | null>(null);
+  const isDemo = !userId;
 
+  useEffect(() => { load(); }, [userId]);
+  useEffect(() => navigation.addListener('focus', () => { if (loaded) load(); }), [navigation, loaded]);
+
+  // Live updates while the dashboard is open, plus a slow poll as a backup
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setParentUserId(data.user?.id ?? '');
-    });
-  }, []);
-
-  // Fetch linked students from Supabase and REPLACE local state — always, even if empty
-  useEffect(() => {
-    if (!parentUserId) return;
-    fetchLinkedStudents(parentUserId).then((links) => {
-      const freshKids = links.map((link) => ({
-        id: link.student_id,
-        studentUserId: link.student_id,
-        name: link.student_name ?? 'Student',
-        pairingCode: link.pairing_code,
-        school: '',
-        grade: '',
-        points: 0,
-        streak: 0,
-        homeworkDue: 0,
-        homeworkDone: 0,
-        eventsToday: 0,
-        lastActive: 'recently',
-      }));
-      // Always replace — wipes demo kids and stale accounts even if Supabase returns []
-      setLinkedKids(freshKids);
-    });
-  }, [parentUserId]);
-
-  const loadSnapshots = useCallback(async () => {
-    const realKids = linkedKids.filter((k) => k.studentUserId && k.studentUserId !== '');
-    if (realKids.length === 0) return;
-    const results = await Promise.all(
-      realKids.map(async (kid) => {
-        const data = await fetchStudentData(kid.studentUserId);
-        return { kid, data };
-      })
-    );
-    const next: Record<string, StudentSnapshot> = {};
-    const newNotifs: import('../../store/useParentStore').ParentNotif[] = [];
-    const now = new Date();
-
-    results.forEach(({ kid, data }) => {
-      const name = data.profile?.display_name ?? kid.name;
-      next[kid.studentUserId] = {
-        studentUserId: kid.studentUserId,
-        name,
-        school: data.profile?.school_name ?? kid.school,
-        homework: data.homework,
-        events: data.events,
-        weekStats: data.weekStats,
-      };
-
-      data.homework.forEach((hw) => {
-        if (hw.done) {
-          newNotifs.push({
-            id: `done-${hw.id}`,
-            kidId: kid.studentUserId,
-            type: 'hw_done',
-            text: `${name} finished ${hw.subject ? hw.subject + ' — ' : ''}${hw.title}`,
-            time: hw.dueDate ? new Date(hw.dueDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : 'recently',
-            read: false,
-          });
-        } else if (hw.dueDate) {
-          const due = new Date(hw.dueDate);
-          const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          if (diffDays <= 1 && diffDays >= -1) {
-            newNotifs.push({
-              id: `due-${hw.id}`,
-              kidId: kid.studentUserId,
-              type: 'hw_due',
-              text: `${hw.subject ? hw.subject + ': ' : ''}${hw.title} due ${diffDays <= 0 ? 'today' : 'tomorrow'}`,
-              time: diffDays <= 0 ? 'today' : 'tomorrow',
-              read: false,
-            });
-          }
-        }
-      });
-
-      data.events.forEach((ev) => {
-        if (!ev.date) return;
-        const evDate = new Date(ev.date);
-        const diffDays = Math.ceil((evDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays >= 0 && diffDays <= 2) {
-          newNotifs.push({
-            id: `event-${ev.id}`,
-            kidId: kid.studentUserId,
-            type: 'event',
-            text: `${name} has ${ev.title} ${diffDays === 0 ? 'today' : diffDays === 1 ? 'tomorrow' : 'in 2 days'}`,
-            time: diffDays === 0 ? 'today' : diffDays === 1 ? 'tomorrow' : 'in 2 days',
-            read: false,
-          });
-        }
-      });
-    });
-
-    setSnapshots(next);
-    if (newNotifs.length > 0) addNotifications(newNotifs);
-  }, [linkedKids, addNotifications]);
-
-  useEffect(() => {
-    loadSnapshots();
-  }, [linkVersion, linkedKids.length]);
-
-  // Real-time: re-load when student's homework changes
-  useEffect(() => {
-    const realKids = linkedKids.filter((k) => k.studentUserId && k.studentUserId !== '');
-    if (realKids.length === 0) return;
-
-    realtimeRef.current?.unsubscribe();
+    if (!parentId || kids.length === 0) return;
+    const ids = new Set(kids.map((k) => k.id));
+    const onChange = (payload: any) => {
+      const row = payload.new ?? payload.old ?? {};
+      const kidId = row.user_id ?? row.student_id;
+      if (kidId && ids.has(kidId)) { reloadKid(kidId); loadActivity(); }
+    };
     const channel = supabase
-      .channel('parent-hw-watch')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'homework' }, () => {
-        loadSnapshots();
-      })
+      .channel(`parent:${parentId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'homework' }, onChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, onChange)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity' }, onChange)
       .subscribe();
-    realtimeRef.current = channel;
+    const poll = setInterval(() => { kids.forEach((k) => reloadKid(k.id)); loadActivity(); }, 60000);
+    return () => { supabase.removeChannel(channel); clearInterval(poll); };
+  }, [parentId, kids.length]);
 
-    return () => { channel.unsubscribe(); };
-  }, [linkedKids.length]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); await load(); setRefreshing(false); }, []);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadSnapshots();
-    setRefreshing(false);
-  }, [loadSnapshots]);
-
-  const today = new Date();
-
-  function renderKidCard(kid: typeof linkedKids[0]) {
-    const isReal = !!kid.studentUserId && kid.studentUserId !== '';
-    const snap = isReal ? snapshots[kid.studentUserId] : null;
-    const hw = snap?.homework ?? [];
-    const evs = snap?.events ?? [];
-    const school = snap?.school ?? kid.school;
-    const name = snap?.name ?? kid.name;
-    const weekStats = snap?.weekStats;
-
-    // Upcoming homework: from the start of today through the next 7 days, sorted by due date
-    const startOfToday = new Date(today); startOfToday.setHours(0, 0, 0, 0);
-    const sevenDaysOut = new Date(startOfToday); sevenDaysOut.setDate(startOfToday.getDate() + 8);
-    const upcomingHw = hw
-      .filter((h) => h.dueDate && new Date(h.dueDate) >= startOfToday && new Date(h.dueDate) < sevenDaysOut)
-      .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
-
-    // Group by day label
-    const hwByDay: Record<string, Homework[]> = {};
-    upcomingHw.forEach((h) => {
-      const label = dayLabel(h.dueDate!, today);
-      if (!hwByDay[label]) hwByDay[label] = [];
-      hwByDay[label].push(h);
-    });
-    const dayOrder = Object.keys(hwByDay);
-
-    const eventsToday = evs.filter((e) => e.date && isSameDay(new Date(e.date), today));
-    const totalPoints = isReal ? hw.filter((h) => h.done).reduce((s, h) => s + (h.points ?? 10), 0) : kid.points;
-    const completionPct = weekStats && weekStats.totalThisWeek > 0
-      ? Math.round((weekStats.completedThisWeek / weekStats.totalThisWeek) * 100)
-      : null;
-
-    return (
-      <View key={kid.id} style={[styles.kidCard, { backgroundColor: cardSurface, borderColor: theme.line }]}>
-        {/* Header */}
-        <View style={styles.kidHeader}>
-          <LinearGradient colors={theme.accentGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.kidAvatar}>
-            <Text style={[styles.kidInitial, { fontFamily: theme.fDisplayItalic }]}>{name[0]}</Text>
-          </LinearGradient>
-          <View style={styles.kidInfo}>
-            <Text style={[styles.kidName, { fontFamily: theme.fBodySemiBold, color: theme.ink }]}>{name}</Text>
-            <Text style={[styles.kidSchool, { fontFamily: theme.fMono, color: theme.soft }]}>
-              {school || 'School not set'}
-            </Text>
-          </View>
-          {isReal && snap === undefined && <ActivityIndicator size="small" color={theme.soft} />}
-          <TouchableOpacity
-            onPress={() => {
-              removeLinkedKid(kid.id);
-              if (parentUserId && kid.studentUserId) deleteParentLink(parentUserId, kid.studentUserId).catch(() => {});
-            }}
-            style={styles.unlinkBtn}
-          >
-            <Text style={[styles.unlinkText, { color: theme.soft }]}>×</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.accent }]}>{totalPoints.toLocaleString()}</Text>
-            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>total pts</Text>
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
-          <View style={styles.statBox}>
-            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: theme.mint }]}>
-              {completionPct !== null ? `${completionPct}%` : '—'}
-            </Text>
-            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>this week</Text>
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: theme.line }]} />
-          <View style={styles.statBox}>
-            <Text style={[styles.statNum, { fontFamily: theme.fMono, color: eventsToday.length > 0 ? theme.purple : theme.soft }]}>
-              {eventsToday.length}
-            </Text>
-            <Text style={[styles.statLabel, { fontFamily: theme.fMono, color: theme.soft }]}>events today</Text>
-          </View>
-        </View>
-
-        {/* Weekly Report Card */}
-        {weekStats && (weekStats.totalThisWeek > 0 || weekStats.upcomingTests.length > 0) && (
-          <View style={[styles.reportCard, { backgroundColor: theme.surfaceHi, borderColor: theme.line }]}>
-            <Text style={[styles.reportTitle, { fontFamily: theme.fMono, color: theme.sub }]}>📋 WEEKLY SNAPSHOT</Text>
-            <View style={styles.reportRow}>
-              <View style={[styles.reportProgressTrack, { backgroundColor: theme.line }]}>
-                <LinearGradient
-                  colors={theme.accentGrad}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.reportProgressFill, { width: `${completionPct ?? 0}%` as any }]}
-                />
-              </View>
-              <Text style={[styles.reportStat, { fontFamily: theme.fMono, color: theme.ink }]}>
-                {weekStats.completedThisWeek}/{weekStats.totalThisWeek} done · {weekStats.pointsThisWeek} pts earned
-              </Text>
-            </View>
-            {weekStats.upcomingTests.length > 0 && (
-              <View style={styles.testsWrap}>
-                <Text style={[styles.testsLabel, { fontFamily: theme.fMono, color: theme.amber }]}>⚠️ COMING UP</Text>
-                {weekStats.upcomingTests.map((t, i) => (
-                  <View key={i} style={styles.testItem}>
-                    <View style={[styles.testDot, { backgroundColor: t.classColor ?? theme.amber }]} />
-                    <Text style={[styles.testText, { fontFamily: theme.fBody, color: theme.ink }]}>
-                      {t.title}
-                      {t.dueDate ? ` · ${formatDueDate(t.dueDate, today)}` : ''}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Upcoming Homework — next 7 days */}
-        <View style={styles.hwSection}>
-          <View style={styles.hwLabelRow}>
-            <Text style={[styles.hwLabel, { fontFamily: theme.fMono, color: theme.sub }]}>UPCOMING HOMEWORK</Text>
-            <Text style={[styles.hwCount, { fontFamily: theme.fMono, color: theme.soft }]}>next 7 days</Text>
-          </View>
-
-          {dayOrder.length === 0 ? (
-            <Text style={[styles.noHw, { fontFamily: theme.fMono, color: theme.soft }]}>
-              {isReal && snap === undefined ? 'Loading...' : 'Nothing due in the next 7 days 🎉'}
-            </Text>
-          ) : (
-            dayOrder.map((label) => (
-              <View key={label} style={styles.dayGroup}>
-                <Text style={[styles.dayGroupLabel, { fontFamily: theme.fMono, color: theme.accent }]}>{label}</Text>
-                {hwByDay[label].map((h) => (
-                  <View key={h.id} style={[styles.hwItem, { borderLeftColor: h.classColor ?? theme.accent }]}>
-                    <View style={styles.hwItemTop}>
-                      <Text style={[styles.hwItemTitle, { fontFamily: theme.fBody, color: h.done ? theme.soft : theme.ink, textDecorationLine: h.done ? 'line-through' : 'none' }]}>
-                        {h.title}
-                      </Text>
-                      <Text style={[styles.hwItemStatus, { fontFamily: theme.fMono, color: h.done ? theme.mint : theme.soft }]}>
-                        {h.done ? '✓' : '○'}
-                      </Text>
-                    </View>
-                    <View style={styles.hwItemMeta}>
-                      {h.subject && <Text style={[styles.hwItemSub, { fontFamily: theme.fMono, color: h.classColor ?? theme.accent }]}>{h.subject}</Text>}
-                      {h.tag && <Text style={[styles.hwItemTag, { fontFamily: theme.fMono, color: theme.soft }]}>· {h.tag}</Text>}
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ))
-          )}
-        </View>
-
-        {/* Today's Events */}
-        {eventsToday.length > 0 && (
-          <View style={styles.hwSection}>
-            <Text style={[styles.hwLabel, { fontFamily: theme.fMono, color: theme.sub }]}>TODAY'S EVENTS</Text>
-            {eventsToday.map((ev) => (
-              <View key={ev.id} style={[styles.evItem, { borderLeftColor: theme.purple }]}>
-                <Text style={[styles.evTime, { fontFamily: theme.fMono, color: theme.purple }]}>{ev.time}</Text>
-                <Text style={[styles.evTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.title}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Actions */}
-        {isReal && (
-          <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={[styles.nudgeBtn, { borderColor: theme.accent }]}
-              onPress={() => {
-                if (nudgeSent[kid.studentUserId]) return;
-                sendNudge(parentUserId, kid.studentUserId, "How's the homework going? 👋");
-                setNudgeSent((prev) => ({ ...prev, [kid.studentUserId]: true }));
-                setTimeout(() => setNudgeSent((prev) => ({ ...prev, [kid.studentUserId]: false })), 2000);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.nudgeBtnText, { fontFamily: theme.fMono, color: nudgeSent[kid.studentUserId] ? theme.mint : theme.accent }]}>
-                {nudgeSent[kid.studentUserId] ? '✓ Nudge sent!' : 'Nudge 👋'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.activityBtn, { borderColor: theme.line }]} onPress={() => navigation.navigate('ParentActivity')}>
-              <Text style={[styles.activityBtnText, { fontFamily: theme.fMono, color: theme.soft }]}>Activity →</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    );
-  }
+  const unread = activity.filter((a) => a.createdAt > (lastSeen || '') && a.createdAt > (clearedBefore || '')).length;
+  const firstName = displayName && displayName !== 'Student' ? displayName.split(' ')[0] : '';
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
-      {/* Ambient glow — only when no photo bg */}
-      {!hasBg && (
-        <LinearGradient
-          colors={[theme.accent + '38', 'transparent']}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 0.65 }}
-          style={StyleSheet.absoluteFillObject}
-          pointerEvents="none"
-        />
-      )}
-      {/* Floating particles */}
-      <FloatingParticles color={theme.accent} />
-      {hasBg && (
-        <ImageBackground
-          source={{ uri: bgImageUri }}
-          style={StyleSheet.absoluteFillObject}
-          resizeMode="cover"
-        >
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.62)' }]} />
-        </ImageBackground>
-      )}
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+      <LinearGradient colors={[theme.accent + '30', 'transparent']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.5 }} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
       <View style={styles.topBar}>
-        <Text style={[styles.headline, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Dashboard.</Text>
+        <View>
+          <Text style={[styles.eyebrow, { fontFamily: theme.fMono, color: theme.accent }]}>PARENT</Text>
+          <Text style={[styles.headline, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{isDemo ? 'Demo dashboard.' : firstName ? `Hi ${firstName}.` : 'Dashboard.'}</Text>
+        </View>
         <View style={styles.topRight}>
-          {linkedKids.length > 0 && (
-            <TouchableOpacity
-              style={[styles.notifBtn, { backgroundColor: theme.surface, borderColor: theme.line }]}
-              onPress={() => navigation.navigate('ParentActivity')}
-            >
-              <Text style={[styles.notifIcon, { color: unreadCount > 0 ? theme.magenta : theme.soft }]}>🔔</Text>
-              {unreadCount > 0 && (
-                <View style={[styles.notifBadge, { backgroundColor: theme.magenta }]}>
-                  <Text style={[styles.notifBadgeText, { fontFamily: theme.fMono }]}>{unreadCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); setPhase('auth'); }}>
-            <Text style={[styles.signOut, { fontFamily: theme.fMono, color: theme.soft }]}>sign out</Text>
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: theme.surface }]} onPress={() => navigation.navigate('ParentActivity')} accessibilityLabel={`Activity${unread ? `, ${unread} new` : ''}`}>
+            <Ionicons name="notifications-outline" size={20} color={unread > 0 ? theme.accent : theme.sub} />
+            {unread > 0 && (
+              <View style={[styles.badge, { backgroundColor: theme.accent }]}><Text style={[styles.badgeText, { fontFamily: theme.fMono }]}>{unread > 99 ? '99+' : unread}</Text></View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: theme.surface }]} onPress={() => navigation.navigate('ParentSettings')} accessibilityLabel="Settings">
+            <Ionicons name="settings-outline" size={20} color={theme.sub} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
-      >
-        {linkedKids.length === 0 && (
+      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}>
+        {isDemo && (
+          <Text style={[styles.demoNote, { fontFamily: theme.fBody, color: theme.sub }]}>
+            This demo shows the sample student’s homework. Create a parent account to see your kid’s.
+          </Text>
+        )}
+        {loading && !loaded && <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />}
+        {error !== '' && <Text style={[styles.err, { fontFamily: theme.fBody, color: theme.red }]}>{error}</Text>}
+        {loaded && kids.length === 0 && (
           <View style={styles.emptyWrap}>
-            <Text style={[styles.emptyIcon]}>👨‍👩‍👧</Text>
-            <Text style={[styles.emptyTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Link your first student</Text>
-            <Text style={[styles.emptySub, { fontFamily: theme.fBody, color: theme.soft }]}>
-              Enter your child's pairing code below to see their homework, events, and weekly progress.
+            <Text style={styles.emptyIcon}>👨‍👩‍👧</Text>
+            <Text style={[styles.emptyTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>One step left.</Text>
+            <Text style={[styles.emptySub, { fontFamily: theme.fBody, color: theme.sub }]}>
+              Enter your kid’s code below to see their homework, due dates and plans. You won’t see their friends or messages.
             </Text>
           </View>
         )}
-        {linkedKids.map(renderKidCard)}
-        <PairKidCard
-          theme={theme}
-          cardSurface={cardSurface}
-          hasLinked={linkedKids.length > 0}
-          parentUserId={parentUserId}
-          onLinked={() => setLinkVersion((v) => v + 1)}
-        />
+        {kids.map((k) => (
+          <KidCard
+            key={k.id}
+            kid={k}
+            theme={theme}
+            onOpen={(view) => navigation.navigate('ParentKid', { kidId: k.id, view })}
+            onNudge={() => setNudgeKid(k)}
+          />
+        ))}
+        <LinkKidCard theme={theme} hasKids={kids.length > 0} isDemo={isDemo} onLinked={load} />
       </ScrollView>
+
+      <NudgeSheet
+        visible={!!nudgeKid}
+        onClose={() => setNudgeKid(null)}
+        parentId={parentId}
+        kidId={nudgeKid?.id ?? ''}
+        kidName={nudgeKid?.name ?? ''}
+        kidPushToken={nudgeKid?.snap?.profile?.push_token}
+      />
     </SafeAreaView>
   );
 }
@@ -551,71 +290,46 @@ export default function ParentDashboardScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   topBar: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  headline: { fontSize: 32, lineHeight: 38 },
-  topRight: { alignItems: 'flex-end', gap: 8 },
-  notifBtn: { width: 44, height: 44, borderRadius: 34, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  notifIcon: { fontSize: 20 },
-  notifBadge: { position: 'absolute', top: -2, right: -2, width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
-  notifBadgeText: { color: '#fff', fontSize: 10 },
-  signOut: { fontSize: 11, letterSpacing: 1 },
-  content: { padding: 16, gap: 16 },
-  emptyWrap: { alignItems: 'center', paddingVertical: 32, gap: 10 },
+  eyebrow: { fontSize: 10, letterSpacing: 2 },
+  headline: { fontSize: 34, lineHeight: 40 },
+  topRight: { flexDirection: 'row', gap: 8 },
+  iconBtn: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  badge: { position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4 },
+  badgeText: { color: '#fff', fontSize: 10 },
+  content: { padding: 16, gap: 16, paddingBottom: 48 },
+  demoNote: { fontSize: 13, lineHeight: 19, paddingHorizontal: 4 },
+  err: { fontSize: 14, textAlign: 'center' },
+  emptyWrap: { alignItems: 'center', paddingVertical: 24, gap: 10 },
   emptyIcon: { fontSize: 48 },
-  emptyTitle: { fontSize: 22 },
-  emptySub: { fontSize: 14, textAlign: 'center', lineHeight: 20, paddingHorizontal: 24 },
-  kidCard: { borderRadius: 32, borderWidth: 0, padding: 16, gap: 16 },
+  emptyTitle: { fontSize: 26 },
+  emptySub: { fontSize: 15, textAlign: 'center', lineHeight: 22, paddingHorizontal: 16, maxWidth: 440 },
+  kidCard: { borderRadius: 28, padding: 16, gap: 14 },
   kidHeader: { flexDirection: 'row', gap: 14, alignItems: 'center' },
-  kidAvatar: { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' },
-  kidInitial: { fontSize: 28, color: '#fff' },
   kidInfo: { flex: 1, gap: 2 },
-  unlinkBtn: { padding: 6 },
-  unlinkText: { fontSize: 26, lineHeight: 28 },
-  kidName: { fontSize: 18 },
-  kidSchool: { fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' },
+  kidName: { fontSize: 19 },
+  kidSchool: { fontSize: 11, letterSpacing: 0.3 },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
   statBox: { flex: 1, alignItems: 'center', gap: 2 },
-  statNum: { fontSize: 20, letterSpacing: 0.5 },
-  statLabel: { fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' },
-  statDivider: { width: 1, height: 32 },
-  reportCard: { borderRadius: 20, borderWidth: 0, padding: 14, gap: 10 },
-  reportTitle: { fontSize: 10, letterSpacing: 1 },
-  reportRow: { gap: 6 },
-  reportProgressTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  reportProgressFill: { height: 6, borderRadius: 3 },
-  reportStat: { fontSize: 13, letterSpacing: 0.3 },
-  testsWrap: { gap: 6, paddingTop: 4 },
+  statNum: { fontSize: 19, fontVariant: ['tabular-nums'] },
+  statLabel: { fontSize: 9, letterSpacing: 1 },
+  statDivider: { width: 1, height: 30 },
+  statusList: { gap: 6 },
+  statusRow: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9 },
+  statusText: { fontSize: 14, lineHeight: 19 },
+  tests: { gap: 4 },
   testsLabel: { fontSize: 10, letterSpacing: 1 },
-  testItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  testDot: { width: 8, height: 8, borderRadius: 4 },
-  testText: { fontSize: 13, flex: 1, lineHeight: 18 },
-  hwSection: { gap: 8 },
-  hwLabelRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  hwLabel: { fontSize: 10, letterSpacing: 1 },
-  hwCount: { fontSize: 10, letterSpacing: 0.5 },
-  dayGroup: { gap: 6, marginBottom: 4 },
-  dayGroupLabel: { fontSize: 11, letterSpacing: 0.5, fontWeight: '600', marginTop: 4 },
-  hwItem: { borderLeftWidth: 3, paddingLeft: 10, paddingVertical: 6, gap: 3 },
-  hwItemTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
-  hwItemTitle: { fontSize: 14, lineHeight: 18, flex: 1 },
-  hwItemStatus: { fontSize: 14, lineHeight: 18 },
-  hwItemMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  hwItemSub: { fontSize: 10, letterSpacing: 0.3 },
-  hwItemTag: { fontSize: 10 },
-  noHw: { fontSize: 12, letterSpacing: 0.5, textAlign: 'center', paddingVertical: 12 },
-  evItem: { borderLeftWidth: 3, paddingLeft: 10, paddingVertical: 6, flexDirection: 'row', gap: 10, alignItems: 'center' },
-  evTime: { fontSize: 12, letterSpacing: 0.3, minWidth: 56 },
-  evTitle: { fontSize: 14, flex: 1 },
+  testText: { fontSize: 14, lineHeight: 20 },
   actionsRow: { flexDirection: 'row', gap: 10 },
-  nudgeBtn: { flex: 1, borderRadius: 28, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
-  nudgeBtnText: { fontSize: 13, letterSpacing: 0.5 },
-  activityBtn: { flex: 1, borderRadius: 28, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
-  activityBtnText: { fontSize: 13, letterSpacing: 0.5 },
-  pairCard: { borderRadius: 32, borderWidth: 0, padding: 20, gap: 12 },
-  pairTitle: { fontSize: 22 },
-  pairHint: { fontSize: 14, lineHeight: 20 },
-  pairRow: { flexDirection: 'row', gap: 10 },
-  pairInput: { flex: 1, borderRadius: 32, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12, fontSize: 18, letterSpacing: 4, textAlign: 'center' },
-  pairBtn: { borderRadius: 32, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center', minWidth: 64 },
-  pairBtnText: { color: '#fff', fontSize: 14, letterSpacing: 0.5 },
-  pairError: { fontSize: 13, lineHeight: 18 },
+  actionPrimary: { flex: 1.6, borderRadius: 24, paddingVertical: 12, alignItems: 'center' },
+  actionPrimaryText: { color: '#fff', fontSize: 13, letterSpacing: 0.3 },
+  actionSecondary: { flex: 1, borderRadius: 24, borderWidth: 1, paddingVertical: 12, alignItems: 'center' },
+  actionSecondaryText: { fontSize: 13, letterSpacing: 0.3 },
+  linkCard: { borderRadius: 28, padding: 20, gap: 12 },
+  linkTitle: { fontSize: 22 },
+  linkHint: { fontSize: 14, lineHeight: 20 },
+  linkRow: { flexDirection: 'row', gap: 10 },
+  linkInput: { flex: 1, minWidth: 0, borderRadius: 24, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12, fontSize: 18, letterSpacing: 4, textAlign: 'center' },
+  linkBtn: { borderRadius: 24, paddingHorizontal: 22, justifyContent: 'center', alignItems: 'center' },
+  linkBtnText: { color: '#fff', fontSize: 14 },
+  linkMsg: { fontSize: 13, lineHeight: 18 },
 });

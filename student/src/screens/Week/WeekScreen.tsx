@@ -1,95 +1,48 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  ImageBackground,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
 import FloatingParticles from '../../components/FloatingParticles';
 import { makeTheme } from '../../theme';
-import { getClosedReason, SCHOOL_CLOSED } from '../../data/schoolClosed';
-import { Class, CalEvent } from '../../types';
+import { getClosedReason, closedDaysInMonth, getDaySchedule, hasSchoolCalendar } from '../../data/schoolCalendars';
+import { Class, CalEvent, Homework } from '../../types';
+import { parseTime, fmt12, isSameDay, dateKey, startOfDay } from '../../lib/time';
+import { eventIcon } from '../../data/constants';
+import { classesOnDate } from '../../lib/timetable';
 import AddEventSheet from '../sheets/AddEventSheet';
+import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
+import EventDetailSheet from '../sheets/EventDetailSheet';
+import HomeworkDetailSheet from '../sheets/HomeworkDetailSheet';
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_ABBR_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const START_HOUR = 8;
-const END_HOUR = 18;
+const END_HOUR = 21;
 const ROW_H = 64;
-const GUTTER = 48;
+const GUTTER = 52;
+const yFor = (min: number) => ((min - START_HOUR * 60) / 60) * ROW_H;
 
 function getWeekDays(anchor: Date): Date[] {
   const monday = new Date(anchor);
   const day = monday.getDay();
   monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
+  return Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d; });
 }
 
 function getMonthDays(year: number, month: number): (Date | null)[] {
   const first = new Date(year, month, 1);
   const last = new Date(year, month + 1, 0);
-  const startPad = first.getDay(); // 0=Sun
-  const cells: (Date | null)[] = Array(startPad).fill(null);
+  const cells: (Date | null)[] = Array(first.getDay()).fill(null);
   for (let d = 1; d <= last.getDate(); d++) cells.push(new Date(year, month, d));
   while (cells.length % 7 !== 0) cells.push(null);
   return cells;
 }
 
-function dateKey(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-const CLOSED_MAP = new Map<string, string>(SCHOOL_CLOSED.map((d) => [d.date, d.label]));
-
-function closedDotColor(label: string): string {
-  if (label.includes('Break')) return '#06d6e0';
-  if (label.includes('Pro-D') || label.includes('Curriculum')) return '#f59e0b';
+function closedColor(label: string): string {
+  if (/break/i.test(label)) return '#06d6e0';
+  if (/pro-d|turnaround|curriculum/i.test(label)) return '#f59e0b';
   return '#f87171';
-}
-
-function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function timeToMinutes(t: string) {
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function parseTimeToMinutes(t: string): number | null {
-  const match = t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-  if (!match) return null;
-  let h = parseInt(match[1]);
-  const m = match[2] ? parseInt(match[2]) : 0;
-  const ampm = match[3]?.toLowerCase();
-  if (ampm === 'pm' && h !== 12) h += 12;
-  if (ampm === 'am' && h === 12) h = 0;
-  return h * 60 + m;
-}
-
-// Accepts "08:45", "15:30", "3:30 pm", "4 PM" — anything parseTimeToMinutes understands
-function fmt12h(t: string) {
-  const total = parseTimeToMinutes(t);
-  if (total === null) return t;
-  const h = Math.floor(total / 60) % 24;
-  const m = total % 60;
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
 export default function WeekScreen() {
@@ -100,484 +53,402 @@ export default function WeekScreen() {
   const [monthAnchor, setMonthAnchor] = useState({ year: today.getFullYear(), month: today.getMonth() });
   const [addEventDate, setAddEventDate] = useState<Date | null>(null);
   const [addEventTime, setAddEventTime] = useState('');
+  const [evEdit, setEvEdit] = useState<CalEvent | null>(null);
+  const [hwEdit, setHwEdit] = useState<Homework | null>(null);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
+  const [evDetailId, setEvDetailId] = useState<string | null>(null);
+  const [hwDetailId, setHwDetailId] = useState<string | null>(null);
 
   const homework = useStore((s) => s.homework);
   const classes = useStore((s) => s.classes);
+  const timetable = useStore((s) => s.timetable);
   const events = useStore((s) => s.events);
+  const school = useStore((s) => s.school);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const bgImageUri = useStore((s) => s.bgImageUri);
   const theme = makeTheme(vibe, darkMode);
   const hasBg = bgImageUri !== '';
-  const cardSurface = hasBg ? 'rgba(20,20,20,0.78)' : theme.surface;
+  const cardSurface = hasBg ? 'rgba(20,20,20,0.82)' : theme.surface;
 
   const weekDays = getWeekDays(anchor);
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR);
-
-  const isWeekend = selectedDay.getDay() === 0 || selectedDay.getDay() === 6;
-  const closedReason = !isWeekend ? getClosedReason(selectedDay) : null;
-  const canAdd = !isWeekend && !closedReason;
-
-  const dayClasses = isWeekend || closedReason ? [] : classes.filter((c) => c.start && c.end);
-  const dayEvents = events.filter((ev) => ev.date && isSameDay(new Date(ev.date), selectedDay));
-  const dayHomework = homework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), selectedDay) && !h.done);
-
-  // Weekend panels: overdue + upcoming next 7 days
-  const startOfSelectedDay = new Date(selectedDay); startOfSelectedDay.setHours(0, 0, 0, 0);
-  const overdueHw = isWeekend
-    ? homework.filter((h) => {
-        if (h.done || !h.dueDate) return false;
-        const d = new Date(h.dueDate); d.setHours(0, 0, 0, 0);
-        return d < startOfSelectedDay;
-      })
-    : [];
-  const sevenDaysOut = new Date(selectedDay); sevenDaysOut.setDate(selectedDay.getDate() + 7);
-  const upcomingHw = isWeekend
-    ? homework.filter((h) => {
-        if (h.done || !h.dueDate) return false;
-        const d = new Date(h.dueDate); d.setHours(0, 0, 0, 0);
-        return d > startOfSelectedDay && d <= sevenDaysOut;
-      }).sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-    : [];
-
-  const monthLabel = viewMode === 'month'
-    ? new Date(monthAnchor.year, monthAnchor.month, 1).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })
-    : selectedDay.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
-
-  function prevWeek() {
-    const d = new Date(anchor); d.setDate(d.getDate() - 7); setAnchor(d);
-    const sel = new Date(selectedDay); sel.setDate(sel.getDate() - 7); setSelectedDay(sel);
-  }
-  function nextWeek() {
-    const d = new Date(anchor); d.setDate(d.getDate() + 7); setAnchor(d);
-    const sel = new Date(selectedDay); sel.setDate(sel.getDate() + 7); setSelectedDay(sel);
-  }
-  function prevMonth() {
-    setMonthAnchor((p) => {
-      const m = p.month === 0 ? 11 : p.month - 1;
-      const y = p.month === 0 ? p.year - 1 : p.year;
-      return { year: y, month: m };
-    });
-  }
-  function nextMonth() {
-    setMonthAnchor((p) => {
-      const m = p.month === 11 ? 0 : p.month + 1;
-      const y = p.month === 11 ? p.year + 1 : p.year;
-      return { year: y, month: m };
-    });
-  }
-
-  function selectDayFromMonth(day: Date) {
-    setSelectedDay(day);
-    setAnchor(day);
-    setViewMode('day');
-  }
-
-  const monthDays = getMonthDays(monthAnchor.year, monthAnchor.month);
   const gridH = hours.length * ROW_H;
 
-  // ─── Month view ──────────────────────────────────────────────────────────────
-  const MonthView = () => (
-    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-      {/* Weekday header */}
-      <View style={mStyles.weekRow}>
-        {DAY_ABBR_SHORT.map((d, i) => (
-          <View key={i} style={mStyles.weekCell}>
-            <Text style={[mStyles.weekLabel, { fontFamily: theme.fMono, color: theme.soft }]}>{d}</Text>
+  const isWeekend = selectedDay.getDay() === 0 || selectedDay.getDay() === 6;
+  const closedReason = !isWeekend ? getClosedReason(selectedDay, school.name) : null;
+  const schedule = getDaySchedule(selectedDay, school.name);
+
+  const dayClasses = isWeekend || closedReason ? [] : classesOnDate(selectedDay, classes, timetable, school.name);
+  const dayEvents = events.filter((ev) => ev.date && isSameDay(new Date(ev.date), selectedDay));
+  const dayHomework = homework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), selectedDay));
+
+  const sod = startOfDay(selectedDay);
+  const overdueHw = homework.filter((h) => !h.done && h.dueDate && new Date(h.dueDate) < sod);
+  const weekOut = new Date(sod); weekOut.setDate(sod.getDate() + 8);
+  const upcomingHw = homework
+    .filter((h) => !h.done && h.dueDate && new Date(h.dueDate) >= sod && new Date(h.dueDate) < weekOut)
+    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+
+  const monthLabel = (viewMode === 'month'
+    ? new Date(monthAnchor.year, monthAnchor.month, 1)
+    : selectedDay
+  ).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
+
+  function shiftWeek(n: number) {
+    const d = new Date(anchor); d.setDate(d.getDate() + 7 * n); setAnchor(d);
+    const sel = new Date(selectedDay); sel.setDate(sel.getDate() + 7 * n); setSelectedDay(sel);
+  }
+  function shiftMonth(n: number) {
+    setMonthAnchor((p) => { const d = new Date(p.year, p.month + n, 1); return { year: d.getFullYear(), month: d.getMonth() }; });
+  }
+
+  const nowMin = today.getHours() * 60 + today.getMinutes();
+  const showNow = isSameDay(selectedDay, today) && nowMin >= START_HOUR * 60 && nowMin < END_HOUR * 60;
+  const evDetail = events.find((e) => e.id === evDetailId) ?? null;
+  const hwDetail = homework.find((h) => h.id === hwDetailId) ?? null;
+
+  // ─── Month view ────────────────────────────────────────────────────────────
+  const renderMonth = () => {
+    const monthDays = getMonthDays(monthAnchor.year, monthAnchor.month);
+    const closed = closedDaysInMonth(monthAnchor.year, monthAnchor.month, school.name);
+    return (
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
+        <View style={mStyles.weekRow}>
+          {DAY_ABBR_SHORT.map((d, i) => (
+            <View key={i} style={mStyles.weekCell}><Text style={[mStyles.weekLabel, { fontFamily: theme.fMono, color: theme.soft }]}>{d}</Text></View>
+          ))}
+        </View>
+        <View style={mStyles.grid}>
+          {monthDays.map((day, i) => {
+            if (!day) return <View key={`empty-${i}`} style={mStyles.cell} />;
+            const key = dateKey(day);
+            const isToday = isSameDay(day, today);
+            const isSelected = isSameDay(day, selectedDay);
+            const isOff = day.getDay() === 0 || day.getDay() === 6;
+            const closedLabel = isOff ? undefined : closed.get(key);
+            const dotColor = closedLabel ? closedColor(closedLabel) : null;
+            const hasPersonal = events.some((ev) => ev.date && isSameDay(new Date(ev.date), day))
+              || homework.some((h) => h.dueDate && !h.done && isSameDay(new Date(h.dueDate), day));
+            return (
+              <TouchableOpacity
+                key={key}
+                style={[mStyles.cell, dotColor && { backgroundColor: dotColor + '18' }]}
+                onPress={() => { setSelectedDay(day); setAnchor(day); setViewMode('day'); }}
+                activeOpacity={0.7}
+                accessibilityLabel={`${day.toDateString()}${closedLabel ? `, ${closedLabel}` : ''}`}
+              >
+                <View style={[mStyles.dayCircle, isSelected && { backgroundColor: theme.accent }, isToday && !isSelected && { borderWidth: 1.5, borderColor: theme.accent }]}>
+                  <Text style={[mStyles.dayNum, {
+                    fontFamily: isToday || isSelected ? theme.fBodySemiBold : theme.fBody,
+                    color: isSelected ? '#fff' : isOff ? theme.soft : theme.ink, opacity: isOff ? 0.5 : 1,
+                  }]}>{day.getDate()}</Text>
+                </View>
+                <View style={mStyles.dotRow}>
+                  {dotColor && <View style={[mStyles.dot, { backgroundColor: dotColor }]} />}
+                  {hasPersonal && <View style={[mStyles.dot, { backgroundColor: theme.accent }]} />}
+                </View>
+                {closedLabel && <Text style={[mStyles.holidayLabel, { fontFamily: theme.fMono, color: dotColor! }]} numberOfLines={2}>{closedLabel}</Text>}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        <View style={[mStyles.legend, { borderTopColor: theme.line }]}>
+          {[
+            { color: '#f87171', label: 'Holiday' },
+            { color: '#f59e0b', label: 'Pro-D Day' },
+            { color: '#06d6e0', label: 'Break' },
+            { color: theme.accent, label: 'Homework or plans' },
+          ].map((item) => (
+            <View key={item.label} style={mStyles.legendItem}>
+              <View style={[mStyles.legendDot, { backgroundColor: item.color }]} />
+              <Text style={[mStyles.legendLabel, { fontFamily: theme.fMono, color: theme.soft }]}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={[mStyles.source, { fontFamily: theme.fMono, color: theme.soft }]}>
+          {hasSchoolCalendar(school.name) ? `${school.name} 2026–27 calendar` : 'BC statutory holidays. Your school’s Pro-D days aren’t loaded yet.'}
+        </Text>
+      </ScrollView>
+    );
+  };
+
+  // ─── Bell-schedule overlay for the day grid ────────────────────────────────
+  const renderBells = () => {
+    if (!schedule) return null;
+    const startMin = parseTime(schedule.dayStart)!;
+    const endMin = parseTime(schedule.dayEnd)!;
+    const items: React.ReactNode[] = [];
+    // Passing breaks between back-to-back class periods
+    const classPeriods = schedule.periods.filter((p) => p.kind === 'class' || p.kind === 'lunch');
+    for (let i = 0; i < classPeriods.length - 1; i++) {
+      const gapStart = parseTime(classPeriods[i].end)!;
+      const gapEnd = parseTime(classPeriods[i + 1].start)!;
+      if (gapEnd - gapStart >= 5) {
+        items.push(
+          <View key={`gap${i}`} pointerEvents="none" style={[styles.gapBand, { top: yFor(gapStart), height: Math.max(yFor(gapEnd) - yFor(gapStart), 4), backgroundColor: theme.ink + '10' }]}>
+            <Text style={[styles.gapLabel, { fontFamily: theme.fMono, color: theme.soft }]}>break {gapEnd - gapStart} min</Text>
           </View>
-        ))}
-      </View>
-
-      {/* Calendar grid */}
-      <View style={mStyles.grid}>
-        {monthDays.map((day, i) => {
-          if (!day) return <View key={`empty-${i}`} style={mStyles.cell} />;
-
-          const isToday = isSameDay(day, today);
-          const isSelected = isSameDay(day, selectedDay);
-          const isOff = day.getDay() === 0 || day.getDay() === 6;
-          const key = dateKey(day);
-          const closedLabel = CLOSED_MAP.get(key);
-          const dotColor = closedLabel ? closedDotColor(closedLabel) : null;
-
-          const dayEvents2 = events.filter((ev) => ev.date && isSameDay(new Date(ev.date), day));
-          const dayHw = homework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), day) && !h.done);
-          const hasPersonal = dayEvents2.length > 0 || dayHw.length > 0;
-
-          return (
-            <TouchableOpacity
-              key={key}
-              style={[
-                mStyles.cell,
-                closedLabel && !isOff && { backgroundColor: dotColor + '18' },
-              ]}
-              onPress={() => selectDayFromMonth(day)}
-              activeOpacity={0.7}
-            >
-              <View style={[
-                mStyles.dayCircle,
-                isSelected && { backgroundColor: theme.accent },
-                isToday && !isSelected && { borderWidth: 1.5, borderColor: theme.accent },
-              ]}>
-                <Text style={[
-                  mStyles.dayNum,
-                  {
-                    fontFamily: isToday || isSelected ? 'Inter_600SemiBold' : 'Inter_400Regular',
-                    color: isSelected ? '#fff' : isOff ? theme.soft : closedLabel ? theme.sub : theme.ink,
-                    opacity: isOff ? 0.4 : 1,
-                  },
-                ]}>
-                  {day.getDate()}
-                </Text>
-              </View>
-              {/* Dots row */}
-              <View style={mStyles.dotRow}>
-                {dotColor && <View style={[mStyles.dot, { backgroundColor: dotColor }]} />}
-                {hasPersonal && <View style={[mStyles.dot, { backgroundColor: theme.accent }]} />}
-              </View>
-              {/* Holiday label */}
-              {closedLabel && (
-                <Text style={[mStyles.holidayLabel, { fontFamily: theme.fMono, color: dotColor ?? theme.soft }]} numberOfLines={1}>
-                  {closedLabel}
-                </Text>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Legend */}
-      <View style={[mStyles.legend, { borderTopColor: theme.line }]}>
-        {[
-          { color: '#f87171', label: 'Holiday' },
-          { color: '#f59e0b', label: 'Pro-D Day' },
-          { color: '#06d6e0', label: 'School Break' },
-          { color: theme.accent, label: 'Your events' },
-        ].map((item) => (
-          <View key={item.label} style={mStyles.legendItem}>
-            <View style={[mStyles.legendDot, { backgroundColor: item.color }]} />
-            <Text style={[mStyles.legendLabel, { fontFamily: theme.fMono, color: theme.soft }]}>{item.label}</Text>
+        );
+      }
+    }
+    schedule.periods.forEach((p, i) => {
+      const s = parseTime(p.start)!; const e = parseTime(p.end)!;
+      if (p.kind === 'lunch' || p.kind === 'tutorial' || p.kind === 'break') {
+        const color = p.kind === 'lunch' ? theme.amber : theme.soft;
+        items.push(
+          <View key={`p${i}`} pointerEvents="none" style={[styles.bellBand, { top: yFor(s), height: yFor(e) - yFor(s), borderColor: color + '88', backgroundColor: color + (p.kind === 'lunch' ? '30' : '14') }]}>
+            <Text style={[styles.bellBandLabel, { fontFamily: theme.fMono, color }]}>
+              {p.kind === 'lunch' ? '🥪 LUNCH' : p.label.toUpperCase()} {fmt12(p.start)}–{fmt12(p.end)}
+            </Text>
           </View>
-        ))}
+        );
+      }
+    });
+    const marker = (min: number, label: string, key: string) => (
+      <View key={key} pointerEvents="none" style={[styles.marker, { top: yFor(min) - 1 }]}>
+        <View style={[styles.markerLine, { backgroundColor: theme.mint }]} />
+        <Text style={[styles.markerLabel, { fontFamily: theme.fMono, color: theme.mint, backgroundColor: theme.bg }]}>{label}</Text>
       </View>
-    </ScrollView>
-  );
+    );
+    items.push(marker(startMin, `🔔 SCHOOL STARTS ${fmt12(schedule.dayStart)}`, 'start'));
+    items.push(marker(endMin, `🔔 DISMISSAL ${fmt12(schedule.dayEnd)}`, 'end'));
+    return items;
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: hasBg ? 'transparent' : theme.bg }]} edges={['top']}>
-      {/* Ambient glow — only when no photo bg */}
-      {!hasBg && (
-        <LinearGradient
-          colors={[theme.accent + '38', 'transparent']}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 0.65 }}
-          style={StyleSheet.absoluteFillObject}
-          pointerEvents="none"
-        />
-      )}
-      {/* Floating particles */}
+      {!hasBg && <LinearGradient colors={[theme.accent + '38', 'transparent']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.65 }} style={StyleSheet.absoluteFillObject} pointerEvents="none" />}
       <FloatingParticles color={theme.accent} />
       {hasBg && (
-        <ImageBackground
-          source={{ uri: bgImageUri }}
-          style={StyleSheet.absoluteFillObject}
-          resizeMode="cover"
-        >
+        <ImageBackground source={{ uri: bgImageUri }} style={StyleSheet.absoluteFillObject} resizeMode="cover">
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.62)' }]} />
         </ImageBackground>
       )}
 
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={[styles.title, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
-            {viewMode === 'month' ? 'month.' : 'week.'}
-          </Text>
-          <Text style={[styles.monthLabel, { fontFamily: theme.fMono, color: theme.sub }]}>
-            {monthLabel.toUpperCase()}
-          </Text>
+          <Text style={[styles.title, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{viewMode === 'month' ? 'month.' : 'week.'}</Text>
+          <Text style={[styles.monthLabel, { fontFamily: theme.fMono, color: theme.sub }]}>{monthLabel.toUpperCase()}</Text>
         </View>
         <View style={styles.navRow}>
-          {viewMode === 'day' ? (
-            <>
-              <TouchableOpacity onPress={prevWeek} style={styles.navBtn}>
-                <Text style={[styles.navArrow, { color: theme.accent }]}>←</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={nextWeek} style={styles.navBtn}>
-                <Text style={[styles.navArrow, { color: theme.accent }]}>→</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <TouchableOpacity onPress={prevMonth} style={styles.navBtn}>
-                <Text style={[styles.navArrow, { color: theme.accent }]}>←</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={nextMonth} style={styles.navBtn}>
-                <Text style={[styles.navArrow, { color: theme.accent }]}>→</Text>
-              </TouchableOpacity>
-            </>
-          )}
-          {/* Toggle button */}
+          <TouchableOpacity onPress={() => (viewMode === 'day' ? shiftWeek(-1) : shiftMonth(-1))} style={styles.navBtn} accessibilityLabel={viewMode === 'day' ? 'Previous week' : 'Previous month'}>
+            <Text style={[styles.navArrow, { color: theme.accent }]}>←</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => (viewMode === 'day' ? shiftWeek(1) : shiftMonth(1))} style={styles.navBtn} accessibilityLabel={viewMode === 'day' ? 'Next week' : 'Next month'}>
+            <Text style={[styles.navArrow, { color: theme.accent }]}>→</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.toggleViewBtn, { backgroundColor: cardSurface, borderColor: theme.line }]}
             onPress={() => {
-              if (viewMode === 'day') {
-                setMonthAnchor({ year: selectedDay.getFullYear(), month: selectedDay.getMonth() });
-                setViewMode('month');
-              } else {
-                setViewMode('day');
-              }
+              if (viewMode === 'day') { setMonthAnchor({ year: selectedDay.getFullYear(), month: selectedDay.getMonth() }); setViewMode('month'); }
+              else setViewMode('day');
             }}
+            accessibilityLabel={viewMode === 'day' ? 'Show month' : 'Show week'}
           >
-            <Text style={[styles.toggleViewText, { fontFamily: theme.fMono, color: theme.accent }]}>
-              {viewMode === 'day' ? '⊞' : '≡'}
-            </Text>
+            <Text style={[styles.toggleViewText, { fontFamily: theme.fMono, color: theme.accent }]}>{viewMode === 'day' ? 'Month' : 'Week'}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {viewMode === 'month' ? (
-        <MonthView />
-      ) : (
+      {viewMode === 'month' ? renderMonth() : (
         <>
-          {/* Day strip */}
           <View style={[styles.dayStrip, { borderBottomColor: theme.line }]}>
             {weekDays.map((day) => {
               const isToday = isSameDay(day, today);
               const isSelected = isSameDay(day, selectedDay);
               const isOff = day.getDay() === 0 || day.getDay() === 6;
-              const key = dateKey(day);
-              const closedEntry = !isOff ? SCHOOL_CLOSED.find((d) => d.date === key) : undefined;
+              const closed = !isOff ? getClosedReason(day, school.name) : null;
               return (
-                <TouchableOpacity
-                  key={day.toISOString()}
-                  style={styles.dayPill}
-                  onPress={() => setSelectedDay(day)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.dayAbbr, { fontFamily: theme.fMono, color: isSelected ? theme.accent : isOff ? theme.soft : theme.sub }]}>
-                    {DAY_ABBR[day.getDay()]}
-                  </Text>
-                  <View style={[
-                    styles.dayNumWrap,
-                    isSelected && { backgroundColor: theme.accent },
-                    isToday && !isSelected && { borderWidth: 1.5, borderColor: theme.accent },
-                  ]}>
-                    <Text style={[styles.dayNum, {
-                      fontFamily: isToday || isSelected ? 'Inter_600SemiBold' : 'Inter_400Regular',
-                      color: isSelected ? '#fff' : isToday ? theme.accent : isOff ? theme.soft : theme.ink,
-                    }]}>
-                      {day.getDate()}
-                    </Text>
+                <TouchableOpacity key={day.toISOString()} style={styles.dayPill} onPress={() => setSelectedDay(day)} activeOpacity={0.7}>
+                  <Text style={[styles.dayAbbr, { fontFamily: theme.fMono, color: isSelected ? theme.accent : isOff ? theme.soft : theme.sub }]}>{DAY_ABBR[day.getDay()]}</Text>
+                  <View style={[styles.dayNumWrap, isSelected && { backgroundColor: theme.accent }, isToday && !isSelected && { borderWidth: 1.5, borderColor: theme.accent }]}>
+                    <Text style={[styles.dayNum, { fontFamily: isToday || isSelected ? theme.fBodySemiBold : theme.fBody, color: isSelected ? '#fff' : isToday ? theme.accent : isOff ? theme.soft : theme.ink }]}>{day.getDate()}</Text>
                   </View>
-                  {closedEntry && (
-                    <View style={[styles.closedDot, { backgroundColor: closedDotColor(closedEntry.label) }]} />
-                  )}
+                  {closed ? <View style={[styles.closedDot, { backgroundColor: closedColor(closed) }]} /> : <View style={styles.closedDot} />}
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          {/* Weekend panel — overdue + upcoming */}
-          {isWeekend && (
+          {isWeekend ? (
             <ScrollView style={styles.gridScroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.weekendContent}>
-              <Text style={[styles.weekendTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
-                {selectedDay.getDay() === 6 ? 'Saturday.' : 'Sunday.'}
-              </Text>
-              <Text style={[styles.weekendSub, { fontFamily: theme.fMono, color: theme.soft }]}>
-                No school — catch up or get ahead.
-              </Text>
+              <Text style={[styles.weekendTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{selectedDay.getDay() === 6 ? 'Saturday.' : 'Sunday.'}</Text>
+              <Text style={[styles.weekendSub, { fontFamily: theme.fMono, color: theme.soft }]}>No school — catch up or get ahead.</Text>
+
+              {dayEvents.length > 0 && (
+                <View style={styles.wkSection}>
+                  <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.accent }]}>PLANS</Text>
+                  {dayEvents.map((ev) => (
+                    <TouchableOpacity key={ev.id} onPress={() => setEvDetailId(ev.id)} style={[styles.wkItem, { borderLeftColor: theme.accent, backgroundColor: cardSurface }]}>
+                      <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.icon ?? eventIcon(ev.type)} {ev.title}</Text>
+                      {ev.time && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.accent }]}>{fmt12(ev.time)}{ev.endTime ? ` – ${fmt12(ev.endTime)}` : ''}</Text>}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
 
               {overdueHw.length > 0 && (
                 <View style={styles.wkSection}>
                   <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.red }]}>⚠ OVERDUE</Text>
-                  {overdueHw.map((hw) => {
-                    const daysAgo = Math.ceil((startOfSelectedDay.getTime() - new Date(hw.dueDate!).setHours(0,0,0,0)) / 86400000);
-                    return (
-                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: theme.red, backgroundColor: cardSurface }]}>
-                        <View style={styles.wkItemTop}>
-                          <Text style={[styles.wkItemTitle, { fontFamily: theme.fBodyMedium, color: theme.red }]}>⚠ {hw.title}</Text>
-                          <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color: theme.red, backgroundColor: theme.red + '20' }]}>
-                            {daysAgo === 1 ? 'yesterday' : `${daysAgo}d ago`}
-                          </Text>
-                        </View>
-                        {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.red + 'aa' }]}>{hw.subject}</Text>}
-                      </View>
-                    );
-                  })}
+                  {overdueHw.map((hw) => (
+                    <TouchableOpacity key={hw.id} onPress={() => setHwDetailId(hw.id)} style={[styles.wkItem, { borderLeftColor: theme.red, backgroundColor: cardSurface }]}>
+                      <Text style={[styles.wkItemTitle, { fontFamily: theme.fBodyMedium, color: theme.red }]}>⚠ {hw.title}</Text>
+                      {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.red }]}>{hw.subject}</Text>}
+                    </TouchableOpacity>
+                  ))}
                 </View>
               )}
 
               {upcomingHw.length > 0 && (
                 <View style={styles.wkSection}>
-                  <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.accent }]}>COMING UP THIS WEEK</Text>
+                  <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.accent }]}>COMING UP</Text>
                   {upcomingHw.map((hw) => {
                     const due = new Date(hw.dueDate!);
-                    const sot = new Date(); sot.setHours(0,0,0,0);
-                    const tom = new Date(sot); tom.setDate(sot.getDate() + 1);
-                    const dat = new Date(sot); dat.setDate(sot.getDate() + 2);
-                    const isTom = due >= tom && due < dat;
-                    const itemColor = isTom ? theme.amber : hw.classColor ?? theme.accent;
-                    const dueLabel = isTom
-                      ? 'Tomorrow'
-                      : due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+                    const tom = new Date(startOfDay(today)); tom.setDate(tom.getDate() + 1);
+                    const isTom = isSameDay(due, tom);
+                    const c = isTom ? theme.amber : hw.classColor ?? theme.accent;
                     return (
-                      <View key={hw.id} style={[styles.wkItem, { borderLeftColor: itemColor, backgroundColor: cardSurface }]}>
+                      <TouchableOpacity key={hw.id} onPress={() => setHwDetailId(hw.id)} style={[styles.wkItem, { borderLeftColor: c, backgroundColor: cardSurface }]}>
                         <View style={styles.wkItemTop}>
                           <Text style={[styles.wkItemTitle, { fontFamily: isTom ? theme.fBodyMedium : theme.fBody, color: isTom ? theme.amber : theme.ink }]}>{hw.title}</Text>
-                          <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color: itemColor, backgroundColor: itemColor + '20' }]}>
-                            {dueLabel}
+                          <Text style={[styles.wkItemBadge, { fontFamily: theme.fMono, color: c, backgroundColor: c + '20' }]}>
+                            {isTom ? 'Tomorrow' : due.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })}
                           </Text>
                         </View>
-                        {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: itemColor }]}>{hw.subject}</Text>}
-                      </View>
+                        {hw.subject && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: c }]}>{hw.subject}</Text>}
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
               )}
 
-              {overdueHw.length === 0 && upcomingHw.length === 0 && (
+              {overdueHw.length === 0 && upcomingHw.length === 0 && dayEvents.length === 0 && (
                 <View style={styles.wkEmpty}>
                   <Text style={styles.wkEmptyIcon}>🎉</Text>
-                  <Text style={[styles.wkEmptyText, { fontFamily: theme.fBody, color: theme.soft }]}>
-                    All clear — nothing overdue and nothing due this week.
-                  </Text>
+                  <Text style={[styles.wkEmptyText, { fontFamily: theme.fBody, color: theme.soft }]}>All clear — nothing overdue and nothing due this week.</Text>
                 </View>
               )}
-
-              {dayEvents.length > 0 && (
-                <View style={styles.wkSection}>
-                  <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.accent }]}>TODAY'S EVENTS</Text>
-                  {dayEvents.map((ev) => (
-                    <View key={ev.id} style={[styles.wkItem, { borderLeftColor: theme.accent, backgroundColor: cardSurface }]}>
-                      <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.title}</Text>
-                      {ev.time && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.accent }]}>{ev.time}</Text>}
-                    </View>
-                  ))}
-                </View>
-              )}
+              <TouchableOpacity style={[styles.addPlan, { borderColor: theme.line }]} onPress={() => { setAddEventTime(''); setAddEventDate(selectedDay); }}>
+                <Text style={[styles.addPlanText, { fontFamily: theme.fMono, color: theme.accent }]}>+ Add a plan for this day</Text>
+              </TouchableOpacity>
             </ScrollView>
-          )}
-
-          {/* Day grid — weekdays only */}
-          {!isWeekend && <ScrollView style={styles.gridScroll} showsVerticalScrollIndicator={false}>
-            <View style={{ height: gridH, position: 'relative' }}>
-              {hours.map((hour, i) => (
-                <TouchableOpacity
-                  key={hour}
-                  style={[styles.hourRow, { top: i * ROW_H, borderTopColor: theme.line }]}
-                  onPress={() => { if (!canAdd) return; setAddEventDate(selectedDay); setAddEventTime(`${hour}:00`); }}
-                  activeOpacity={canAdd ? 0.4 : 1}
-                >
-                  <Text style={[styles.timeLabel, { fontFamily: theme.fMono, color: theme.soft, width: GUTTER }]}>
-                    {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
-                  </Text>
-                  <View style={[styles.hourLine, { backgroundColor: theme.line }]} />
-                </TouchableOpacity>
-              ))}
-
-              {closedReason && (
-                <View style={[styles.closedBanner, { backgroundColor: hasBg ? 'rgba(20,20,20,0.88)' : theme.surface + 'ee', left: GUTTER }]}>
-                  <View style={[styles.closedPill, { backgroundColor: closedDotColor(closedReason) + '22', borderColor: closedDotColor(closedReason) + '55' }]}>
-                    <Text style={[styles.closedLabel, { fontFamily: theme.fMono, color: closedDotColor(closedReason) }]}>
-                      {closedReason.toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={[styles.closedSub, { fontFamily: theme.fMono, color: theme.soft }]}>
-                    SD44 · No school
-                  </Text>
-                </View>
+          ) : (
+            <ScrollView style={styles.gridScroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
+              {(schedule?.note || closedReason) && (
+                <Text style={[styles.dayNote, { fontFamily: theme.fMono, color: closedReason ? closedColor(closedReason) : theme.amber }]}>
+                  {closedReason ? `${closedReason} — no school` : schedule!.note}
+                </Text>
               )}
-
-              {dayClasses.map((cls) => {
-                const startMin = timeToMinutes(cls.start!);
-                const endMin = timeToMinutes(cls.end!);
-                const top = (startMin - START_HOUR * 60) / 60 * ROW_H;
-                const blockH = Math.max((endMin - startMin) / 60 * ROW_H - 3, 48);
-                return (
-                  <TouchableOpacity key={cls.id} style={[styles.block, { top, left: GUTTER + 6, right: 6, height: blockH, backgroundColor: cls.color + '22', borderLeftColor: cls.color, zIndex: startMin }]} onPress={() => setSelectedClass(cls)} activeOpacity={0.8}>
-                    <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: cls.color }]} numberOfLines={2}>
-                      {cls.emoji ? `${cls.emoji} ` : ''}{cls.name || 'Class'}
-                    </Text>
-                    <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: cls.color + 'bb' }]}>
-                      {fmt12h(cls.start!)} – {fmt12h(cls.end!)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-
-              {dayEvents.map((ev) => {
-                const startMin = ev.time ? parseTimeToMinutes(ev.time) : null;
-                if (startMin === null || startMin < START_HOUR * 60 || startMin >= END_HOUR * 60) return null;
-                const endLabel = ev.endTime ? parseTimeToMinutes(ev.endTime) : null;
-                const blockH = endLabel ? Math.max((endLabel - startMin) / 60 * ROW_H - 3, 32) : ROW_H - 3;
-                const top = (startMin - START_HOUR * 60) / 60 * ROW_H;
-                return (
-                  <TouchableOpacity key={ev.id} style={[styles.block, { top, left: GUTTER + 6, right: 6, height: blockH, backgroundColor: theme.accent + '22', borderLeftColor: theme.accent }]} onPress={() => setSelectedEvent(ev)} activeOpacity={0.8}>
-                    <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: theme.accent }]} numberOfLines={2}>
-                      {ev.icon ? `${ev.icon} ` : ''}{ev.title}
-                    </Text>
-                    {ev.time && (
-                      <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: theme.accent + 'bb' }]}>
-                        {fmt12h(ev.time)}{ev.endTime ? ` – ${fmt12h(ev.endTime)}` : ''}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-
               {dayHomework.length > 0 && (
-                <View style={[styles.hwRow, { left: GUTTER + 6, top: 6 }]}>
+                <View style={[styles.hwRow, { paddingLeft: GUTTER + 6 }]}>
+                  <Text style={[styles.hwRowLabel, { fontFamily: theme.fMono, color: theme.soft }]}>DUE</Text>
                   {dayHomework.map((hw) => {
                     const color = hw.classColor ?? theme.accent;
                     return (
-                      <View key={hw.id} style={[styles.hwChip, { backgroundColor: color + '22', borderColor: color + '66' }]}>
-                        <Text style={[styles.hwChipText, { fontFamily: theme.fMono, color }]} numberOfLines={1}>{hw.title}</Text>
-                      </View>
+                      <TouchableOpacity key={hw.id} onPress={() => setHwDetailId(hw.id)} style={[styles.hwChip, { backgroundColor: color + '22', borderColor: color + '66' }]}>
+                        <Text style={[styles.hwChipText, { fontFamily: theme.fMono, color, textDecorationLine: hw.done ? 'line-through' : 'none' }]} numberOfLines={1}>
+                          {hw.done ? '✓ ' : ''}{hw.title}
+                        </Text>
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
               )}
-            </View>
-          </ScrollView>}
+              <View style={{ height: gridH, position: 'relative' }}>
+                {hours.map((hour, i) => (
+                  <TouchableOpacity
+                    key={hour}
+                    style={[styles.hourRow, { top: i * ROW_H, borderTopColor: theme.line }]}
+                    onPress={() => { setAddEventTime(`${hour}:00`); setAddEventDate(selectedDay); }}
+                    activeOpacity={0.4}
+                    accessibilityLabel={`Add a plan at ${fmt12(hour * 60)}`}
+                  >
+                    <Text style={[styles.timeLabel, { fontFamily: theme.fMono, color: theme.soft, width: GUTTER }]}>{fmt12(hour * 60)}</Text>
+                    <View style={[styles.hourLine, { backgroundColor: theme.line }]} />
+                  </TouchableOpacity>
+                ))}
+
+                {closedReason && (
+                  <View pointerEvents="none" style={[styles.closedBanner, { left: GUTTER, top: yFor(9 * 60), height: ROW_H * 6, backgroundColor: closedColor(closedReason) + '14', borderColor: closedColor(closedReason) + '55' }]}>
+                    <Text style={[styles.closedLabel, { fontFamily: theme.fMono, color: closedColor(closedReason) }]}>{closedReason.toUpperCase()}</Text>
+                    <Text style={[styles.closedSub, { fontFamily: theme.fMono, color: theme.soft }]}>No school</Text>
+                  </View>
+                )}
+
+                {dayClasses.map(({ cls, start, end, slotLabel }, idx) => {
+                  const s = parseTime(start)!; const e = parseTime(end)!;
+                  return (
+                    <TouchableOpacity
+                      key={`${cls.id}-${idx}`}
+                      style={[styles.block, { top: yFor(s), left: GUTTER + 6, right: 6, height: Math.max(yFor(e) - yFor(s) - 2, 30), backgroundColor: cls.color + '22', borderLeftColor: cls.color }]}
+                      onPress={() => setSelectedClass(cls)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: cls.color }]} numberOfLines={1}>{cls.emoji ? `${cls.emoji} ` : ''}{cls.name}</Text>
+                      <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: cls.color + 'cc' }]}>{fmt12(start)} – {fmt12(end)}{slotLabel ? `  ·  ${slotLabel}` : ''}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+
+                {renderBells()}
+
+                {dayEvents.map((ev) => {
+                  const s = parseTime(ev.time);
+                  if (s === null || s < START_HOUR * 60 || s >= END_HOUR * 60) return null;
+                  const e = parseTime(ev.endTime) ?? s + 60;
+                  return (
+                    <TouchableOpacity
+                      key={ev.id}
+                      style={[styles.block, { top: yFor(s), left: GUTTER + 30, right: 6, height: Math.max(yFor(e) - yFor(s) - 2, 30), backgroundColor: theme.accent + '33', borderLeftColor: theme.accent, zIndex: 3 }]}
+                      onPress={() => setEvDetailId(ev.id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: theme.accent }]} numberOfLines={1}>{ev.icon ?? eventIcon(ev.type)} {ev.title}</Text>
+                      <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: theme.accent + 'cc' }]}>{fmt12(ev.time)}{ev.endTime ? ` – ${fmt12(ev.endTime)}` : ''}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+
+                {showNow && (
+                  <View pointerEvents="none" style={[styles.nowLine, { top: yFor(nowMin), left: GUTTER - 4 }]}>
+                    <View style={[styles.nowDot, { backgroundColor: theme.red }]} />
+                    <View style={[styles.nowBar, { backgroundColor: theme.red }]} />
+                  </View>
+                )}
+              </View>
+            </ScrollView>
+          )}
         </>
       )}
 
-      <AddEventSheet visible={!!addEventDate} onClose={() => setAddEventDate(null)} defaultDate={addEventDate ?? undefined} defaultTime={addEventTime} />
+      <AddEventSheet
+        visible={!!addEventDate || !!evEdit}
+        onClose={() => { setAddEventDate(null); setEvEdit(null); }}
+        defaultDate={addEventDate ?? undefined}
+        defaultTime={addEventTime || undefined}
+        editEvent={evEdit}
+      />
+      <AddHomeworkSheet visible={!!hwEdit} onClose={() => setHwEdit(null)} editHw={hwEdit} />
+      <EventDetailSheet ev={evDetail} visible={!!evDetail} onClose={() => setEvDetailId(null)} onEdit={(ev) => setEvEdit(ev)} />
+      <HomeworkDetailSheet hw={hwDetail} visible={!!hwDetail} onClose={() => setHwDetailId(null)} onEdit={(hw) => setHwEdit(hw)} />
 
-      {/* Class detail */}
       <Modal visible={!!selectedClass} transparent animationType="fade" onRequestClose={() => setSelectedClass(null)}>
         <TouchableOpacity style={detailStyles.backdrop} activeOpacity={1} onPress={() => setSelectedClass(null)}>
-          <View style={[detailStyles.card, { backgroundColor: cardSurface, borderColor: selectedClass?.color ?? theme.line }]} onStartShouldSetResponder={() => true}>
+          <View style={[detailStyles.card, { backgroundColor: theme.surface, borderColor: selectedClass?.color ?? theme.line }]} onStartShouldSetResponder={() => true}>
             <View style={[detailStyles.colorBar, { backgroundColor: selectedClass?.color }]} />
             <View style={detailStyles.body}>
-              <Text style={[detailStyles.cardTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>
-                {selectedClass?.emoji ?? '📚'}  {selectedClass?.name}
+              <Text style={[detailStyles.cardTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{selectedClass?.emoji ?? '📚'}  {selectedClass?.name}</Text>
+              {!!selectedClass?.teacher && <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.soft }]}>{selectedClass.teacher}</Text>}
+              {selectedClass && (() => {
+                const when = dayClasses.filter((d) => d.cls.id === selectedClass.id).map((d) => `${fmt12(d.start)} – ${fmt12(d.end)}`).join(', ');
+                return when ? <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: selectedClass.color }]}>{when}</Text> : null;
+              })()}
+              <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.soft }]}>
+                {homework.filter((h) => h.classId === selectedClass?.id && !h.done).length} open assignments
               </Text>
-              {selectedClass?.teacher && <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.soft }]}>{selectedClass.teacher}</Text>}
-              {selectedClass?.start && <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: selectedClass.color }]}>{selectedClass.start} – {selectedClass.end}</Text>}
             </View>
-            <TouchableOpacity onPress={() => setSelectedClass(null)}>
-              <Text style={[detailStyles.closeX, { color: theme.soft }]}>×</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Event detail */}
-      <Modal visible={!!selectedEvent} transparent animationType="fade" onRequestClose={() => setSelectedEvent(null)}>
-        <TouchableOpacity style={detailStyles.backdrop} activeOpacity={1} onPress={() => setSelectedEvent(null)}>
-          <View style={[detailStyles.card, { backgroundColor: cardSurface, borderColor: theme.accent }]} onStartShouldSetResponder={() => true}>
-            <View style={[detailStyles.colorBar, { backgroundColor: theme.accent }]} />
-            <View style={detailStyles.body}>
-              <Text style={[detailStyles.cardTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{selectedEvent?.title}</Text>
-              {selectedEvent?.time && <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.accent }]}>{selectedEvent.time}{selectedEvent.endTime ? ` – ${selectedEvent.endTime}` : ''}</Text>}
-              {selectedEvent?.date && <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.soft }]}>{new Date(selectedEvent.date).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })}</Text>}
-              {selectedEvent?.location && <Text style={[detailStyles.cardMeta, { fontFamily: theme.fMono, color: theme.soft }]}>📍 {selectedEvent.location}</Text>}
-            </View>
-            <TouchableOpacity onPress={() => setSelectedEvent(null)}>
+            <TouchableOpacity onPress={() => setSelectedClass(null)} accessibilityLabel="Close">
               <Text style={[detailStyles.closeX, { color: theme.soft }]}>×</Text>
             </TouchableOpacity>
           </View>
@@ -589,7 +460,7 @@ export default function WeekScreen() {
 
 const detailStyles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 },
-  card: { borderRadius: 32, borderWidth: 1, flexDirection: 'row', alignItems: 'stretch', overflow: 'hidden' },
+  card: { borderRadius: 28, borderWidth: 1, flexDirection: 'row', alignItems: 'stretch', overflow: 'hidden', maxWidth: 520, width: '100%', alignSelf: 'center' },
   colorBar: { width: 5 },
   body: { flex: 1, padding: 16, gap: 6 },
   cardTitle: { fontSize: 22, lineHeight: 28 },
@@ -602,16 +473,17 @@ const mStyles = StyleSheet.create({
   weekCell: { flex: 1, alignItems: 'center' },
   weekLabel: { fontSize: 10, letterSpacing: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 4 },
-  cell: { width: '14.285%', minHeight: 70, padding: 3, borderRadius: 12, alignItems: 'center' },
+  cell: { width: '14.285%', minHeight: 72, padding: 3, borderRadius: 12, alignItems: 'center' },
   dayCircle: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   dayNum: { fontSize: 13 },
-  dotRow: { flexDirection: 'row', gap: 3, marginTop: 2 },
+  dotRow: { flexDirection: 'row', gap: 3, marginTop: 2, height: 5 },
   dot: { width: 5, height: 5, borderRadius: 3 },
-  holidayLabel: { fontSize: 7, letterSpacing: 0.3, textAlign: 'center', marginTop: 2 },
+  holidayLabel: { fontSize: 7, letterSpacing: 0.2, textAlign: 'center', marginTop: 2 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 7, height: 7, borderRadius: 4 },
   legendLabel: { fontSize: 10, letterSpacing: 0.5 },
+  source: { fontSize: 9, letterSpacing: 0.3, paddingHorizontal: 16, paddingTop: 10 },
 });
 
 const styles = StyleSheet.create({
@@ -623,29 +495,40 @@ const styles = StyleSheet.create({
   navRow: { flexDirection: 'row', gap: 4, paddingBottom: 4, alignItems: 'center' },
   navBtn: { padding: 8 },
   navArrow: { fontSize: 18 },
-  toggleViewBtn: { marginLeft: 4, width: 34, height: 34, borderRadius: 17, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  toggleViewText: { fontSize: 16 },
+  toggleViewBtn: { marginLeft: 4, height: 34, paddingHorizontal: 12, borderRadius: 17, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  toggleViewText: { fontSize: 12 },
   dayStrip: { flexDirection: 'row', paddingHorizontal: 8, paddingBottom: 10, paddingTop: 4, borderBottomWidth: StyleSheet.hairlineWidth },
   dayPill: { flex: 1, alignItems: 'center', gap: 4 },
-  dayAbbr: { fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: '600' },
+  dayAbbr: { fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase' },
   dayNumWrap: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
   dayNum: { fontSize: 15 },
+  closedDot: { width: 5, height: 5, borderRadius: 3 },
   gridScroll: { flex: 1 },
+  dayNote: { fontSize: 11, letterSpacing: 0.3, paddingHorizontal: 16, paddingTop: 8 },
+  hwRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, paddingRight: 8, paddingTop: 8, paddingBottom: 4, alignItems: 'center' },
+  hwRowLabel: { fontSize: 9, letterSpacing: 1, marginRight: 2 },
+  hwChip: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, maxWidth: 220 },
+  hwChipText: { fontSize: 10, letterSpacing: 0.2 },
   hourRow: { position: 'absolute', left: 0, right: 0, height: ROW_H, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'flex-start', paddingTop: 4 },
-  timeLabel: { fontSize: 10, letterSpacing: 0.3, textAlign: 'right', paddingRight: 10, fontWeight: '600' },
+  timeLabel: { fontSize: 10, letterSpacing: 0.3, textAlign: 'right', paddingRight: 8 },
   hourLine: { flex: 1, height: StyleSheet.hairlineWidth, marginTop: 7 },
-  block: { position: 'absolute', borderRadius: 12, borderLeftWidth: 3, paddingHorizontal: 10, paddingVertical: 7, gap: 2 },
+  block: { position: 'absolute', borderRadius: 12, borderLeftWidth: 3, paddingHorizontal: 10, paddingVertical: 6, gap: 2, overflow: 'hidden' },
   blockTitle: { fontSize: 12, letterSpacing: 0.2, fontWeight: '700' },
-  blockTime: { fontSize: 10, letterSpacing: 0.2, fontWeight: '600' },
-  closedBanner: { position: 'absolute', top: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', gap: 8 },
-  closedPill: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 8 },
+  blockTime: { fontSize: 10, letterSpacing: 0.2 },
+  bellBand: { position: 'absolute', left: GUTTER + 6, right: 6, borderWidth: 1, borderStyle: 'dashed', borderRadius: 8, zIndex: 2, justifyContent: 'center', paddingHorizontal: 8 },
+  bellBandLabel: { fontSize: 9, letterSpacing: 0.8, textAlign: 'right' },
+  gapBand: { position: 'absolute', left: GUTTER + 6, right: 6, zIndex: 1, justifyContent: 'center' },
+  gapLabel: { fontSize: 8, letterSpacing: 0.5, textAlign: 'right', paddingRight: 8 },
+  marker: { position: 'absolute', left: GUTTER, right: 0, zIndex: 4, flexDirection: 'row', alignItems: 'center' },
+  markerLine: { position: 'absolute', left: 0, right: 0, height: 2 },
+  markerLabel: { fontSize: 9, letterSpacing: 0.8, marginLeft: 'auto', marginRight: 8, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, overflow: 'hidden' },
+  closedBanner: { position: 'absolute', right: 6, borderWidth: 1, borderRadius: 14, justifyContent: 'center', alignItems: 'center', gap: 6, zIndex: 2 },
   closedLabel: { fontSize: 12, letterSpacing: 2 },
   closedSub: { fontSize: 10, letterSpacing: 1 },
-  closedDot: { width: 5, height: 5, borderRadius: 3 },
-  hwRow: { position: 'absolute', right: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  hwChip: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3 },
-  hwChipText: { fontSize: 10, letterSpacing: 0.2 },
-  weekendContent: { padding: 20, gap: 8, paddingBottom: 48 },
+  nowLine: { position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', zIndex: 6 },
+  nowDot: { width: 8, height: 8, borderRadius: 4 },
+  nowBar: { flex: 1, height: 2 },
+  weekendContent: { padding: 20, gap: 8, paddingBottom: 110 },
   weekendTitle: { fontSize: 32, marginBottom: 2 },
   weekendSub: { fontSize: 11, letterSpacing: 0.5, marginBottom: 8 },
   wkSection: { gap: 8, marginTop: 16 },
@@ -655,7 +538,9 @@ const styles = StyleSheet.create({
   wkItemTitle: { fontSize: 15, flex: 1, lineHeight: 20 },
   wkItemBadge: { fontSize: 10, letterSpacing: 0.3, borderRadius: 32, paddingHorizontal: 8, paddingVertical: 3, overflow: 'hidden' },
   wkItemSub: { fontSize: 11, letterSpacing: 0.3 },
-  wkEmpty: { alignItems: 'center', paddingVertical: 48, gap: 10 },
+  wkEmpty: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   wkEmptyIcon: { fontSize: 40 },
   wkEmptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  addPlan: { borderWidth: 1, borderStyle: 'dashed', borderRadius: 16, padding: 14, alignItems: 'center', marginTop: 16 },
+  addPlanText: { fontSize: 12, letterSpacing: 0.5 },
 });

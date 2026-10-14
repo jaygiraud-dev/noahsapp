@@ -1,28 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Modal,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  Alert,
+  Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Image, Alert,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
 import { Class, Homework } from '../../types';
 import { HW_TAGS, DUE_OPTIONS } from '../../data/constants';
+import { HW_REMINDERS } from '../../lib/classNotifications';
+import { pickImage } from '../../lib/images';
+import { isSameDay } from '../../lib/time';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import MicroLabel from '../../components/MicroLabel';
 import Pill from '../../components/Pill';
 import SerifTitle from '../../components/SerifTitle';
 
 const MAX_PHOTOS = 3;
+const NO_CLASS = '__none__';
 
 interface Props {
   visible: boolean;
@@ -32,183 +25,145 @@ interface Props {
   editHw?: Homework | null;
 }
 
+/** Due dates are stored as the end of that day so "due today" is never overdue early. */
+function endOfDay(d: Date): Date { const x = new Date(d); x.setHours(23, 59, 0, 0); return x; }
+
 export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaultClass, editHw }: Props) {
   const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState(defaultClass?.name ?? '');
+  const [notes, setNotes] = useState('');
+  const [classId, setClassId] = useState<string>(NO_CLASS);
   const [tag, setTag] = useState<string>(HW_TAGS[0].label);
   const [due, setDue] = useState<string>(DUE_OPTIONS[0].label);
-  const [attachedImages, setAttachedImages] = useState<string[]>([]);
   const [pickedDate, setPickedDate] = useState<Date>(new Date());
+  const [reminder, setReminder] = useState<string>('None');
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const addHomework = useStore((s) => s.addHomework);
   const editHomework = useStore((s) => s.editHomework);
   const classes = useStore((s) => s.classes);
+  const userId = useStore((s) => s.userId);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
 
   useEffect(() => {
-    if (visible) {
-      if (editHw) {
-        setTitle(editHw.title);
-        setSubject(editHw.subject ?? '');
-        setTag(editHw.tag ?? HW_TAGS[0].label);
-        setDue(editHw.due ?? DUE_OPTIONS[0].label);
-        setAttachedImages(editHw.attachedImages ?? []);
-        setPickedDate(editHw.dueDate ? new Date(editHw.dueDate) : new Date());
-      } else {
-        setPickedDate(defaultDate ? new Date(defaultDate) : new Date());
-        setSubject(defaultClass?.name ?? '');
-        setTitle('');
-        setTag(HW_TAGS[0].label);
-        setDue(DUE_OPTIONS[0].label);
-        setAttachedImages([]);
-      }
+    if (!visible) return;
+    if (editHw) {
+      setTitle(editHw.title);
+      setNotes(editHw.notes ?? '');
+      setClassId(editHw.classId && classes.some((c) => c.id === editHw.classId) ? editHw.classId : NO_CLASS);
+      setTag(editHw.tag ?? HW_TAGS[0].label);
+      // Editing always shows the exact due day, so nothing moves by accident
+      setDue('Pick a day');
+      setPickedDate(editHw.dueDate ? new Date(editHw.dueDate) : new Date());
+      setReminder(editHw.reminder && (HW_REMINDERS as readonly string[]).includes(editHw.reminder) ? editHw.reminder : 'None');
+      setAttachedImages(editHw.attachedImages ?? []);
+    } else {
+      setTitle('');
+      setNotes('');
+      setClassId(defaultClass?.id ?? (classes[0]?.id ?? NO_CLASS));
+      setTag(HW_TAGS[0].label);
+      setDue(DUE_OPTIONS[0].label);
+      setPickedDate(defaultDate ? new Date(defaultDate) : new Date());
+      setReminder('None');
+      setAttachedImages([]);
     }
   }, [visible, defaultClass, editHw]);
 
-  async function pickImage(fromCamera: boolean) {
+  async function addPhoto(source: 'library' | 'camera') {
     if (attachedImages.length >= MAX_PHOTOS) return;
-
-    if (fromCamera) {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Allow camera access to take photos.');
-        return;
-      }
-    }
-
-    const result = fromCamera
-      ? await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          quality: 0.5,
-          base64: Platform.OS === 'web',
-        })
-      : await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          quality: 0.5,
-          base64: Platform.OS === 'web',
-        });
-
-    if (!result.canceled) {
-      const asset = result.assets[0];
-      const uri = Platform.OS === 'web' && asset.base64
-        ? `data:image/jpeg;base64,${asset.base64}`
-        : asset.uri;
-      setAttachedImages((prev) => [...prev, uri]);
+    setPhotoBusy(true);
+    try {
+      const img = await pickImage({ source, maxSize: 1600, quality: 0.7 });
+      if (img) setAttachedImages((prev) => [...prev, img.uri]);
+    } finally {
+      setPhotoBusy(false);
     }
   }
 
   function handleAttachPhoto() {
-    if (Platform.OS === 'web') {
-      pickImage(false);
-      return;
-    }
-    Alert.alert('Add photo', 'Choose source', [
-      { text: 'Camera', onPress: () => pickImage(true) },
-      { text: 'Photo library', onPress: () => pickImage(false) },
+    if (Platform.OS === 'web') { addPhoto('library'); return; }
+    Alert.alert('Add a photo', 'Snap the whiteboard or pick a photo', [
+      { text: 'Camera', onPress: () => addPhoto('camera') },
+      { text: 'Photo library', onPress: () => addPhoto('library') },
       { text: 'Cancel', style: 'cancel' },
     ]);
   }
 
-  function removeImage(idx: number) {
-    setAttachedImages((prev) => prev.filter((_, i) => i !== idx));
-  }
-
   function computeDueDate(): Date {
-    if (due === 'Pick a day') return new Date(pickedDate);
-    const base = editHw ? new Date() : defaultDate ? new Date(defaultDate) : new Date();
+    if (due === 'Pick a day') return endOfDay(pickedDate);
+    const base = defaultDate ? new Date(defaultDate) : new Date();
     if (due === 'Tomorrow') base.setDate(base.getDate() + 1);
-    else if (due === 'In 3 days') base.setDate(base.getDate() + 3);
     else if (due === 'Next week') base.setDate(base.getDate() + 7);
-    return base;
+    return endOfDay(base);
   }
 
-  function handleAdd() {
+  function dueLabel(d: Date): string {
+    const today = new Date();
+    const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
+    if (isSameDay(d, today)) return 'Today';
+    if (isSameDay(d, tomorrow)) return 'Tomorrow';
+    return d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  function handleSave() {
     if (!title.trim()) return;
-    const matchedClass = classes.find((c) => c.name === subject);
+    const cls = classes.find((c) => c.id === classId);
     const dueDate = computeDueDate();
-    if (editHw) {
-      // Only move the due date when the user actually changed the due option
-      const dueChanged = due !== (editHw.due ?? DUE_OPTIONS[0].label) || due === 'Pick a day';
-      editHomework(editHw.id, {
-        title: title.trim(),
-        subject: subject || 'General',
-        classId: matchedClass?.id,
-        classColor: matchedClass?.color,
-        tag,
-        due,
-        ...(dueChanged ? { dueDate: dueDate.toISOString() } : {}),
-        attachedImages: attachedImages.length > 0 ? attachedImages : undefined,
-      });
-    } else {
-      addHomework({
-        classId: matchedClass?.id,
-        subject: subject || 'General',
-        classColor: matchedClass?.color,
-        title: title.trim(),
-        tag,
-        due,
-        dueDate: dueDate.toISOString(),
-        points: 10,
-        attachedImages: attachedImages.length > 0 ? attachedImages : undefined,
-      });
-    }
+    const fields = {
+      title: title.trim(),
+      notes: notes.trim() || undefined,
+      classId: cls?.id,
+      subject: cls?.name ?? 'Other',
+      classColor: cls?.color,
+      tag,
+      due: dueLabel(dueDate),
+      dueDate: dueDate.toISOString(),
+      reminder,
+      attachedImages,
+    };
+    if (editHw) editHomework(editHw.id, fields);
+    else addHomework({ ...fields, points: 10 });
     onClose();
   }
 
-  // 14 upcoming days for the "Pick a day" option
-  const pickDays = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + i); return d;
-  });
-  const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-
-  const canAddMore = attachedImages.length < MAX_PHOTOS;
+  const pickDays = Array.from({ length: 21 }, (_, i) => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + i - 1); return d; });
+  const input = [styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }];
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.backdrop}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}>
         <TouchableOpacity style={styles.backdropDismiss} activeOpacity={1} onPress={onClose} />
         <View style={[styles.modal, { backgroundColor: theme.bg }]}>
           <View style={[styles.handle, { backgroundColor: theme.line }]} />
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.titleRow}>
               <SerifTitle size={24}>{editHw ? 'Edit homework.' : 'Add homework.'}</SerifTitle>
-              <TouchableOpacity onPress={onClose}>
+              <TouchableOpacity onPress={onClose} accessibilityLabel="Close">
                 <Text style={[styles.close, { color: theme.soft }]}>×</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.fieldGroup}>
-              <MicroLabel>Title</MicroLabel>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
-                value={title}
-                onChangeText={setTitle}
-                placeholder="What's the assignment?"
-                placeholderTextColor={theme.soft}
-                autoFocus
-              />
+              <MicroLabel>What's the assignment?</MicroLabel>
+              <TextInput style={input} value={title} onChangeText={setTitle} placeholder="Worksheet 3.2, read ch. 5…" placeholderTextColor={theme.soft} autoFocus={!editHw} />
             </View>
 
             <View style={styles.fieldGroup}>
               <MicroLabel>Class</MicroLabel>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
                 {classes.map((c) => (
-                  <Pill key={c.id} label={c.name} active={subject === c.name} tone={c.color} onPress={() => setSubject(c.name)} />
+                  <Pill key={c.id} label={c.name} active={classId === c.id} tone={c.color} onPress={() => setClassId(c.id)} />
                 ))}
+                <Pill label="No class" active={classId === NO_CLASS} tone={theme.accent} onPress={() => setClassId(NO_CLASS)} />
               </ScrollView>
             </View>
 
             <View style={styles.fieldGroup}>
-              <MicroLabel>Tag</MicroLabel>
+              <MicroLabel>Type</MicroLabel>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
                 {HW_TAGS.map((t) => (
-                  <Pill key={t.id} label={t.label} active={tag === t.label} tone={theme.accent} onPress={() => setTag(t.label)} />
+                  <Pill key={t.id} label={`${t.icon} ${t.label}`} active={tag === t.label} tone={theme.accent} onPress={() => setTag(t.label)} />
                 ))}
               </ScrollView>
             </View>
@@ -222,28 +177,22 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
                     style={[styles.dueBtn, { backgroundColor: due === d.label ? theme.accent : theme.surface, borderColor: due === d.label ? theme.accent : theme.line }]}
                     onPress={() => setDue(d.label)}
                   >
-                    <Text style={[styles.dueBtnText, { fontFamily: theme.fMono, color: due === d.label ? '#fff' : theme.sub }]}>
-                      {d.label}
-                    </Text>
+                    <Text style={[styles.dueBtnText, { fontFamily: theme.fMono, color: due === d.label ? '#fff' : theme.sub }]}>{d.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
               {due === 'Pick a day' && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickRow}>
                   {pickDays.map((d) => {
-                    const active = sameDay(d, pickedDate);
+                    const active = isSameDay(d, pickedDate);
                     return (
                       <TouchableOpacity
                         key={d.toISOString()}
                         style={[styles.pickDay, { backgroundColor: active ? theme.accent : theme.surface, borderColor: active ? theme.accent : theme.line }]}
                         onPress={() => setPickedDate(d)}
                       >
-                        <Text style={[styles.pickDayName, { fontFamily: theme.fMono, color: active ? '#fff' : theme.soft }]}>
-                          {d.toLocaleDateString('en-CA', { weekday: 'short' })}
-                        </Text>
-                        <Text style={[styles.pickDayNum, { fontFamily: theme.fBodySemiBold, color: active ? '#fff' : theme.ink }]}>
-                          {d.getDate()}
-                        </Text>
+                        <Text style={[styles.pickDayName, { fontFamily: theme.fMono, color: active ? '#fff' : theme.soft }]}>{d.toLocaleDateString('en-CA', { weekday: 'short' })}</Text>
+                        <Text style={[styles.pickDayNum, { fontFamily: theme.fBodySemiBold, color: active ? '#fff' : theme.ink }]}>{d.getDate()}</Text>
                       </TouchableOpacity>
                     );
                   })}
@@ -251,42 +200,50 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
               )}
             </View>
 
-            {/* Photo attachments — up to 3 */}
+            <View style={styles.fieldGroup}>
+              <MicroLabel>Remind me</MicroLabel>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRow}>
+                {HW_REMINDERS.map((r) => (
+                  <Pill key={r} label={r} active={reminder === r} tone={theme.accent} onPress={() => setReminder(r)} />
+                ))}
+              </ScrollView>
+              {reminder !== 'None' && Platform.OS === 'web' && (
+                <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.soft }]}>Reminders pop up on the phone app.</Text>
+              )}
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <MicroLabel>Notes (optional)</MicroLabel>
+              <TextInput style={[...input, styles.notes]} value={notes} onChangeText={setNotes} placeholder="Pages, questions, what the teacher said…" placeholderTextColor={theme.soft} multiline />
+            </View>
+
             <View style={styles.fieldGroup}>
               <View style={styles.photoLabelRow}>
                 <MicroLabel>Photos</MicroLabel>
-                <Text style={[styles.photoCount, { fontFamily: theme.fMono, color: theme.soft }]}>
-                  {attachedImages.length}/{MAX_PHOTOS}
-                </Text>
+                <Text style={[styles.photoCount, { fontFamily: theme.fMono, color: theme.soft }]}>{attachedImages.length}/{MAX_PHOTOS}</Text>
               </View>
               <View style={styles.photoRow}>
                 {attachedImages.map((uri, idx) => (
                   <View key={idx} style={styles.thumbWrap}>
                     <Image source={{ uri }} style={styles.thumb} resizeMode="cover" />
-                    <TouchableOpacity
-                      style={[styles.thumbRemove, { backgroundColor: theme.bg }]}
-                      onPress={() => removeImage(idx)}
-                    >
+                    <TouchableOpacity style={[styles.thumbRemove, { backgroundColor: theme.bg }]} onPress={() => setAttachedImages((p) => p.filter((_, i) => i !== idx))} accessibilityLabel="Remove photo">
                       <Text style={[styles.thumbRemoveText, { color: theme.ink }]}>×</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
-                {canAddMore && (
-                  <TouchableOpacity
-                    style={[styles.addPhotoTile, { backgroundColor: theme.surface, borderColor: theme.line }]}
-                    onPress={handleAttachPhoto}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.addPhotoIcon, { color: theme.soft }]}>📷</Text>
-                    <Text style={[styles.addPhotoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>
-                      Add photo
-                    </Text>
+                {attachedImages.length < MAX_PHOTOS && (
+                  <TouchableOpacity style={[styles.addPhotoTile, { backgroundColor: theme.surface, borderColor: theme.line }]} onPress={handleAttachPhoto} disabled={photoBusy} activeOpacity={0.7}>
+                    <Text style={styles.addPhotoIcon}>📷</Text>
+                    <Text style={[styles.addPhotoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>{photoBusy ? 'Loading…' : 'Add photo'}</Text>
                   </TouchableOpacity>
                 )}
               </View>
+              {!userId && attachedImages.length > 0 && (
+                <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.soft }]}>Demo mode: photos stay on this device only.</Text>
+              )}
             </View>
 
-            <PrimaryBtn label={editHw ? 'Save changes' : 'Add homework +'} onPress={handleAdd} disabled={!title.trim()} style={styles.addBtn} />
+            <PrimaryBtn label={editHw ? 'Save changes' : 'Add homework +'} onPress={handleSave} disabled={!title.trim()} style={styles.addBtn} />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -294,54 +251,37 @@ export default function AddHomeworkSheet({ visible, onClose, defaultDate, defaul
   );
 }
 
-const THUMB_SIZE = 96;
+const THUMB = 92;
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: 'flex-end' },
   backdropDismiss: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
   modal: { borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: '90%' },
   handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 8 },
-  content: { padding: 20, gap: 20 },
+  content: { padding: 20, gap: 18, paddingBottom: 36 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   close: { fontSize: 28, lineHeight: 32 },
   fieldGroup: { gap: 8 },
-  input: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 13, fontSize: 15 },
+  input: { borderRadius: 24, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 13, fontSize: 15 },
+  notes: { minHeight: 64, textAlignVertical: 'top' },
   pillRow: { gap: 8, flexDirection: 'row' },
   dueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   dueBtn: { borderRadius: 28, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
   dueBtnText: { fontSize: 12, letterSpacing: 0.5 },
-  pickRow: { gap: 8, flexDirection: 'row', paddingTop: 10 },
+  pickRow: { gap: 8, flexDirection: 'row', paddingTop: 4 },
   pickDay: { width: 48, height: 56, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
   pickDayName: { fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase' },
   pickDayNum: { fontSize: 16 },
+  hint: { fontSize: 12 },
   photoLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   photoCount: { fontSize: 10, letterSpacing: 0.5 },
-  photoRow: { flexDirection: 'row', gap: 10 },
-  thumbWrap: { position: 'relative', width: THUMB_SIZE, height: THUMB_SIZE },
-  thumb: { width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: 28 },
-  thumbRemove: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 22,
-    height: 22,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 0.85,
-  },
-  thumbRemoveText: { fontSize: 14, lineHeight: 18 },
-  addPhotoTile: {
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
+  photoRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  thumbWrap: { position: 'relative', width: THUMB, height: THUMB },
+  thumb: { width: THUMB, height: THUMB, borderRadius: 18 },
+  thumbRemove: { position: 'absolute', top: 4, right: 4, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', opacity: 0.9 },
+  thumbRemoveText: { fontSize: 15, lineHeight: 18 },
+  addPhotoTile: { width: THUMB, height: THUMB, borderRadius: 18, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4 },
   addPhotoIcon: { fontSize: 22 },
   addPhotoLabel: { fontSize: 9, letterSpacing: 0.5 },
-  addBtn: { marginTop: 8 },
+  addBtn: { marginTop: 4 },
 });

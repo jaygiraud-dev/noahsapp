@@ -23,6 +23,7 @@ export default function SerifTitle({ children, size = 32, color, italic = true, 
         {
           fontFamily: italic ? theme.fDisplayItalic : theme.fDisplay,
           fontSize: size,
+          lineHeight: Math.round(size * 1.18),
           color: color ?? theme.ink,
         },
         style,
@@ -34,5 +35,5 @@ export default function SerifTitle({ children, size = 32, color, italic = true, 
 }
 
 const styles = StyleSheet.create({
-  text: { lineHeight: 40 },
+  text: {},
 });

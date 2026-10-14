@@ -14,8 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
-import { supabase } from '../../lib/supabase';
-import { upsertProfile, fetchProfileState } from '../../lib/db';
+import { supabase, authRedirectUrl } from '../../lib/supabase';
+import { enterApp } from '../../lib/session';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import MicroLabel from '../../components/MicroLabel';
 import FloatingParticles from '../../components/FloatingParticles';
@@ -23,24 +23,38 @@ import FloatingParticles from '../../components/FloatingParticles';
 type AccountType = 'student' | 'parent';
 type Mode = 'signin' | 'signup';
 
-export default function SignInScreen({ navigation }: any) {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Turns Supabase's error text into something a person can act on. */
+function friendlyAuthError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes('invalid login credentials')) return "That email and password don't match an account. Check both, or create an account.";
+  if (m.includes('already registered') || m.includes('already been registered')) return 'There is already an account with this email. Sign in instead.';
+  if (m.includes('password should be at least')) return 'Use a password with at least 6 characters.';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Too many tries in a row. Wait a minute, then try again.';
+  if (m.includes('failed to fetch') || m.includes('network')) return "Can't reach the server. Check your internet connection and try again.";
+  if (m.includes('signups not allowed')) return 'New accounts are turned off right now.';
+  return msg;
+}
+
+export default function SignInScreen({ navigation, route }: any) {
   const [accountType, setAccountType] = useState<AccountType>('student');
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState(route?.params?.email ?? '');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<Mode>('signin');
+  const [mode, setMode] = useState<Mode>(route?.params?.mode ?? 'signin');
 
   const setPhase = useStore((s) => s.setPhase);
-  const setUserRole = useStore((s) => s.setUserRole);
-  const storedUserId = useStore((s) => s.userId);
-  const school = useStore((s) => s.school);
-  const resetForUser = useStore((s) => s.resetForUser);
-  const loadDataFromSupabase = useStore((s) => s.loadDataFromSupabase);
-  const applyProfileState = useStore((s) => s.applyProfileState);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
+
+  useEffect(() => {
+    if (route?.params?.email) setEmail(route.params.email);
+    if (route?.params?.mode) setMode(route.params.mode);
+  }, [route?.params]);
 
   // Entrance animation
   const titleY = useRef(new Animated.Value(30)).current;
@@ -62,67 +76,67 @@ export default function SignInScreen({ navigation }: any) {
   }, []);
 
   async function handleAuth() {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
     setError('');
-    setLoading(true);
-
-    let authError: string | null = null;
-    const role: 'student' | 'parent' = accountType;
-    let uid = '';
-    let emailAddr = email;
-
-    if (mode === 'signup') {
-      const { data, error: e } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { role } },
-      });
-      if (e) authError = e.message;
-      else uid = data.user?.id ?? '';
-    } else {
-      const { data, error: e } = await supabase.auth.signInWithPassword({ email, password });
-      if (e) authError = e.message;
-      else { uid = data.user?.id ?? ''; emailAddr = data.user?.email ?? email; }
-    }
-
-    setLoading(false);
-
-    if (authError) {
-      setError(authError);
+    if (mode === 'signup' && !cleanName) { setError('Add your first name so your family and friends know it is you.'); return; }
+    if (!EMAIL_RE.test(cleanEmail)) {
+      setError(/\s/.test(email.trim()) ? 'Email addresses can’t contain spaces.' : 'Enter a full email address, like name@icloud.com.');
       return;
     }
+    if (password.length < 6) { setError('Use a password with at least 6 characters.'); return; }
 
-    if (!uid) return;
-
-    const displayName = emailAddr.split('@')[0];
-
-    if (uid !== storedUserId) {
-      // New device (or a different user was here last). Start clean, then pull
-      // back whatever this account already saved: pairing code, classes, points…
-      resetForUser(uid, role, displayName);
-      if (role === 'student') {
-        const existing = await fetchProfileState(uid).catch(() => null);
-        if (existing) applyProfileState(existing);
+    setLoading(true);
+    try {
+      if (mode === 'signup') {
+        const { data, error: e } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: { role: accountType, display_name: cleanName },
+            emailRedirectTo: authRedirectUrl(),
+          },
+        });
+        if (e) { setError(friendlyAuthError(e.message)); return; }
+        // With email confirmation on, an existing address comes back with no identities
+        if (data.user && (data.user.identities ?? []).length === 0) {
+          setError('There is already an account with this email. Sign in instead.');
+          return;
+        }
+        if (data.session && data.user) {
+          await enterApp(data.user);
+        } else {
+          navigation.navigate('ConfirmEmail', { email: cleanEmail });
+        }
+      } else {
+        const { data, error: e } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+        if (e) {
+          if (e.message.toLowerCase().includes('email not confirmed')) {
+            navigation.navigate('ConfirmEmail', { email: cleanEmail, notConfirmed: true });
+            return;
+          }
+          setError(friendlyAuthError(e.message));
+          return;
+        }
+        if (data.user) await enterApp(data.user);
       }
-    } else {
-      setUserRole(role);
-      setPhase(role === 'parent' ? 'parent' : 'main');
+    } catch (e: any) {
+      setError(friendlyAuthError(e?.message ?? 'Something went wrong. Try again.'));
+    } finally {
+      setLoading(false);
     }
+  }
 
-    const st = useStore.getState();
-    await upsertProfile(
-      uid, role,
-      role === 'student' ? st.pairingCode : undefined,
-      role === 'student' ? st.school.name : undefined,
-      displayName
-    ).catch(() => {});
-    if (role === 'student') loadDataFromSupabase().catch(() => {});
+  function switchMode() {
+    setMode(mode === 'signin' ? 'signup' : 'signin');
+    setError('');
   }
 
   const isStudent = accountType === 'student';
+  const inputStyle = [styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
-      {/* Atmospheric backdrop */}
       <LinearGradient
         colors={[theme.accent + '22', theme.bg, theme.bg]}
         start={{ x: 0.5, y: 0 }}
@@ -130,7 +144,6 @@ export default function SignInScreen({ navigation }: any) {
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
-      {/* Bottom warm pool */}
       <LinearGradient
         colors={['transparent', theme.accentGrad[1] + '10']}
         start={{ x: 0.5, y: 0.6 }}
@@ -141,16 +154,9 @@ export default function SignInScreen({ navigation }: any) {
       <FloatingParticles color={theme.accent} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* ── HERO ── */}
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <Animated.View style={[styles.hero, { opacity: titleOpacity, transform: [{ translateY: titleY }] }]}>
-            <Text style={[styles.eyebrow, { fontFamily: theme.fMono, color: theme.accent }]}>
-              ✦ MY AGENDA
-            </Text>
+            <Text style={[styles.eyebrow, { fontFamily: theme.fMono, color: theme.accent }]}>✦ MY AGENDA</Text>
             <Text
               style={[
                 styles.heroTitle,
@@ -163,14 +169,11 @@ export default function SignInScreen({ navigation }: any) {
                 },
               ]}
             >
-              {mode === 'signin'
-                ? isStudent ? 'welcome\nback.' : 'hi,\nparent.'
-                : isStudent ? 'join the\nsquad.' : 'stay in\nthe loop.'}
+              {mode === 'signin' ? 'welcome\nback.' : isStudent ? 'join the\nsquad.' : 'stay in\nthe loop.'}
             </Text>
             <Text style={[styles.tagline, { fontFamily: theme.fMono, color: theme.sub }]}>
-              YOUR SCHOOL · YOUR SQUAD · YOUR STREAK
+              {mode === 'signup' && !isStudent ? "SEE YOUR KID'S HOMEWORK · WITHOUT ASKING" : 'YOUR SCHOOL · YOUR SQUAD · YOUR STREAK'}
             </Text>
-            {/* Decorative rule */}
             <View style={styles.ruleRow}>
               <View style={[styles.ruleLine, { backgroundColor: theme.accent + '40' }]} />
               <View style={[styles.ruleDiamond, { backgroundColor: theme.accent }]} />
@@ -178,34 +181,56 @@ export default function SignInScreen({ navigation }: any) {
             </View>
           </Animated.View>
 
-          {/* ── FORM ── */}
           <Animated.View style={[styles.formWrap, { opacity: formOpacity, transform: [{ translateY: formY }] }]}>
-            {/* Student / Parent toggle */}
-            <View style={[styles.typeToggle, { backgroundColor: theme.surface }]}>
-              {(['student', 'parent'] as AccountType[]).map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.typeOption, accountType === t && { backgroundColor: theme.accent }]}
-                  onPress={() => setAccountType(t)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.typeLabel, { fontFamily: theme.fMono, color: accountType === t ? '#fff' : theme.soft }]}>
-                    {t === 'student' ? '🎒  Student' : '👨‍👩‍👧  Parent'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            {mode === 'signup' && (
+              <>
+                <Text style={[styles.question, { fontFamily: theme.fBodyMedium, color: theme.sub }]}>Who is this account for?</Text>
+                <View style={[styles.typeToggle, { backgroundColor: theme.surface }]}>
+                  {(['student', 'parent'] as AccountType[]).map((t) => (
+                    <TouchableOpacity
+                      key={t}
+                      style={[styles.typeOption, accountType === t && { backgroundColor: theme.accent }]}
+                      onPress={() => setAccountType(t)}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: accountType === t }}
+                    >
+                      <Text style={[styles.typeLabel, { fontFamily: theme.fMono, color: accountType === t ? '#fff' : theme.soft }]}>
+                        {t === 'student' ? '🎒  Student' : '👨‍👩‍👧  Parent'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
 
             <View style={styles.form}>
+              {mode === 'signup' && (
+                <View style={styles.fieldGroup}>
+                  <MicroLabel>First name</MicroLabel>
+                  <TextInput
+                    style={inputStyle}
+                    value={name}
+                    onChangeText={(v) => { setName(v); setError(''); }}
+                    placeholder={isStudent ? 'Noah' : 'Jay'}
+                    placeholderTextColor={theme.soft}
+                    autoCapitalize="words"
+                    autoComplete="given-name"
+                    maxLength={40}
+                  />
+                </View>
+              )}
+
               <View style={styles.fieldGroup}>
                 <MicroLabel>Email</MicroLabel>
                 <TextInput
-                  style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
+                  style={inputStyle}
                   value={email}
                   onChangeText={(v) => { setEmail(v); setError(''); }}
-                  placeholder={isStudent ? 'you@school.ca' : 'you@email.com'}
+                  placeholder="you@icloud.com"
                   placeholderTextColor={theme.soft}
                   autoCapitalize="none"
+                  autoCorrect={false}
                   keyboardType="email-address"
                   autoComplete="email"
                 />
@@ -214,25 +239,26 @@ export default function SignInScreen({ navigation }: any) {
               <View style={styles.fieldGroup}>
                 <MicroLabel>Password</MicroLabel>
                 <TextInput
-                  style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
+                  style={inputStyle}
                   value={password}
                   onChangeText={(v) => { setPassword(v); setError(''); }}
-                  placeholder="••••••••"
+                  placeholder={mode === 'signup' ? 'At least 6 characters' : '••••••••'}
                   placeholderTextColor={theme.soft}
                   secureTextEntry
-                  autoComplete="password"
+                  autoComplete={mode === 'signup' ? 'new-password' : 'password'}
+                  onSubmitEditing={handleAuth}
                 />
               </View>
 
               {error !== '' && (
-                <Text style={[styles.errorText, { fontFamily: theme.fBody, color: theme.red }]}>{error}</Text>
+                <Text style={[styles.errorText, { fontFamily: theme.fBody, color: theme.red }]} accessibilityLiveRegion="polite">
+                  {error}
+                </Text>
               )}
 
               {mode === 'signin' && (
-                <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')} style={styles.forgotWrap}>
-                  <Text style={[styles.forgot, { fontFamily: theme.fBody, color: theme.accent }]}>
-                    Forgot password?
-                  </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('ResetPassword', { email: email.trim() })} style={styles.forgotWrap}>
+                  <Text style={[styles.forgot, { fontFamily: theme.fBody, color: theme.accent }]}>Forgot password?</Text>
                 </TouchableOpacity>
               )}
 
@@ -243,22 +269,24 @@ export default function SignInScreen({ navigation }: any) {
                 style={styles.btn}
               />
 
-              <TouchableOpacity onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); }} style={styles.switchWrap}>
+              <TouchableOpacity onPress={switchMode} style={styles.switchWrap}>
                 <Text style={[styles.switch, { fontFamily: theme.fBody, color: theme.soft }]}>
-                  {mode === 'signin' ? "Don't have an account? " : 'Already have one? '}
-                  <Text style={{ color: theme.accent }}>
-                    {mode === 'signin' ? 'Sign up' : 'Sign in'}
-                  </Text>
+                  {mode === 'signin' ? 'New here? ' : 'Already have an account? '}
+                  <Text style={{ color: theme.accent }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</Text>
                 </Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.footer}>
-              <TouchableOpacity onPress={() => setPhase(accountType === 'parent' ? 'parent' : 'onboarding')}>
-                <Text style={[styles.demo, { fontFamily: theme.fMono, color: theme.soft }]}>
-                  {accountType === 'parent' ? 'try parent demo' : 'try demo — set up your classes'}
-                </Text>
-              </TouchableOpacity>
+              <Text style={[styles.demoLabel, { fontFamily: theme.fMono, color: theme.soft }]}>JUST LOOKING?</Text>
+              <View style={styles.demoRow}>
+                <TouchableOpacity onPress={() => setPhase('main')} style={[styles.demoBtn, { borderColor: theme.line }]}>
+                  <Text style={[styles.demo, { fontFamily: theme.fMono, color: theme.sub }]}>Student demo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setPhase('parent')} style={[styles.demoBtn, { borderColor: theme.line }]}>
+                  <Text style={[styles.demo, { fontFamily: theme.fMono, color: theme.sub }]}>Parent demo</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </Animated.View>
         </ScrollView>
@@ -272,38 +300,31 @@ const styles = StyleSheet.create({
   kav: { flex: 1 },
   scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
 
-  // Hero
-  hero: { paddingTop: 52, paddingBottom: 32, alignItems: 'flex-start' },
+  hero: { paddingTop: 44, paddingBottom: 28, alignItems: 'flex-start' },
   eyebrow: { fontSize: 10, letterSpacing: 3, marginBottom: 16 },
-  heroTitle: {
-    fontSize: 64,
-    lineHeight: 68,
-    marginBottom: 14,
-  },
+  heroTitle: { fontSize: 64, lineHeight: 68, marginBottom: 14 },
   tagline: { fontSize: 9, letterSpacing: 2, marginBottom: 20 },
   ruleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '60%' },
   ruleLine: { flex: 1, height: 1 },
   ruleDiamond: { width: 5, height: 5, transform: [{ rotate: '45deg' }] },
 
-  // Form
   formWrap: { flex: 1 },
-  typeToggle: {
-    flexDirection: 'row',
-    borderRadius: 34,
-    padding: 4,
-    marginBottom: 20,
-  },
+  question: { fontSize: 14, marginBottom: 8 },
+  typeToggle: { flexDirection: 'row', borderRadius: 34, padding: 4, marginBottom: 20 },
   typeOption: { flex: 1, borderRadius: 28, paddingVertical: 10, alignItems: 'center' },
   typeLabel: { fontSize: 13, letterSpacing: 0.5 },
   form: {},
-  fieldGroup: { marginBottom: 14 },
+  fieldGroup: { marginBottom: 14, gap: 6 },
   input: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16 },
-  errorText: { fontSize: 14, marginBottom: 10, textAlign: 'center' },
+  errorText: { fontSize: 14, lineHeight: 20, marginBottom: 10, textAlign: 'center' },
   forgotWrap: { alignSelf: 'flex-end', marginBottom: 4 },
   forgot: { fontSize: 14 },
   btn: { marginTop: 6, marginBottom: 16 },
   switchWrap: { alignItems: 'center' },
   switch: { fontSize: 14 },
-  footer: { alignItems: 'center', paddingTop: 28 },
-  demo: { fontSize: 11, letterSpacing: 1 },
+  footer: { alignItems: 'center', paddingTop: 32, gap: 10 },
+  demoLabel: { fontSize: 9, letterSpacing: 2 },
+  demoRow: { flexDirection: 'row', gap: 10 },
+  demoBtn: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  demo: { fontSize: 11, letterSpacing: 0.5 },
 });

@@ -1,3 +1,47 @@
+# my agenda — school agenda app for students and parents
+
+The production app lives in `student/` (Expo / React Native, deployed to Netlify as a web app).
+One app serves both sides: students sign up as a student, parents sign up as a parent.
+The original design handoff follows further down.
+
+## Setup (one time)
+
+1. **Database.** In Supabase, open SQL Editor → New query, paste all of `supabase_schema.sql`, and press Run.
+   It is safe to run again; it upgrades an existing database without losing data.
+2. **Email links.** In Supabase → Authentication → URL Configuration, set **Site URL** to the Netlify address
+   (for example `https://your-site.netlify.app`) and add the same address under **Redirect URLs**.
+   Confirmation and password-reset emails send people back there.
+3. **Email confirmation** is on by default in Supabase. The app handles it: after signing up you see
+   "Check your inbox", tap the link, then sign in. To skip it while testing, turn off
+   Authentication → Providers → Email → "Confirm email".
+4. **Deploy.** Netlify builds from `main` using `netlify.toml`.
+
+## Trying the full flow
+
+1. **Kid:** Create an account → Student, first name, email, password → confirm the email → sign in →
+   pick the school (search or scroll A–Z) → grade, classes per day, class names and each class's usual block →
+   "Your week": choose "They move around" and drag blocks into each day's order → add a photo and note the code.
+2. **Parent:** on another device or browser, Create an account → Parent → confirm → sign in →
+   type the kid's code. The kid's last setup step shows "Connected" within a few seconds.
+3. Add homework and plans as the kid; the parent dashboard, day/week view and Activity update live.
+   The parent can send a nudge, which shows as a banner in the kid's app.
+
+Parents see homework, due dates, classes and plans. They never see friends. Only the parent can remove the link.
+
+## What's where
+
+| Path | What it is |
+|---|---|
+| `student/src/screens/Auth` | Sign in, sign up, email confirmation, password reset |
+| `student/src/screens/Onboarding` | School search, classes, week grid, photo + parent code |
+| `student/src/screens/{Today,Week,Squad,Me}` | Student tabs |
+| `student/src/screens/Parent` | Parent dashboard, kid day/week view, activity, settings |
+| `student/src/data/schools.ts` | 115 Lower Mainland public high schools |
+| `student/src/data/schoolCalendars.ts` | Sutherland 2026–27 calendar + bell schedule; BC holidays for everyone else |
+| `supabase_schema.sql` | Tables, security rules, sign-up trigger, code-checking functions, photo storage |
+
+---
+
 # Handoff — **plan.** Teen Agenda App
 
 ## Overview

@@ -4,18 +4,24 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useStore } from '../store/useStore';
 import { makeTheme } from '../theme';
 import SignInScreen from '../screens/Auth/SignInScreen';
+import ConfirmEmailScreen from '../screens/Auth/ConfirmEmailScreen';
 import ResetPasswordScreen from '../screens/Auth/ResetPasswordScreen';
 import SchoolPickerScreen from '../screens/Onboarding/SchoolPickerScreen';
 import ClassesScreen from '../screens/Onboarding/ClassesScreen';
 import ParentPairScreen from '../screens/Onboarding/ParentPairScreen';
+import TimetableScreen from '../screens/Onboarding/TimetableScreen';
 import MainTabNavigator from './MainTabNavigator';
 import ParentDashboardScreen from '../screens/Parent/ParentDashboardScreen';
+import ParentKidScreen from '../screens/Parent/ParentKidScreen';
 import ParentActivityScreen from '../screens/Parent/ParentActivityScreen';
+import ParentSettingsScreen from '../screens/Parent/ParentSettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
   const phase = useStore((s) => s.phase);
+  const passwordRecovery = useStore((s) => s.passwordRecovery);
+  const onboardingStart = useStore((s) => s.onboardingStart);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -36,17 +42,30 @@ export default function RootNavigator() {
     >
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         {phase === 'auth' && (
-          <>
-            <Stack.Screen name="SignIn" component={SignInScreen} />
+          passwordRecovery ? (
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-          </>
+          ) : (
+            <>
+              <Stack.Screen name="SignIn" component={SignInScreen} />
+              <Stack.Screen name="ConfirmEmail" component={ConfirmEmailScreen} />
+              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            </>
+          )
         )}
         {phase === 'onboarding' && (
-          <>
-            <Stack.Screen name="Classes" component={ClassesScreen} />
-            <Stack.Screen name="ParentPair" component={ParentPairScreen} />
-            <Stack.Screen name="SchoolPicker" component={SchoolPickerScreen} />
-          </>
+          onboardingStart === 'Classes' ? (
+            <>
+              <Stack.Screen name="Classes" component={ClassesScreen} />
+              <Stack.Screen name="Timetable" component={TimetableScreen} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="SchoolPicker" component={SchoolPickerScreen} />
+              <Stack.Screen name="Classes" component={ClassesScreen} />
+              <Stack.Screen name="Timetable" component={TimetableScreen} />
+              <Stack.Screen name="ParentPair" component={ParentPairScreen} />
+            </>
+          )
         )}
         {phase === 'main' && (
           <Stack.Screen name="Main" component={MainTabNavigator} />
@@ -54,7 +73,9 @@ export default function RootNavigator() {
         {phase === 'parent' && (
           <>
             <Stack.Screen name="ParentDashboard" component={ParentDashboardScreen} />
+            <Stack.Screen name="ParentKid" component={ParentKidScreen} />
             <Stack.Screen name="ParentActivity" component={ParentActivityScreen} />
+            <Stack.Screen name="ParentSettings" component={ParentSettingsScreen} />
           </>
         )}
       </Stack.Navigator>
