@@ -8,6 +8,7 @@ import { CalEvent } from '../../types';
 import { EVENT_TYPES, eventIcon } from '../../data/constants';
 import { EVENT_REMINDERS } from '../../lib/classNotifications';
 import { parseTime, fmt12 } from '../../lib/time';
+import { weekdayName } from '../../lib/events';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import MicroLabel from '../../components/MicroLabel';
 import Pill from '../../components/Pill';
@@ -33,6 +34,7 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
   const [endTime, setEndTime] = useState('');
   const [type, setType] = useState<string>(EVENT_TYPES[0].label);
   const [reminder, setReminder] = useState<string>('None');
+  const [weekly, setWeekly] = useState(false);
   const [error, setError] = useState('');
   const addEvent = useStore((s) => s.addEvent);
   const editEventAction = useStore((s) => s.editEvent);
@@ -52,6 +54,7 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
       setEndTime(editEvent.endTime ? fmt12(editEvent.endTime) : '');
       setType(editEvent.type ?? EVENT_TYPES[0].label);
       setReminder(editEvent.reminder && (EVENT_REMINDERS as readonly string[]).includes(editEvent.reminder) ? editEvent.reminder : 'None');
+      setWeekly(editEvent.repeat === 'weekly');
     } else {
       setTitle('');
       setLocation('');
@@ -60,6 +63,7 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
       setTime(defaultTime ? fmt12(defaultTime) : '3:30 PM');
       setType(EVENT_TYPES[0].label);
       setReminder('None');
+      setWeekly(false);
     }
   }, [visible, editEvent]);
 
@@ -83,6 +87,9 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
       icon: eventIcon(type),
       reminder,
       date: selectedDate.toISOString(),
+      repeat: weekly ? ('weekly' as const) : null,
+      // Turning repeat off (or back on) starts the series fresh
+      ...(editEvent && (editEvent.repeat === 'weekly') !== weekly ? { repeatUntil: null, skipDates: [] } : {}),
     };
     if (editEvent) editEventAction(editEvent.id, data);
     else addEvent(data);
@@ -131,6 +138,33 @@ export default function AddEventSheet({ visible, onClose, defaultDate, defaultTi
                     <Text style={[styles.dateArrowText, { color: theme.accent }]}>›</Text>
                   </TouchableOpacity>
                 </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <MicroLabel>Repeat</MicroLabel>
+                <View style={styles.repeatRow}>
+                  {[false, true].map((w) => {
+                    const active = weekly === w;
+                    return (
+                      <TouchableOpacity
+                        key={String(w)}
+                        style={[styles.repeatBtn, { backgroundColor: active ? theme.accent : theme.surface, borderColor: active ? theme.accent : theme.line }]}
+                        onPress={() => setWeekly(w)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Text style={[styles.repeatText, { fontFamily: theme.fMono, color: active ? '#fff' : theme.sub }]}>
+                          {w ? `🔁 Every ${weekdayName(selectedDate)}` : 'Doesn’t repeat'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {weekly && (
+                  <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.soft }]}>
+                    Shows every {weekdayName(selectedDate)} until you remove it. You can skip a single week from the event.
+                  </Text>
+                )}
               </View>
 
               <View style={styles.twoCol}>
@@ -189,6 +223,9 @@ const styles = StyleSheet.create({
   dateArrowText: { fontSize: 22, lineHeight: 26 },
   dateLabel: { flex: 1, textAlign: 'center', fontSize: 14, letterSpacing: 0.3 },
   twoCol: { flexDirection: 'row', gap: 12 },
+  repeatRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  repeatBtn: { borderRadius: 22, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
+  repeatText: { fontSize: 12, letterSpacing: 0.3 },
   hint: { fontSize: 12 },
   error: { fontSize: 13 },
   addBtn: { marginTop: 4 },

@@ -13,6 +13,7 @@ import { linkStudentByCode } from '../../lib/db';
 import { useParentData, Kid } from '../../lib/parentData';
 import { isSameDay, startOfDay, effectiveStreak, fmt12, parseTime } from '../../lib/time';
 import { classesOnDate } from '../../lib/timetable';
+import { eventsOn } from '../../lib/events';
 import { getClosedReason } from '../../data/schoolCalendars';
 import { eventIcon } from '../../data/constants';
 import Avatar from '../../components/Avatar';
@@ -38,6 +39,7 @@ function LinkKidCard({ theme, hasKids, isDemo, onLinked }: { theme: Theme; hasKi
         res.reason === 'code_not_found' ? 'No student has that code. Ask your kid to open Me in their app and read it to you.'
         : res.reason === 'not_a_parent' ? 'This account is a student account. Sign up for a separate parent account to link a kid.'
         : res.reason === 'not_signed_in' ? 'Sign in again, then try the code.'
+        : res.reason === 'needs_update' ? 'Linking isn’t switched on yet. The app’s database update needs to be run first (README, setup step 1).'
         : 'Couldn’t reach the server. Check your connection and try again.'
       );
       return;
@@ -86,8 +88,7 @@ function KidCard({ kid, theme, onOpen, onNudge }: { kid: Kid; theme: Theme; onOp
   const overdue = hw.filter((h) => !h.done && h.dueDate && new Date(h.dueDate) < sod);
   const dueToday = hw.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), today));
   const dueTomorrow = hw.filter((h) => !h.done && h.dueDate && isSameDay(new Date(h.dueDate), tom));
-  const plansToday = (snap?.events ?? []).filter((e) => e.date && isSameDay(new Date(e.date), today))
-    .sort((a, b) => (parseTime(a.time) ?? 0) - (parseTime(b.time) ?? 0));
+  const plansToday = eventsOn(snap?.events ?? [], today);
   const closed = getClosedReason(today, p?.school_name ?? undefined);
   const classesToday = closed ? [] : classesOnDate(today, p?.classes ?? [], p?.timetable, p?.school_name ?? undefined);
   const nowMin = today.getHours() * 60 + today.getMinutes();

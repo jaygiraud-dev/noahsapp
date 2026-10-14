@@ -103,10 +103,13 @@ export default function ParentPairScreen({ navigation }: any) {
           ) : (
             <TouchableOpacity onPress={copyCode} activeOpacity={0.8} accessibilityLabel="Copy pairing code">
               <LinearGradient colors={theme.accentGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.codeCard}>
-                <Text style={[styles.code, { fontFamily: theme.fMono }]}>{pairingCode || '······'}</Text>
+                <Text style={[pairingCode ? styles.code : styles.codeMissing, { fontFamily: theme.fMono }]}>{pairingCode || 'Code not ready yet'}</Text>
                 <Text style={[styles.copyHint, { fontFamily: theme.fMono }]}>{copied ? '✓ copied' : 'tap to copy'}</Text>
               </LinearGradient>
             </TouchableOpacity>
+          )}
+          {!isDemo && !pairingCode && (
+            <Text style={[styles.waiting, { fontFamily: theme.fBody, color: theme.amber }]}>Your code isn’t ready yet. It appears once the app’s database update has been run (README, setup step 1).</Text>
           )}
           {connected ? (
             <View style={[styles.status, { backgroundColor: theme.mint + '22', borderColor: theme.mint }]}>
@@ -139,6 +142,7 @@ const styles = StyleSheet.create({
   smallBtnText: { fontSize: 12, color: '#fff', letterSpacing: 0.3 },
   codeCard: { borderRadius: 20, paddingVertical: 22, alignItems: 'center', gap: 4 },
   code: { fontSize: 36, letterSpacing: 8, color: '#fff' },
+  codeMissing: { fontSize: 16, color: '#fff' },
   copyHint: { fontSize: 11, color: 'rgba(255,255,255,0.85)', letterSpacing: 1 },
   status: { borderRadius: 12, borderWidth: 1, padding: 12, alignItems: 'center' },
   statusText: { fontSize: 15 },

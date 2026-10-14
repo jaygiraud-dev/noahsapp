@@ -231,7 +231,9 @@ export default function MeScreen() {
                 {s.parents.length > 0 ? '' : ' To connect, your parent types this code in their parent account:'}
               </Text>
               <TouchableOpacity style={[styles.codeBox, { backgroundColor: theme.accent + '15', borderColor: theme.accent + '55' }]} onPress={copyCode} activeOpacity={0.7} accessibilityLabel="Copy your code">
-                <Text style={[styles.codeText, { fontFamily: theme.fMono, color: theme.accent }]}>{s.pairingCode || '······'}</Text>
+                {s.pairingCode
+                  ? <Text style={[styles.codeText, { fontFamily: theme.fMono, color: theme.accent }]}>{s.pairingCode}</Text>
+                  : <Text style={[styles.pairHint, { fontFamily: theme.fBody, color: theme.amber, textAlign: 'center' }]}>Your code isn’t ready yet. It appears once the app’s database update has been run (README, setup step 1).</Text>}
                 <Text style={[styles.copyBtn, { fontFamily: theme.fMono, color: codeCopied ? theme.mint : theme.accent }]}>{codeCopied ? '✓ copied' : 'your code · tap to copy'}</Text>
               </TouchableOpacity>
             </ShineCard>

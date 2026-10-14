@@ -12,7 +12,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Status = 'idle' | 'loading' | 'added' | 'already' | 'not_found' | 'self' | 'not_signed_in' | 'error';
+type Status = 'idle' | 'loading' | 'added' | 'already' | 'not_found' | 'self' | 'not_signed_in' | 'needs_update' | 'error';
 
 const STATUS_MSG: Record<Status, string> = {
   idle: '',
@@ -22,6 +22,7 @@ const STATUS_MSG: Record<Status, string> = {
   not_found: 'No student has that code. Check the letters and try again.',
   self: 'That’s your own code.',
   not_signed_in: 'Create an account to add friends.',
+  needs_update: 'Adding friends isn’t switched on yet. The app’s database update needs to be run first (README, setup step 1).',
   error: 'Couldn’t reach the server. Check your connection and try again.',
 };
 
@@ -56,7 +57,7 @@ export default function AddFriendSheet({ visible, onClose }: Props) {
 
   function handleClose() { setCode(''); setStatus('idle'); setCopied(false); onClose(); }
 
-  const bad = status === 'not_found' || status === 'self' || status === 'error' || status === 'not_signed_in';
+  const bad = status === 'not_found' || status === 'self' || status === 'error' || status === 'not_signed_in' || status === 'needs_update';
   const statusColor = status === 'added' ? theme.mint : bad ? theme.red : theme.soft;
 
   return (
@@ -103,7 +104,9 @@ export default function AddFriendSheet({ visible, onClose }: Props) {
             <View style={styles.section}>
               <MicroLabel>Your code</MicroLabel>
               <View style={[styles.codeBox, { backgroundColor: theme.surface, borderColor: theme.line }]}>
-                <Text style={[styles.myCode, { fontFamily: theme.fMono, color: theme.accent }]}>{pairingCode || '······'}</Text>
+                {pairingCode
+                  ? <Text style={[styles.myCode, { fontFamily: theme.fMono, color: theme.accent }]}>{pairingCode}</Text>
+                  : <Text style={[styles.hint, { flex: 1, fontFamily: theme.fBody, color: theme.amber }]}>Your code isn’t ready yet. It appears once the app’s database update has been run (README, setup step 1).</Text>}
                 <TouchableOpacity style={[styles.copyBtn, { backgroundColor: copied ? theme.mint : theme.accent }]} onPress={handleCopy}>
                   <Text style={[styles.copyText, { fontFamily: theme.fMono }]}>{copied ? 'copied!' : 'copy'}</Text>
                 </TouchableOpacity>

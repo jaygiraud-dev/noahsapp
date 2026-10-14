@@ -7,6 +7,7 @@ import { useParentData } from '../../lib/parentData';
 import { Homework, CalEvent } from '../../types';
 import { isSameDay, startOfDay, fmt12, parseTime } from '../../lib/time';
 import { classesOnDate } from '../../lib/timetable';
+import { eventsOn, repeatLabel } from '../../lib/events';
 import { getClosedReason, getDaySchedule } from '../../data/schoolCalendars';
 import { eventIcon, tagIcon } from '../../data/constants';
 import NudgeSheet from './NudgeSheet';
@@ -66,7 +67,7 @@ function EventRow({ ev, theme }: { ev: CalEvent; theme: Theme }) {
       <View style={{ flex: 1 }}>
         <Text style={[styles.evTitle, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{ev.title}</Text>
         <Text style={[styles.evMeta, { fontFamily: theme.fMono, color: theme.soft }]}>
-          {[ev.time ? `${fmt12(ev.time)}${ev.endTime ? ` – ${fmt12(ev.endTime)}` : ''}` : 'Any time', ev.type, ev.location].filter(Boolean).join('  ·  ')}
+          {[ev.time ? `${fmt12(ev.time)}${ev.endTime ? ` – ${fmt12(ev.endTime)}` : ''}` : 'Any time', ev.type, ev.location, repeatLabel(ev)].filter(Boolean).join('  ·  ')}
         </Text>
       </View>
     </View>
@@ -109,7 +110,7 @@ export default function ParentKidScreen({ navigation, route }: any) {
   // ─── Day ───
   const renderDay = (d: Date) => {
     const dueHw = homework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), d));
-    const evs = events.filter((e) => e.date && isSameDay(new Date(e.date), d)).sort((a, b) => (parseTime(a.time) ?? 0) - (parseTime(b.time) ?? 0));
+    const evs = eventsOn(events, d);
     const closed = getClosedReason(d, school);
     const weekend = d.getDay() === 0 || d.getDay() === 6;
     const sched = getDaySchedule(d, school);
@@ -206,7 +207,7 @@ export default function ParentKidScreen({ navigation, route }: any) {
             </Text>
             {weekDays.map((d) => {
               const hw = homework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), d));
-              const evs = events.filter((e) => e.date && isSameDay(new Date(e.date), d)).sort((a, b) => (parseTime(a.time) ?? 0) - (parseTime(b.time) ?? 0));
+              const evs = eventsOn(events, d);
               const closed = getClosedReason(d, school);
               const isToday = isSameDay(d, new Date());
               return (

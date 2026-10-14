@@ -13,6 +13,7 @@ import { isSameDay, startOfDay, effectiveStreak, parseTime, fmt12, dateKey } fro
 import { getClosedReason, getDaySchedule } from '../../data/schoolCalendars';
 import { eventIcon, tagIcon } from '../../data/constants';
 import { classesOnDate, ScheduledClass } from '../../lib/timetable';
+import { eventsOn } from '../../lib/events';
 import DayPicker from '../../components/DayPicker';
 import ShineCard from '../../components/ShineCard';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
@@ -154,7 +155,7 @@ function EventBlock({ ev, theme, cardSurface, onPress }: { ev: CalEvent; theme: 
         <View style={styles.eventInfo}>
           <Text style={[styles.eventTitle, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{ev.title}</Text>
           <Text style={[styles.eventLoc, { fontFamily: theme.fMono, color: theme.soft }]}>
-            {[ev.time ? `${fmt12(ev.time)}${ev.endTime ? ` – ${fmt12(ev.endTime)}` : ''}` : '', ev.location].filter(Boolean).join('  ·  ')}
+            {[ev.time ? `${fmt12(ev.time)}${ev.endTime ? ` – ${fmt12(ev.endTime)}` : ''}` : '', ev.location, ev.repeat === 'weekly' ? '🔁 weekly' : ''].filter(Boolean).join('  ·  ')}
           </Text>
         </View>
         <Text style={[styles.chev, { color: theme.soft }]}>›</Text>
@@ -197,7 +198,7 @@ export default function TodayScreen() {
   const [evSheetOpen, setEvSheetOpen] = useState(false);
   const [evEdit, setEvEdit] = useState<CalEvent | null>(null);
   const [hwDetailId, setHwDetailId] = useState<string | null>(null);
-  const [evDetailId, setEvDetailId] = useState<string | null>(null);
+  const [evPick, setEvPick] = useState<{ id: string; occ?: string } | null>(null);
   const [dueListOpen, setDueListOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const fabRotate = useRef(new Animated.Value(0)).current;
@@ -266,9 +267,7 @@ export default function TodayScreen() {
   const otherHw = homework.filter((h) => (!h.classId || !classIds.has(h.classId)) && showsOnDay(h, selectedDate));
   otherHw.forEach((h) => shownIds.add(h.id));
 
-  const todayEvents = events
-    .filter((e) => e.date && isSameDay(new Date(e.date), selectedDate))
-    .sort((a, b) => (parseTime(a.time) ?? 0) - (parseTime(b.time) ?? 0));
+  const todayEvents = eventsOn(events, selectedDate);
 
   // Coming up: open work not already on a card — overdue, or due within the next week
   const upcomingHw = homework
@@ -283,7 +282,8 @@ export default function TodayScreen() {
   const hasBg = bgImageUri !== '';
   const cardSurface = hasBg ? 'rgba(20,20,20,0.78)' : theme.surface;
   const hwDetail = homework.find((h) => h.id === hwDetailId) ?? null;
-  const evDetail = events.find((e) => e.id === evDetailId) ?? null;
+  const evBase = events.find((e) => e.id === evPick?.id);
+  const evDetail = evBase ? { ...evBase, occurrence: evPick?.occ } : null;
   const shownStreak = effectiveStreak(streak, lastActivityDate);
 
   function openAlert() {
@@ -395,7 +395,7 @@ export default function TodayScreen() {
           <Text style={[styles.sectionLabel, { fontFamily: theme.fMono, color: theme.soft }]}>{isToday ? 'AFTER SCHOOL & PLANS' : 'PLANS'}</Text>
         )}
         {todayEvents.map((ev) => (
-          <EventBlock key={ev.id} ev={ev} theme={theme} cardSurface={cardSurface} onPress={() => setEvDetailId(ev.id)} />
+          <EventBlock key={ev.id} ev={ev} theme={theme} cardSurface={cardSurface} onPress={() => setEvPick({ id: ev.id, occ: ev.occurrence })} />
         ))}
 
         {upcomingHw.length > 0 && (
@@ -496,7 +496,7 @@ export default function TodayScreen() {
       <EventDetailSheet
         ev={evDetail}
         visible={!!evDetail}
-        onClose={() => setEvDetailId(null)}
+        onClose={() => setEvPick(null)}
         onEdit={(ev) => setEvEdit(ev)}
       />
     </SafeAreaView>

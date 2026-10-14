@@ -68,6 +68,14 @@ export interface CalEvent {
   location?: string;
   reminder?: string;
   done: boolean;
+  /** 'weekly' repeats on the same weekday as `date` until removed */
+  repeat?: 'weekly' | null;
+  /** Last day of a weekly repeat (ISO), or null for forever */
+  repeatUntil?: string | null;
+  /** Days removed from a weekly repeat, as YYYY-MM-DD */
+  skipDates?: string[];
+  /** Which day a listed copy is for, as YYYY-MM-DD (never stored) */
+  occurrence?: string;
 }
 
 export interface Friend {

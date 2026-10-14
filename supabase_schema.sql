@@ -298,6 +298,9 @@ alter table public.events add column if not exists reminder   text;
 alter table public.events add column if not exists done       boolean default false;
 alter table public.events add column if not exists created_at timestamptz default now();
 alter table public.events add column if not exists updated_at timestamptz default now();
+alter table public.events add column if not exists repeat       text;          -- 'weekly' or null
+alter table public.events add column if not exists repeat_until timestamptz;   -- null = until removed
+alter table public.events add column if not exists skip_dates   text[] default '{}';
 
 alter table public.events enable row level security;
 

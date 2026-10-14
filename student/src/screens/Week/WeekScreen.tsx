@@ -9,6 +9,7 @@ import { Class, CalEvent, Homework } from '../../types';
 import { parseTime, fmt12, isSameDay, dateKey, startOfDay } from '../../lib/time';
 import { eventIcon } from '../../data/constants';
 import { classesOnDate } from '../../lib/timetable';
+import { eventsOn } from '../../lib/events';
 import AddEventSheet from '../sheets/AddEventSheet';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
 import EventDetailSheet from '../sheets/EventDetailSheet';
@@ -56,7 +57,7 @@ export default function WeekScreen() {
   const [evEdit, setEvEdit] = useState<CalEvent | null>(null);
   const [hwEdit, setHwEdit] = useState<Homework | null>(null);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [evDetailId, setEvDetailId] = useState<string | null>(null);
+  const [evPick, setEvPick] = useState<{ id: string; occ?: string } | null>(null);
   const [hwDetailId, setHwDetailId] = useState<string | null>(null);
 
   const homework = useStore((s) => s.homework);
@@ -80,7 +81,7 @@ export default function WeekScreen() {
   const schedule = getDaySchedule(selectedDay, school.name);
 
   const dayClasses = isWeekend || closedReason ? [] : classesOnDate(selectedDay, classes, timetable, school.name);
-  const dayEvents = events.filter((ev) => ev.date && isSameDay(new Date(ev.date), selectedDay));
+  const dayEvents = eventsOn(events, selectedDay);
   const dayHomework = homework.filter((h) => h.dueDate && isSameDay(new Date(h.dueDate), selectedDay));
 
   const sod = startOfDay(selectedDay);
@@ -105,7 +106,8 @@ export default function WeekScreen() {
 
   const nowMin = today.getHours() * 60 + today.getMinutes();
   const showNow = isSameDay(selectedDay, today) && nowMin >= START_HOUR * 60 && nowMin < END_HOUR * 60;
-  const evDetail = events.find((e) => e.id === evDetailId) ?? null;
+  const evBase = events.find((e) => e.id === evPick?.id);
+  const evDetail = evBase ? { ...evBase, occurrence: evPick?.occ } : null;
   const hwDetail = homework.find((h) => h.id === hwDetailId) ?? null;
 
   // ─── Month view ────────────────────────────────────────────────────────────
@@ -128,7 +130,7 @@ export default function WeekScreen() {
             const isOff = day.getDay() === 0 || day.getDay() === 6;
             const closedLabel = isOff ? undefined : closed.get(key);
             const dotColor = closedLabel ? closedColor(closedLabel) : null;
-            const hasPersonal = events.some((ev) => ev.date && isSameDay(new Date(ev.date), day))
+            const hasPersonal = eventsOn(events, day).length > 0
               || homework.some((h) => h.dueDate && !h.done && isSameDay(new Date(h.dueDate), day));
             return (
               <TouchableOpacity
@@ -239,6 +241,13 @@ export default function WeekScreen() {
             <Text style={[styles.navArrow, { color: theme.accent }]}>→</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: theme.accent }]}
+            onPress={() => { setAddEventTime(''); setAddEventDate(selectedDay); }}
+            accessibilityLabel={`Add a plan on ${selectedDay.toDateString()}`}
+          >
+            <Text style={[styles.addBtnText, { fontFamily: theme.fMono }]}>+ Add</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.toggleViewBtn, { backgroundColor: cardSurface, borderColor: theme.line }]}
             onPress={() => {
               if (viewMode === 'day') { setMonthAnchor({ year: selectedDay.getFullYear(), month: selectedDay.getMonth() }); setViewMode('month'); }
@@ -280,7 +289,7 @@ export default function WeekScreen() {
                 <View style={styles.wkSection}>
                   <Text style={[styles.wkSectionLabel, { fontFamily: theme.fMono, color: theme.accent }]}>PLANS</Text>
                   {dayEvents.map((ev) => (
-                    <TouchableOpacity key={ev.id} onPress={() => setEvDetailId(ev.id)} style={[styles.wkItem, { borderLeftColor: theme.accent, backgroundColor: cardSurface }]}>
+                    <TouchableOpacity key={ev.id} onPress={() => setEvPick({ id: ev.id, occ: ev.occurrence })} style={[styles.wkItem, { borderLeftColor: theme.accent, backgroundColor: cardSurface }]}>
                       <Text style={[styles.wkItemTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.icon ?? eventIcon(ev.type)} {ev.title}</Text>
                       {ev.time && <Text style={[styles.wkItemSub, { fontFamily: theme.fMono, color: theme.accent }]}>{fmt12(ev.time)}{ev.endTime ? ` – ${fmt12(ev.endTime)}` : ''}</Text>}
                     </TouchableOpacity>
@@ -401,7 +410,7 @@ export default function WeekScreen() {
                     <TouchableOpacity
                       key={ev.id}
                       style={[styles.block, { top: yFor(s), left: GUTTER + 30, right: 6, height: Math.max(yFor(e) - yFor(s) - 2, 30), backgroundColor: theme.accent + '33', borderLeftColor: theme.accent, zIndex: 3 }]}
-                      onPress={() => setEvDetailId(ev.id)}
+                      onPress={() => setEvPick({ id: ev.id, occ: ev.occurrence })}
                       activeOpacity={0.8}
                     >
                       <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: theme.accent }]} numberOfLines={1}>{ev.icon ?? eventIcon(ev.type)} {ev.title}</Text>
@@ -430,7 +439,7 @@ export default function WeekScreen() {
         editEvent={evEdit}
       />
       <AddHomeworkSheet visible={!!hwEdit} onClose={() => setHwEdit(null)} editHw={hwEdit} />
-      <EventDetailSheet ev={evDetail} visible={!!evDetail} onClose={() => setEvDetailId(null)} onEdit={(ev) => setEvEdit(ev)} />
+      <EventDetailSheet ev={evDetail} visible={!!evDetail} onClose={() => setEvPick(null)} onEdit={(ev) => setEvEdit(ev)} />
       <HomeworkDetailSheet hw={hwDetail} visible={!!hwDetail} onClose={() => setHwDetailId(null)} onEdit={(hw) => setHwEdit(hw)} />
 
       <Modal visible={!!selectedClass} transparent animationType="fade" onRequestClose={() => setSelectedClass(null)}>
@@ -497,6 +506,8 @@ const styles = StyleSheet.create({
   navArrow: { fontSize: 18 },
   toggleViewBtn: { marginLeft: 4, height: 34, paddingHorizontal: 12, borderRadius: 17, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   toggleViewText: { fontSize: 12 },
+  addBtn: { marginLeft: 4, height: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
+  addBtnText: { color: '#fff', fontSize: 12 },
   dayStrip: { flexDirection: 'row', paddingHorizontal: 8, paddingBottom: 10, paddingTop: 4, borderBottomWidth: StyleSheet.hairlineWidth },
   dayPill: { flex: 1, alignItems: 'center', gap: 4 },
   dayAbbr: { fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase' },

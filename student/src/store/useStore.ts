@@ -11,7 +11,8 @@ import {
   fetchUnseenNudges, markNudgeSeen,
 } from '../lib/db';
 import { dateKey } from '../lib/time';
-import { reminderTime, scheduleReminder, cancelReminder } from '../lib/classNotifications';
+import { reminderTime, scheduleReminder, scheduleWeeklyReminder, cancelReminder } from '../lib/classNotifications';
+import { nextOccurrence, repeatLabel } from '../lib/events';
 import { defaultPeriods } from '../lib/timetable';
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -80,6 +81,10 @@ interface AppState {
   addEvent: (ev: Omit<CalEvent, 'id' | 'done'>) => void;
   editEvent: (id: string, changes: Partial<CalEvent>) => void;
   deleteEvent: (id: string) => void;
+  /** Remove one day from a weekly repeat */
+  skipEventOn: (id: string, day: string) => void;
+  /** Stop a weekly repeat before this day (keeps earlier ones) */
+  endEventBefore: (id: string, day: string) => void;
   setVibe: (vibe: Vibe) => void;
   setDarkMode: (v: boolean) => void;
   setBgImageUri: (uri: string) => void;
@@ -187,6 +192,12 @@ function scheduleHwReminder(hw: Homework) {
 }
 
 function scheduleEventReminder(ev: CalEvent) {
+  if (ev.repeat === 'weekly') {
+    const next = nextOccurrence(ev);
+    const when = next ? reminderTime(ev.reminder, { eventDate: next.toISOString(), eventTime: ev.time }) : null;
+    scheduleWeeklyReminder(ev.id, `📅 ${ev.title}`, [ev.time, ev.location].filter(Boolean).join(' · ') || 'Coming up', when).catch(() => {});
+    return;
+  }
   const when = reminderTime(ev.reminder, { eventDate: ev.date, eventTime: ev.time });
   scheduleReminder(ev.id, `📅 ${ev.title}`, [ev.time, ev.location].filter(Boolean).join(' · ') || 'Coming up', when).catch(() => {});
 }
@@ -463,7 +474,8 @@ export const useStore = create<AppState>()(
     pushEv(newEv).then((ok) => { if (ok) set({ toast: 'Event saved' }); });
     get().syncProfileState();
     const day = newEv.date ? new Date(newEv.date).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
-    logActivity(userId, 'event_added', `Added ${newEv.title}${day ? ` · ${day}` : ''}${newEv.time ? ` ${newEv.time}` : ''}`).catch(() => {});
+    const when = newEv.repeat === 'weekly' ? repeatLabel(newEv).toLowerCase() : day;
+    logActivity(userId, 'event_added', `Added ${newEv.title}${when ? ` · ${when}` : ''}${newEv.time ? ` ${newEv.time}` : ''}`).catch(() => {});
   },
 
   editEvent: (id, changes) => {
@@ -480,6 +492,21 @@ export const useStore = create<AppState>()(
     cancelReminder(id).catch(() => {});
     markSynced(id);
     if (userId) deleteEventRow(id).catch(() => {});
+  },
+
+  skipEventOn: (id, day) => {
+    const ev = get().events.find((e) => e.id === id);
+    if (!ev) return;
+    get().editEvent(id, { skipDates: Array.from(new Set([...(ev.skipDates ?? []), day])) });
+  },
+
+  endEventBefore: (id, day) => {
+    const ev = get().events.find((e) => e.id === id);
+    if (!ev?.date) return;
+    const cut = new Date(day + 'T12:00:00'); cut.setDate(cut.getDate() - 1);
+    // Ending before the very first one means removing the whole series
+    if (cut < new Date(new Date(ev.date).toDateString())) { get().deleteEvent(id); return; }
+    get().editEvent(id, { repeatUntil: cut.toISOString() });
   },
 
   setVibe: (vibe) => set({

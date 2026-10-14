@@ -149,6 +149,9 @@ export async function upsertEvent(userId: string, ev: CalEvent): Promise<string 
       location: ev.location ?? null,
       reminder: ev.reminder ?? null,
       done: ev.done,
+      repeat: ev.repeat === 'weekly' ? 'weekly' : null,
+      repeat_until: ev.repeatUntil ?? null,
+      skip_dates: ev.skipDates ?? [],
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'id' }
@@ -189,12 +192,13 @@ export async function fetchActivity(studentIds: string[], limit = 100): Promise<
 
 export type LinkResult =
   | { ok: true; studentId: string; name: string | null; school: string | null }
-  | { ok: false; reason: 'code_not_found' | 'not_a_parent' | 'not_signed_in' | 'network' };
+  | { ok: false; reason: 'code_not_found' | 'not_a_parent' | 'not_signed_in' | 'needs_update' | 'network' };
 
 export async function linkStudentByCode(code: string): Promise<LinkResult> {
   const { data, error } = await supabase.rpc('link_student_by_code', { p_code: code.trim().toUpperCase() });
   if (error) {
     const msg = error.message ?? '';
+    if (/function|schema cache/i.test(msg)) return { ok: false, reason: 'needs_update' };
     if (msg.includes('code_not_found')) return { ok: false, reason: 'code_not_found' };
     if (msg.includes('not_a_parent')) return { ok: false, reason: 'not_a_parent' };
     if (msg.includes('not_signed_in')) return { ok: false, reason: 'not_signed_in' };
@@ -310,11 +314,14 @@ export async function markNudgeSeen(id: string): Promise<void> {
 
 // ─── FRIENDS ─────────────────────────────────────────────────────────────────
 
-export type AddFriendResult = 'added' | 'already' | 'not_found' | 'self' | 'not_signed_in' | 'error';
+export type AddFriendResult = 'added' | 'already' | 'not_found' | 'self' | 'not_signed_in' | 'needs_update' | 'error';
 
 export async function addFriendByCode(code: string): Promise<AddFriendResult> {
   const { data, error } = await supabase.rpc('add_friend_by_code', { p_code: code.trim().toUpperCase() });
-  if (error) { console.warn('[db] addFriendByCode:', error.message); return 'error'; }
+  if (error) {
+    console.warn('[db] addFriendByCode:', error.message);
+    return /function|schema cache|does not exist/i.test(error.message) ? 'needs_update' : 'error';
+  }
   return (data as AddFriendResult) ?? 'error';
 }
 
@@ -420,5 +427,8 @@ function rowToEvent(row: any): CalEvent {
     location: row.location ?? undefined,
     reminder: row.reminder ?? undefined,
     done: row.done ?? false,
+    repeat: row.repeat === 'weekly' ? 'weekly' : null,
+    repeatUntil: row.repeat_until ?? null,
+    skipDates: Array.isArray(row.skip_dates) ? row.skip_dates : [],
   };
 }

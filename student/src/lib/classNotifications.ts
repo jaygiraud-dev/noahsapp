@@ -100,6 +100,23 @@ export async function scheduleReminder(id: string, title: string, body: string, 
   });
 }
 
+/** Repeats every week at the same weekday and time as `firstFire`. */
+export async function scheduleWeeklyReminder(id: string, title: string, body: string, firstFire: Date | null): Promise<void> {
+  if (Platform.OS === 'web') return;
+  await Notifications.cancelScheduledNotificationAsync(`rem-${id}`).catch(() => {});
+  if (!firstFire) return;
+  await Notifications.scheduleNotificationAsync({
+    identifier: `rem-${id}`,
+    content: { title, body },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday: firstFire.getDay() + 1,
+      hour: firstFire.getHours(),
+      minute: firstFire.getMinutes(),
+    },
+  });
+}
+
 export async function cancelReminder(id: string): Promise<void> {
   if (Platform.OS === 'web') return;
   await Notifications.cancelScheduledNotificationAsync(`rem-${id}`).catch(() => {});
