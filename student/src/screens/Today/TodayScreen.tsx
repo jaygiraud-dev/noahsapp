@@ -19,6 +19,7 @@ import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
 import AddEventSheet from '../sheets/AddEventSheet';
 import HomeworkDetailSheet from '../sheets/HomeworkDetailSheet';
 import EventDetailSheet from '../sheets/EventDetailSheet';
+import { SyncBanner } from '../../components/SaveStatus';
 
 type Theme = ReturnType<typeof makeTheme>;
 
@@ -270,9 +271,8 @@ export default function TodayScreen() {
     .sort((a, b) => (parseTime(a.time) ?? 0) - (parseTime(b.time) ?? 0));
 
   // Coming up: open work not already on a card — overdue, or due within the next week
-  const weekOut = new Date(startOfDay(selectedDate)); weekOut.setDate(weekOut.getDate() + 8);
   const upcomingHw = homework
-    .filter((h) => !h.done && h.dueDate && !shownIds.has(h.id) && new Date(h.dueDate) < weekOut)
+    .filter((h) => !h.done && h.dueDate && !shownIds.has(h.id))
     .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
   function isNow(start: string, end: string) {
@@ -305,6 +305,7 @@ export default function TodayScreen() {
         </ImageBackground>
       )}
 
+      <SyncBanner />
       {nudges.length > 0 ? (
         <Banner
           theme={theme}

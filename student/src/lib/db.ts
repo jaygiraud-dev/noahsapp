@@ -91,7 +91,8 @@ export async function fetchHomework(userId: string): Promise<Homework[]> {
   return (data ?? []).map(rowToHomework);
 }
 
-export async function upsertHomework(userId: string, hw: Homework): Promise<void> {
+/** Saves one homework row. Returns null on success, or the error message. */
+export async function upsertHomework(userId: string, hw: Homework): Promise<string | null> {
   const { error } = await supabase.from('homework').upsert(
     {
       id: hw.id,
@@ -113,8 +114,9 @@ export async function upsertHomework(userId: string, hw: Homework): Promise<void
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'id' }
-  );
-  if (error) console.warn('[db] upsertHomework:', error.message);
+  ).then((r) => r, (e) => ({ error: { message: e?.message ?? 'Network request failed' } as any }));
+  if (error) { console.warn('[db] upsertHomework:', error.message); return error.message; }
+  return null;
 }
 
 export async function deleteHomeworkRow(id: string): Promise<void> {
@@ -131,7 +133,8 @@ export async function fetchEvents(userId: string): Promise<CalEvent[]> {
   return (data ?? []).map(rowToEvent);
 }
 
-export async function upsertEvent(userId: string, ev: CalEvent): Promise<void> {
+/** Saves one event row. Returns null on success, or the error message. */
+export async function upsertEvent(userId: string, ev: CalEvent): Promise<string | null> {
   const { error } = await supabase.from('events').upsert(
     {
       id: ev.id,
@@ -149,8 +152,9 @@ export async function upsertEvent(userId: string, ev: CalEvent): Promise<void> {
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'id' }
-  );
-  if (error) console.warn('[db] upsertEvent:', error.message);
+  ).then((r) => r, (e) => ({ error: { message: e?.message ?? 'Network request failed' } as any }));
+  if (error) { console.warn('[db] upsertEvent:', error.message); return error.message; }
+  return null;
 }
 
 export async function deleteEventRow(id: string): Promise<void> {

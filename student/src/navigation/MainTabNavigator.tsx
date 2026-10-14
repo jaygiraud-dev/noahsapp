@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import { makeTheme } from '../theme';
 import BottomNav from '../components/BottomNav';
 import RewardOverlay from '../components/RewardOverlay';
+import { SaveToast } from '../components/SaveStatus';
 import TodayScreen from '../screens/Today/TodayScreen';
 import WeekScreen from '../screens/Week/WeekScreen';
 import SquadScreen from '../screens/Squad/SquadScreen';
@@ -27,6 +28,7 @@ export default function MainTabNavigator() {
         {activeTab === 'me' && <MeScreen />}
       </View>
       <BottomNav activeTab={activeTab} onTabPress={setActiveTab} />
+      <SaveToast />
       {reward && <RewardOverlay />}
     </View>
   );

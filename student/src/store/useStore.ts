@@ -51,6 +51,14 @@ interface AppState {
   /** Which setup screen to open first when editing from Me (not persisted) */
   onboardingStart: 'SchoolPicker' | 'Classes';
   editSetup: (start: 'SchoolPicker' | 'Classes') => void;
+  /** Homework/event ids saved on this device but not yet on the server */
+  unsynced: string[];
+  /** Why the last save to the server failed ('' when everything is saved) */
+  syncError: string;
+  /** Short confirmation shown after adding something (not persisted) */
+  toast: string;
+  retrySync: () => Promise<void>;
+  clearToast: () => void;
   _hasHydrated: boolean;
 
   setPhase: (phase: AppPhase) => void;
@@ -187,6 +195,57 @@ function notifyParents(title: string, body: string) {
   getParentPushTokens().then((tokens) => tokens.forEach((t) => sendExpoPush(t, title, body))).catch(() => {});
 }
 
+/** Turns a database error into something a student or parent can act on. */
+function friendlySyncError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (/column|schema cache|does not exist|relation/.test(m)) return 'The database needs its one-time update before homework can be saved. Run supabase_schema.sql in Supabase (README, setup step 1).';
+  if (/jwt|not authenticated|401|row-level security/.test(m)) return 'You’re signed out of your account. Sign out and back in to save.';
+  if (/fetch|network|timeout|offline/.test(m)) return 'No connection right now. It’s kept on this phone and will save when you’re back online.';
+  return msg;
+}
+
+function markUnsynced(id: string) {
+  useStore.setState((s) => (s.unsynced.includes(id) ? s : { unsynced: [...s.unsynced, id] }));
+}
+
+function markSynced(id: string) {
+  useStore.setState((s) => {
+    const unsynced = s.unsynced.filter((x) => x !== id);
+    return { unsynced, syncError: unsynced.length === 0 ? '' : s.syncError };
+  });
+}
+
+/** Saves homework to the account; on failure keeps it locally and records why. */
+async function pushHw(hw: Homework): Promise<boolean> {
+  const { userId } = useStore.getState();
+  if (!userId) return true;
+  markUnsynced(hw.id);
+  const { attachedImages, ...row } = hw;
+  const err = await upsertHomework(userId, row as Homework);
+  if (err) { useStore.setState({ syncError: friendlySyncError(err) }); return false; }
+  markSynced(hw.id);
+  return true;
+}
+
+async function pushEv(ev: CalEvent): Promise<boolean> {
+  const { userId } = useStore.getState();
+  if (!userId) return true;
+  markUnsynced(ev.id);
+  const err = await upsertEvent(userId, ev);
+  if (err) { useStore.setState({ syncError: friendlySyncError(err) }); return false; }
+  markSynced(ev.id);
+  return true;
+}
+
+function dueText(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const t = new Date(); const tm = new Date(); tm.setDate(t.getDate() + 1);
+  if (d.toDateString() === t.toDateString()) return 'today';
+  if (d.toDateString() === tm.toDateString()) return 'tomorrow';
+  return d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -216,6 +275,9 @@ export const useStore = create<AppState>()(
   passwordRecovery: false,
   nudges: [],
   onboardingStart: 'SchoolPicker',
+  unsynced: [],
+  syncError: '',
+  toast: '',
   _hasHydrated: false,
 
   setPhase: (phase) => set({ phase }),
@@ -244,6 +306,8 @@ export const useStore = create<AppState>()(
     bgImageUri: '',
     onboarded: false,
     nudges: [],
+    unsynced: [],
+    syncError: '',
     reward: null,
     phase: role === 'parent' ? 'parent' : 'onboarding',
   }),
@@ -306,7 +370,7 @@ export const useStore = create<AppState>()(
     });
     scheduleHwReminder(updated);
     if (!userId) return;
-    upsertHomework(userId, updated).catch(() => {});
+    pushHw(updated);
     get().syncProfileState();
     if (newDone) {
       logActivity(userId, 'hw_done', `Finished ${hw.title}`, hw.subject, hw.classColor).catch(() => {});
@@ -333,7 +397,8 @@ export const useStore = create<AppState>()(
       };
     });
     scheduleHwReminder(newHw);
-    if (!userId) return;
+    if (!userId) { set({ toast: `Added · due ${dueText(newHw.dueDate)}` }); return; }
+    markUnsynced(id);
     get().syncProfileState();
     const dueLabel = newHw.dueDate
       ? new Date(newHw.dueDate).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })
@@ -348,7 +413,8 @@ export const useStore = create<AppState>()(
         saved = { ...newHw, ...res };
         set((st) => ({ homework: st.homework.map((h) => (h.id === id ? { ...h, photos: res.photos } : h)) }));
       }
-      await upsertHomework(userId, saved);
+      const ok = await pushHw(saved);
+      if (ok) set({ toast: `Saved · due ${dueText(saved.dueDate)}` });
     })().catch(() => {});
   },
 
@@ -367,7 +433,8 @@ export const useStore = create<AppState>()(
         saved = { ...after, ...res };
         set((st) => ({ homework: st.homework.map((h) => (h.id === id ? { ...h, photos: res.photos } : h)) }));
       }
-      await upsertHomework(userId, saved);
+      const ok = await pushHw(saved);
+      if (ok) set({ toast: 'Changes saved' });
     })().catch(() => {});
   },
 
@@ -378,6 +445,7 @@ export const useStore = create<AppState>()(
     set((s) => ({ homework: s.homework.filter((h) => h.id !== id) }));
     cancelReminder(id).catch(() => {});
     if (!userId) return;
+    markSynced(id);
     deleteHomeworkRow(id).catch(() => {});
     if (hw.photos?.length) deletePhotoPaths(hw.photos).catch(() => {});
   },
@@ -391,8 +459,8 @@ export const useStore = create<AppState>()(
       return { events: [...s.events, newEv], streak, lastActivityDate };
     });
     scheduleEventReminder(newEv);
-    if (!userId) return;
-    upsertEvent(userId, newEv).catch(() => {});
+    if (!userId) { set({ toast: 'Event added' }); return; }
+    pushEv(newEv).then((ok) => { if (ok) set({ toast: 'Event saved' }); });
     get().syncProfileState();
     const day = newEv.date ? new Date(newEv.date).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
     logActivity(userId, 'event_added', `Added ${newEv.title}${day ? ` · ${day}` : ''}${newEv.time ? ` ${newEv.time}` : ''}`).catch(() => {});
@@ -403,13 +471,14 @@ export const useStore = create<AppState>()(
     set((s) => ({ events: s.events.map((e) => (e.id === id ? { ...e, ...changes } : e)) }));
     const updated = get().events.find((e) => e.id === id);
     if (updated) scheduleEventReminder(updated);
-    if (userId && updated) upsertEvent(userId, updated).catch(() => {});
+    if (userId && updated) pushEv(updated);
   },
 
   deleteEvent: (id) => {
     const { userId } = get();
     set((s) => ({ events: s.events.filter((e) => e.id !== id) }));
     cancelReminder(id).catch(() => {});
+    markSynced(id);
     if (userId) deleteEventRow(id).catch(() => {});
   },
 
@@ -488,24 +557,45 @@ export const useStore = create<AppState>()(
       return; // offline — keep what's on the device
     }
     if (profile) get().applyProfile(profile);
+    const pending = new Set(get().unsynced);
+    const sbHwIds = new Set(sbHw.map((h) => h.id));
+    const sbEvIds = new Set(sbEv.map((e) => e.id));
     if (sbHw.length > 0 || sbEv.length > 0) {
       const paths = sbHw.flatMap((h) => h.photos ?? []);
       const urls = await signPhotoPaths(paths);
-      set({
-        homework: sbHw.map((h) => ({ ...h, attachedImages: (h.photos ?? []).map((p) => urls[p]).filter(Boolean) })),
-        events: sbEv,
+      const fromServer = sbHw.map((h) => {
+        // A local edit that hasn't reached the server yet wins over the server copy
+        const local = pending.has(h.id) ? localHw.find((l) => l.id === h.id) : undefined;
+        const base = local ? { ...local, photos: local.photos ?? h.photos } : h;
+        return { ...base, attachedImages: (base.photos ?? []).map((p) => urls[p]).filter(Boolean) };
       });
+      const onlyLocal = localHw.filter((h) => pending.has(h.id) && !sbHwIds.has(h.id));
+      const evFromServer = sbEv.map((e) => (pending.has(e.id) ? localEv.find((l) => l.id === e.id) ?? e : e));
+      const evOnlyLocal = localEv.filter((e) => pending.has(e.id) && !sbEvIds.has(e.id));
+      set({ homework: [...fromServer, ...onlyLocal], events: [...evFromServer, ...evOnlyLocal] });
     } else if (localHw.length > 0 || localEv.length > 0) {
       // Server is empty but this device has data for this same account — push it up
-      await Promise.all([
-        ...localHw.map((hw) => upsertHomework(userId, hw)),
-        ...localEv.map((ev) => upsertEvent(userId, ev)),
-      ]);
+      localHw.forEach((h) => markUnsynced(h.id));
+      localEv.forEach((e) => markUnsynced(e.id));
     }
+    await get().retrySync();
     get().loadFriends();
     get().loadParents();
     get().checkNudges();
   },
+
+  retrySync: async () => {
+    const { unsynced, homework, events } = get();
+    for (const id of unsynced) {
+      const h = homework.find((x) => x.id === id);
+      if (h) { await pushHw(h); continue; }
+      const e = events.find((x) => x.id === id);
+      if (e) { await pushEv(e); continue; }
+      markSynced(id); // deleted locally meanwhile
+    }
+  },
+
+  clearToast: () => set({ toast: '' }),
 
   // Debounced push of profile fields that change often.
   syncProfileState: () => {
@@ -563,6 +653,7 @@ export const useStore = create<AppState>()(
         userId: state.userId,
         userRole: state.userRole,
         onboarded: state.onboarded,
+        unsynced: state.unsynced,
       }),
     }
   )

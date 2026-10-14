@@ -36,6 +36,44 @@ alter table public.profiles add column if not exists avatar             text;   
 alter table public.profiles add column if not exists onboarded          boolean default false;
 alter table public.profiles add column if not exists timetable          jsonb;     -- slots + weekday rotation
 
+-- An older app ("ScholarQuest") used this same database and left required
+-- columns (name, account_type, loc, day_offset…) that this app never fills in.
+-- Make any such leftover column optional so sign-ups and saves aren't rejected.
+do $$
+declare r record;
+begin
+  for r in
+    select c.table_name, c.column_name
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.table_name in ('profiles', 'homework', 'events', 'parent_student_links', 'nudges')
+      and c.is_nullable = 'NO'
+      and c.column_default is null
+      and not (c.table_name, c.column_name) in (
+        ('profiles', 'id'), ('homework', 'id'), ('homework', 'user_id'), ('homework', 'title'),
+        ('events', 'id'), ('events', 'user_id'), ('events', 'title'),
+        ('parent_student_links', 'id'), ('parent_student_links', 'parent_id'), ('parent_student_links', 'student_id'),
+        ('nudges', 'id'), ('nudges', 'parent_id'), ('nudges', 'student_id'))
+  loop
+    execute format('alter table public.%I alter column %I drop not null', r.table_name, r.column_name);
+  end loop;
+end $$;
+
+-- Carry over names and parent/student roles from the older app's columns
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'name') then
+    execute 'update public.profiles set display_name = name where display_name is null and name is not null and trim(name) <> ''''';
+  end if;
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'account_type') then
+    execute 'update public.profiles set role = ''parent'', pairing_code = null where account_type = ''parent'' and role <> ''parent''';
+  end if;
+end $$;
+
+-- Students from the older app never did this app's setup, so send them through it
+update public.profiles set onboarded = false
+where role = 'student' and classes is null and timetable is null and onboarded is true;
+
 -- Pairing codes must be unique so a code always points at exactly one student
 do $$
 begin

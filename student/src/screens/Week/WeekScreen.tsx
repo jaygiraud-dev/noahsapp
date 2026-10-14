@@ -13,6 +13,7 @@ import AddEventSheet from '../sheets/AddEventSheet';
 import AddHomeworkSheet from '../sheets/AddHomeworkSheet';
 import EventDetailSheet from '../sheets/EventDetailSheet';
 import HomeworkDetailSheet from '../sheets/HomeworkDetailSheet';
+import { SyncBanner } from '../../components/SaveStatus';
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_ABBR_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -224,6 +225,7 @@ export default function WeekScreen() {
         </ImageBackground>
       )}
 
+      <SyncBanner />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={[styles.title, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{viewMode === 'month' ? 'month.' : 'week.'}</Text>
