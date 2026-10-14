@@ -17,6 +17,15 @@ create table if not exists public.profiles (
   updated_at    timestamptz default now()
 );
 
+-- The table may already exist (for example from Supabase's starter template),
+-- so make sure every column the app uses is there.
+alter table public.profiles add column if not exists role               text not null default 'student';
+alter table public.profiles add column if not exists display_name       text;
+alter table public.profiles add column if not exists pairing_code       text;
+alter table public.profiles add column if not exists school_name        text;
+alter table public.profiles add column if not exists school_city        text;
+alter table public.profiles add column if not exists created_at         timestamptz default now();
+alter table public.profiles add column if not exists updated_at         timestamptz default now();
 alter table public.profiles add column if not exists push_token         text;
 alter table public.profiles add column if not exists classes            jsonb;
 alter table public.profiles add column if not exists points             integer default 0;
@@ -38,7 +47,20 @@ end $$;
 
 alter table public.profiles enable row level security;
 
--- Old policy let every signed-in user read every profile (and every pairing code).
+-- Remove every older access rule on the app's tables before adding the new ones.
+-- (Rules combine with OR, so one leftover "everyone can read" rule would expose data.)
+do $$
+declare r record;
+begin
+  for r in
+    select policyname, tablename from pg_policies
+    where schemaname = 'public'
+      and tablename in ('profiles', 'homework', 'events', 'parent_student_links', 'nudges', 'activity', 'friendships')
+  loop
+    execute format('drop policy if exists %I on public.%I', r.policyname, r.tablename);
+  end loop;
+end $$;
+
 drop policy if exists "Auth users read profiles"      on public.profiles;
 drop policy if exists "Users read own profile"        on public.profiles;
 drop policy if exists "Parents read linked profiles"  on public.profiles;
@@ -122,6 +144,17 @@ create table if not exists public.parent_student_links (
   unique(parent_id, student_id)
 );
 
+alter table public.parent_student_links add column if not exists pairing_code text;
+alter table public.parent_student_links add column if not exists student_name text;
+alter table public.parent_student_links add column if not exists linked_at    timestamptz default now();
+do $$
+begin
+  create unique index if not exists parent_student_links_pair_key
+    on public.parent_student_links (parent_id, student_id);
+exception when unique_violation then
+  raise notice 'Duplicate parent links exist; unique index skipped';
+end $$;
+
 alter table public.parent_student_links enable row level security;
 
 -- Links are only ever created by link_student_by_code(), which checks the code.
@@ -172,6 +205,19 @@ create table if not exists public.homework (
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );
+alter table public.homework add column if not exists class_id    text;
+alter table public.homework add column if not exists subject     text;
+alter table public.homework add column if not exists class_color text;
+alter table public.homework add column if not exists notes       text;
+alter table public.homework add column if not exists tag         text;
+alter table public.homework add column if not exists due         text;
+alter table public.homework add column if not exists due_date    timestamptz;
+alter table public.homework add column if not exists due_urgent  boolean default false;
+alter table public.homework add column if not exists reminder    text;
+alter table public.homework add column if not exists points      integer default 10;
+alter table public.homework add column if not exists done        boolean default false;
+alter table public.homework add column if not exists created_at  timestamptz default now();
+alter table public.homework add column if not exists updated_at  timestamptz default now();
 alter table public.homework add column if not exists photos  text[] default '{}';
 alter table public.homework add column if not exists done_at timestamptz;
 
@@ -202,6 +248,18 @@ create table if not exists public.events (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+alter table public.events add column if not exists kind       text;
+alter table public.events add column if not exists type       text;
+alter table public.events add column if not exists icon       text;
+alter table public.events add column if not exists time       text;
+alter table public.events add column if not exists end_time   text;
+alter table public.events add column if not exists date       timestamptz;
+alter table public.events add column if not exists location   text;
+alter table public.events add column if not exists reminder   text;
+alter table public.events add column if not exists done       boolean default false;
+alter table public.events add column if not exists created_at timestamptz default now();
+alter table public.events add column if not exists updated_at timestamptz default now();
 
 alter table public.events enable row level security;
 
@@ -247,6 +305,9 @@ create table if not exists public.nudges (
   sent_at      timestamptz default now(),
   seen         boolean default false
 );
+alter table public.nudges add column if not exists message text not null default 'How''s the homework going? 👋';
+alter table public.nudges add column if not exists sent_at timestamptz default now();
+alter table public.nudges add column if not exists seen    boolean default false;
 alter table public.nudges enable row level security;
 
 drop policy if exists "Parents insert nudges"    on public.nudges;
