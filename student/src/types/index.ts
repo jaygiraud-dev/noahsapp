@@ -49,6 +49,7 @@ export interface Homework {
   points: number;
   done: boolean;
   doneAt?: string;
+  createdAt?: string;
   /** Storage paths of uploaded photos (signed-in students) */
   photos?: string[];
   /** Displayable URIs, same order as photos. Never persisted. */

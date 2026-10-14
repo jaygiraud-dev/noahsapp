@@ -398,6 +398,7 @@ function rowToHomework(row: any): Homework {
     points: row.points ?? 10,
     done: row.done ?? false,
     doneAt: row.done_at ?? undefined,
+    createdAt: row.created_at ?? undefined,
     photos: Array.isArray(row.photos) ? row.photos : [],
   };
 }

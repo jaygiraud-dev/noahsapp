@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useStore } from '../../store/useStore';
 import { makeTheme } from '../../theme';
@@ -21,10 +21,13 @@ interface Props {
   kidId: string;
   kidName: string;
   kidPushToken?: string | null;
+  /** Pre-filled message, e.g. when nudging about one assignment */
+  initialMessage?: string;
 }
 
-export default function NudgeSheet({ visible, onClose, parentId, kidId, kidName, kidPushToken }: Props) {
-  const [message, setMessage] = useState(PRESETS[0]);
+export default function NudgeSheet({ visible, onClose, parentId, kidId, kidName, kidPushToken, initialMessage }: Props) {
+  const [message, setMessage] = useState(initialMessage ?? PRESETS[0]);
+  useEffect(() => { if (visible) setMessage(initialMessage ?? PRESETS[0]); }, [visible, initialMessage]);
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);

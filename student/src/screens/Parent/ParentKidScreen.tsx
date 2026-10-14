@@ -10,6 +10,7 @@ import { classesOnDate } from '../../lib/timetable';
 import { getClosedReason, getDaySchedule } from '../../data/schoolCalendars';
 import { eventIcon, tagIcon } from '../../data/constants';
 import NudgeSheet from './NudgeSheet';
+import ParentHomeworkSheet from './ParentHomeworkSheet';
 
 type Theme = ReturnType<typeof makeTheme>;
 
@@ -24,12 +25,18 @@ function status(hw: Homework): { label: string; tone: 'done' | 'overdue' | 'toda
   return { label: 'Not done yet', tone: 'later' };
 }
 
-function HomeworkCard({ hw, theme, onPhoto }: { hw: Homework; theme: Theme; onPhoto: (uri: string) => void }) {
+function HomeworkCard({ hw, theme, onPhoto, onOpen }: { hw: Homework; theme: Theme; onPhoto: (uri: string) => void; onOpen: () => void }) {
   const st = status(hw);
   const color = hw.classColor ?? theme.accent;
   const toneColor = st.tone === 'done' ? theme.mint : st.tone === 'overdue' ? theme.red : st.tone === 'soon' || st.tone === 'today' ? theme.amber : theme.sub;
   return (
-    <View style={[styles.hwCard, { backgroundColor: theme.surface, borderLeftColor: color }]}>
+    <TouchableOpacity
+      style={[styles.hwCard, { backgroundColor: theme.surface, borderLeftColor: color }]}
+      onPress={onOpen}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={`${hw.title}, ${st.label}. Open details`}
+    >
       <View style={styles.hwTop}>
         <Text style={[styles.hwTitle, { fontFamily: theme.fBodyMedium, color: theme.ink, textDecorationLine: hw.done ? 'line-through' : 'none' }]}>{hw.title}</Text>
         <Text style={[styles.statusPill, { fontFamily: theme.fMono, color: toneColor, backgroundColor: toneColor + '1f' }]}>{st.tone === 'done' ? '✓ ' : st.tone === 'overdue' ? '⚠ ' : ''}{st.label}</Text>
@@ -47,7 +54,8 @@ function HomeworkCard({ hw, theme, onPhoto }: { hw: Homework; theme: Theme; onPh
           ))}
         </View>
       )}
-    </View>
+      <Text style={[styles.more, { fontFamily: theme.fMono, color: theme.accent }]}>Details ›</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -71,6 +79,8 @@ export default function ParentKidScreen({ navigation, route }: any) {
   const [day, setDay] = useState(new Date());
   const [photo, setPhoto] = useState<string | null>(null);
   const [nudgeOpen, setNudgeOpen] = useState(false);
+  const [nudgeText, setNudgeText] = useState<string | undefined>(undefined);
+  const [openHwId, setOpenHwId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const { kids, reloadKid, parentId } = useParentData();
   const vibe = useStore((s) => s.vibe);
@@ -135,7 +145,7 @@ export default function ParentKidScreen({ navigation, route }: any) {
           <Text style={[styles.sectionLabel, { fontFamily: theme.fMono, color: theme.soft }]}>HOMEWORK DUE · {dueHw.filter((h) => h.done).length}/{dueHw.length} DONE</Text>
           {dueHw.length === 0
             ? <Text style={[styles.empty, { fontFamily: theme.fBody, color: theme.soft }]}>Nothing due this day.</Text>
-            : dueHw.map((h) => <HomeworkCard key={h.id} hw={h} theme={theme} onPhoto={setPhoto} />)}
+            : dueHw.map((h) => <HomeworkCard key={h.id} hw={h} theme={theme} onPhoto={setPhoto} onOpen={() => setOpenHwId(h.id)} />)}
         </View>
 
         <View style={styles.section}>
@@ -185,7 +195,7 @@ export default function ParentKidScreen({ navigation, route }: any) {
         {overdue.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { fontFamily: theme.fMono, color: theme.red }]}>⚠ OVERDUE · {overdue.length}</Text>
-            {overdue.map((h) => <HomeworkCard key={h.id} hw={h} theme={theme} onPhoto={setPhoto} />)}
+            {overdue.map((h) => <HomeworkCard key={h.id} hw={h} theme={theme} onPhoto={setPhoto} onOpen={() => setOpenHwId(h.id)} />)}
           </View>
         )}
 
@@ -212,9 +222,12 @@ export default function ParentKidScreen({ navigation, route }: any) {
                     const st = status(h);
                     const c = st.tone === 'done' ? theme.mint : st.tone === 'overdue' ? theme.red : theme.ink;
                     return (
-                      <Text key={h.id} style={[styles.weekLine, { fontFamily: theme.fBody, color: c }]}>
-                        {h.done ? '✓' : st.tone === 'overdue' ? '⚠' : '○'} {h.title}<Text style={{ color: theme.soft }}>{h.subject ? `  ·  ${h.subject}` : ''}</Text>
-                      </Text>
+                      <TouchableOpacity key={h.id} onPress={() => setOpenHwId(h.id)} accessibilityRole="button" accessibilityLabel={`${h.title}, ${st.label}. Open details`}>
+                        <Text style={[styles.weekLine, { fontFamily: theme.fBody, color: c }]}>
+                          {h.done ? '✓' : st.tone === 'overdue' ? '⚠' : '○'} {h.title}<Text style={{ color: theme.soft }}>{h.subject ? `  ·  ${h.subject}` : ''}</Text>
+                          <Text style={{ color: theme.accent }}>  ›</Text>
+                        </Text>
+                      </TouchableOpacity>
                     );
                   })}
                   {evs.map((e) => (
@@ -234,7 +247,22 @@ export default function ParentKidScreen({ navigation, route }: any) {
           {photo && <Image source={{ uri: photo }} style={styles.photoFull} resizeMode="contain" />}
         </TouchableOpacity>
       </Modal>
-      <NudgeSheet visible={nudgeOpen} onClose={() => setNudgeOpen(false)} parentId={parentId} kidId={kid.id} kidName={kid.name} kidPushToken={profile?.push_token} />
+      <ParentHomeworkSheet
+        hw={homework.find((h) => h.id === openHwId) ?? null}
+        kidName={kid.name}
+        profile={profile}
+        onClose={() => setOpenHwId(null)}
+        onNudge={(msg) => { setOpenHwId(null); setNudgeText(msg); setTimeout(() => setNudgeOpen(true), 250); }}
+      />
+      <NudgeSheet
+        visible={nudgeOpen}
+        onClose={() => { setNudgeOpen(false); setNudgeText(undefined); }}
+        parentId={parentId}
+        kidId={kid.id}
+        kidName={kid.name}
+        kidPushToken={profile?.push_token}
+        initialMessage={nudgeText}
+      />
     </SafeAreaView>
   );
 }
@@ -284,7 +312,8 @@ const styles = StyleSheet.create({
   weekDayHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   weekDayName: { fontSize: 15 },
   closedTag: { fontSize: 10, letterSpacing: 0.5 },
-  weekLine: { fontSize: 14, lineHeight: 20 },
+  weekLine: { fontSize: 14, lineHeight: 22 },
+  more: { fontSize: 11, letterSpacing: 0.3, alignSelf: 'flex-end' },
   photoBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
   photoFull: { width: '100%', height: '80%' },
 });
