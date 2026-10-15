@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Miller Automotive — Honest Auto Repair in North Vancouver, BC</title>
+<meta name="description" content="Miller Automotive is a trusted North Vancouver auto repair shop. Honest diagnostics and quality repairs for vintage collector cars and modern vehicles. Call (604) 985-6355."/>
+<meta name="theme-color" content="#0e1116"/>
+<meta property="og:title" content="Miller Automotive — Honest Auto Repair in North Vancouver, BC"/>
+<meta property="og:description" content="Honest diagnostics and quality repairs for vintage collector cars and modern vehicles. North Vancouver, BC. Call (604) 985-6355."/>
+<meta property="og:type" content="business.business"/>
+<meta property="og:image" content="assets/shop-interior.jpeg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23c1272d'/%3E%3Ctext x='50' y='72' font-size='64' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E"/>
+<style>
+:root{
+  --bg:#0e1116;
+  --bg-2:#151a22;
+  --bg-3:#1d242e;
+  --ink:#eef2f7;
+  --muted:#9aa6b4;
+  --line:rgba(255,255,255,.08);
+  --red:#c1272d;
+  --red-2:#e03a40;
+  --amber:#f5a623;
+  --maxw:1140px;
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  line-height:1.6;
+  overflow-x:hidden;
+}
+h1,h2,h3,.cond{font-family:'Barlow Condensed','Inter',sans-serif;line-height:1.05;text-transform:uppercase;letter-spacing:.01em}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+.eyebrow{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+  letter-spacing:.22em;color:var(--red-2);font-size:14px;margin-bottom:14px;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;font-weight:700;
+  font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.06em;
+  font-size:17px;padding:13px 26px;border-radius:10px;transition:.18s ease;cursor:pointer;border:2px solid transparent;
+}
+.btn-primary{background:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-2);transform:translateY(-2px);box-shadow:0 10px 26px rgba(193,39,45,.4)}
+.btn-ghost{border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--red-2);color:#fff}
+
+/* ---------- Header ---------- */
+header{position:sticky;top:0;z-index:50;background:rgba(14,17,22,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:70px}
+.brand{display:flex;align-items:center;gap:12px;font-family:'Barlow Condensed';font-weight:800;font-size:24px;text-transform:uppercase;letter-spacing:.03em}
+.logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--red),#8e1c20);display:grid;place-items:center;font-size:26px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.brand small{display:block;font-family:'Inter';font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.nav-links{display:flex;align-items:center;gap:30px}
+.nav-links a{font-weight:600;font-size:15px;color:var(--muted);transition:.15s}
+.nav-links a:hover{color:#fff}
+.nav-call{display:inline-flex;align-items:center;gap:8px;font-family:'Barlow Condensed';font-weight:700;font-size:19px;color:#fff;letter-spacing:.02em}
+.nav-call:hover{color:var(--red-2)}
+.menu-btn{display:none;background:none;border:0;color:#fff;font-size:26px;cursor:pointer}
+
+/* ---------- Hero ---------- */
+.hero{position:relative;padding:96px 0 104px;overflow:hidden;background:
+  radial-gradient(1200px 500px at 78% -10%,rgba(193,39,45,.22),transparent 60%),
+  linear-gradient(180deg,#10141a,#0e1116);}
+.hero::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:46px 46px;mask-image:radial-gradient(700px 380px at 75% 25%,#000,transparent 75%);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;position:relative;z-index:2}
+.hero h1{font-size:clamp(44px,6.4vw,82px);font-weight:800;margin-bottom:20px}
+.hero h1 .hl{color:var(--red-2)}
+.hero p.lead{font-size:19px;color:var(--muted);max-width:520px;margin-bottom:30px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:30px}
+.trust{display:flex;align-items:center;gap:22px;flex-wrap:wrap;color:var(--muted);font-size:14px;font-weight:500}
+.stars{color:var(--amber);letter-spacing:2px;font-size:17px}
+.hero-photo{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 70px rgba(0,0,0,.5);aspect-ratio:4/5}
+.hero-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-photo .open-badge{position:absolute;top:16px;left:16px;margin:0;backdrop-filter:blur(8px)}
+.photo-cap{position:absolute;left:0;right:0;bottom:0;padding:42px 18px 16px;font-size:14.5px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.82))}
+.hero-card{
+  background:linear-gradient(180deg,var(--bg-2),var(--bg-3));border:1px solid var(--line);
+  border-radius:18px;padding:30px;box-shadow:0 30px 70px rgba(0,0,0,.45);
+}
+.hero-card h3{font-size:24px;font-weight:700;margin-bottom:6px}
+.hero-card .sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+.hours-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
+.hours-row:last-of-type{border-bottom:0}
+.hours-row span:first-child{color:var(--muted)}
+.hours-row.closed span:last-child{color:#7d8794}
+.open-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(46,182,125,.12);color:#34d399;border:1px solid rgba(46,182,125,.3);padding:6px 13px;border-radius:999px;font-weight:600;font-size:13px;margin-bottom:18px}
+.dot{width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.25)}
+
+/* ---------- Section frame ---------- */
+section{padding:84px 0}
+.sec-head{max-width:680px;margin:0 auto 52px;text-align:center}
+.sec-head h2{font-size:clamp(34px,4.6vw,52px);font-weight:800;margin-bottom:14px}
+.sec-head p{color:var(--muted);font-size:17px}
+.bg-alt{background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+
+/* ---------- Services ---------- */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:28px;transition:.2s ease}
+.bg-alt .card{background:var(--bg-3)}
+.card:hover{transform:translateY(-4px);border-color:rgba(224,58,64,.45);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.card .ic{width:52px;height:52px;border-radius:12px;background:rgba(193,39,45,.14);display:grid;place-items:center;font-size:26px;margin-bottom:16px}
+.card h3{font-size:21px;font-weight:700;margin-bottom:8px;letter-spacing:.02em}
+.card p{color:var(--muted);font-size:15px}
+
+/* ---------- Why ---------- */
+.why-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.why-list{list-style:none;display:grid;gap:20px}
+.why-list li{display:flex;gap:16px;align-items:flex-start}
+.why-list .chk{flex:0 0 38px;height:38px;border-radius:10px;background:rgba(193,39,45,.14);color:var(--red-2);display:grid;place-items:center;font-weight:800;font-size:18px}
+.why-list h4{font-family:'Barlow Condensed';font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px}
+.why-list p{color:var(--muted);font-size:15px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.stat{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:26px;text-align:center}
+.stat .n{font-family:'Barlow Condensed';font-size:46px;font-weight:800;color:#fff;line-height:1}
+.stat .n .small{font-size:26px;color:var(--red-2)}
+.stat .l{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.12em;margin-top:8px;font-weight:600}
+
+/* ---------- Gallery ---------- */
+.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.gphoto{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3;background:#000}
+.gphoto img{width:100%;height:100%;object-fit:cover;transition:.45s ease}
+.gphoto:hover img{transform:scale(1.06)}
+.gphoto figcaption{position:absolute;left:0;right:0;bottom:0;padding:30px 16px 14px;color:#fff;font-weight:600;font-size:15px;letter-spacing:.01em;background:linear-gradient(transparent,rgba(0,0,0,.82))}
+
+/* ---------- Reviews ---------- */
+.reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.review{background:var(--bg-3);border:1px solid var(--line);border-radius:var(--r);padding:26px;display:flex;flex-direction:column;gap:14px}
+.review .q{font-size:15.5px;color:var(--ink);flex:1}
+.review .who{display:flex;align-items:center;gap:12px}
+.avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--red),#8e1c20);display:grid;place-items:center;font-weight:700;color:#fff;font-family:'Barlow Condensed';font-size:19px}
+.who .name{font-weight:600;font-size:15px}
+.who .meta{color:var(--muted);font-size:12px}
+
+/* ---------- Contact ---------- */
+.contact-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:36px;align-items:stretch}
+.info-card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:30px}
+.info-row{display:flex;gap:15px;padding:17px 0;border-bottom:1px solid var(--line)}
+.info-row:last-child{border-bottom:0}
+.info-row .ic{flex:0 0 44px;height:44px;border-radius:10px;background:rgba(193,39,45,.14);display:grid;place-items:center;font-size:21px}
+.info-row .lab{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.13em;font-weight:600;margin-bottom:2px}
+.info-row .val{font-size:17px;font-weight:600}
+.info-row a.val:hover{color:var(--red-2)}
+.map-frame{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);min-height:420px;height:100%}
+.map-frame iframe{width:100%;height:100%;min-height:420px;border:0;filter:grayscale(.3) contrast(1.05)}
+
+/* ---------- CTA band ---------- */
+.cta-band{background:linear-gradient(120deg,#a01f25,#c1272d 55%,#e03a40);text-align:center;padding:70px 0}
+.cta-band h2{font-size:clamp(32px,4.4vw,50px);font-weight:800;color:#fff;margin-bottom:12px}
+.cta-band p{color:rgba(255,255,255,.9);font-size:18px;margin-bottom:26px}
+.cta-band .btn-primary{background:#fff;color:var(--red)}
+.cta-band .btn-primary:hover{background:#0e1116;color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.3)}
+
+/* ---------- Footer ---------- */
+footer{background:#0a0d11;border-top:1px solid var(--line);padding:48px 0 30px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:36px;margin-bottom:34px}
+.foot-grid p{color:var(--muted);font-size:14px;margin-top:12px;max-width:300px}
+.foot-col h4{font-family:'Barlow Condensed';font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.foot-col a{display:block;color:var(--muted);font-size:14px;padding:5px 0}
+.foot-col a:hover{color:#fff}
+.foot-bottom{border-top:1px solid var(--line);padding-top:22px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;color:#6b7682;font-size:13px}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(22px);transition:.6s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+
+/* ---------- Responsive ---------- */
+@media(max-width:920px){
+  .hero-grid,.why-grid,.contact-grid{grid-template-columns:1fr}
+  .cards,.reviews,.gallery{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+  .nav-links.open{display:flex;position:absolute;top:70px;left:0;right:0;flex-direction:column;background:var(--bg-2);border-bottom:1px solid var(--line);padding:18px 22px;gap:16px}
+  .menu-btn{display:block}
+  .hero{padding:64px 0 72px}
+}
+@media(max-width:600px){
+  .cards,.reviews,.gallery,.stat-grid,.foot-grid{grid-template-columns:1fr}
+  section{padding:60px 0}
+  .nav-call span{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="wrap nav">
+    <a href="#top" class="brand">
+      <span class="logo">M</span>
+      <span>Miller Automotive<small>North Vancouver, BC</small></span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#services">Services</a>
+      <a href="#gallery">Our Work</a>
+      <a href="#why">Why Us</a>
+      <a href="#reviews">Reviews</a>
+      <a href="#contact">Hours &amp; Location</a>
+      <a href="#contact" class="btn btn-primary" style="padding:9px 18px;font-size:15px">Book Service</a>
+    </nav>
+    <a href="tel:+16049856355" class="nav-call">📞 <span>(604) 985-6355</span></a>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">Trusted North Shore Mechanics</div>
+      <h1>Honest Repairs.<br/><span class="hl">Done Right.</span></h1>
+      <p class="lead">From vintage collector cars to your daily driver, Miller Automotive delivers straight-talking diagnostics and quality workmanship — without the upsell. Family-style service the North Shore has trusted for years.</p>
+      <div class="hero-cta">
+        <a href="tel:+16049856355" class="btn btn-primary">Call (604) 985-6355</a>
+        <a href="#services" class="btn btn-ghost">View Services</a>
+      </div>
+      <div class="trust">
+        <span><span class="stars">★★★★★</span> 4.7 / 5</span>
+        <span>•&nbsp; 37+ verified reviews</span>
+        <span>•&nbsp; Independent &amp; local</span>
+      </div>
+    </div>
+    <aside class="hero-photo">
+      <img src="assets/shop-interior.jpeg" alt="Classic cars including a Corvette and a vintage Mustang being serviced inside the Miller Automotive shop in North Vancouver" fetchpriority="high"/>
+      <div class="open-badge" id="openBadge"><span class="dot"></span> Open Now</div>
+      <div class="photo-cap">Inside the shop — North Vancouver, BC</div>
+    </aside>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">What We Do</div>
+      <h2>Full-Service Auto Repair</h2>
+      <p>One shop for everything your vehicle needs — diagnosed honestly and fixed properly the first time.</p>
+    </div>
+    <div class="cards">
+      <div class="card reveal"><div class="ic">🔧</div><h3>General Repair</h3><p>Engine, suspension, steering and everything in between — repairs you can rely on for any make or model.</p></div>
+      <div class="card reveal"><div class="ic">🔍</div><h3>Diagnostics</h3><p>Check-engine lights and mystery noises decoded with proper equipment, then explained to you in plain English.</p></div>
+      <div class="card reveal"><div class="ic">🛢️</div><h3>Oil &amp; Maintenance</h3><p>Oil changes, fluids, filters and scheduled service to keep your vehicle running smoothly for the long haul.</p></div>
+      <div class="card reveal"><div class="ic">🛑</div><h3>Brakes</h3><p>Pads, rotors, lines and full brake inspections — because nothing matters more than stopping safely.</p></div>
+      <div class="card reveal"><div class="ic">💨</div><h3>Exhaust &amp; Mufflers</h3><p>Muffler and exhaust repair to quiet things down, pass inspection and keep emissions in check.</p></div>
+      <div class="card reveal"><div class="ic">🚗</div><h3>Classics &amp; Collectors</h3><p>A genuine passion for vintage and collector cars — careful, knowledgeable work on the vehicles you love.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery" class="bg-alt">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">In The Shop</div>
+      <h2>Classics Welcome Here</h2>
+      <p>A few of the vintage and collector cars our team has had the pleasure of bringing back to life.</p>
+    </div>
+    <div class="gallery">
+      <figure class="gphoto reveal"><img src="assets/cadillac-1959.jpeg" loading="lazy" alt="Light blue 1959 Cadillac with tail fins in the Miller Automotive shop"/><figcaption>1959 Cadillac — in for service</figcaption></figure>
+      <figure class="gphoto reveal"><img src="assets/lincoln-continental.jpeg" loading="lazy" alt="Red 1960s Lincoln Continental convertible outside the shop"/><figcaption>Lincoln Continental convertible</figcaption></figure>
+      <figure class="gphoto reveal"><img src="assets/engine-rebuild.jpeg" loading="lazy" alt="Classic V8 engine bay with carburetor during a rebuild"/><figcaption>Engine rebuilds &amp; tuning</figcaption></figure>
+      <figure class="gphoto reveal"><img src="assets/restoration.jpeg" loading="lazy" alt="Classic truck engine and chassis during a frame-off restoration"/><figcaption>Frame-off restorations</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section id="why">
+  <div class="wrap why-grid">
+    <div class="reveal">
+      <div class="eyebrow">Why Drivers Choose Us</div>
+      <h2 style="font-size:clamp(32px,4.4vw,48px);font-weight:800;margin-bottom:22px">No Surprises. Just Good Work.</h2>
+      <ul class="why-list">
+        <li><span class="chk">✓</span><div><h4>Honest Assessments</h4><p>We tell you what actually needs doing now and what can wait — and we'll say so if you don't need a repair at all.</p></div></li>
+        <li><span class="chk">✓</span><div><h4>Fair, Transparent Pricing</h4><p>Clear quotes before we start. Customers regularly tell us we saved them money over the dealership.</p></div></li>
+        <li><span class="chk">✓</span><div><h4>Quick Turnaround</h4><p>We get you in fast and back on the road without the runaround.</p></div></li>
+        <li><span class="chk">✓</span><div><h4>All Makes &amp; Eras</h4><p>From brand-new imports to beloved classics, our team has the range to handle it.</p></div></li>
+      </ul>
+    </div>
+    <div class="stat-grid reveal">
+      <div class="stat"><div class="n">4.7<span class="small">★</span></div><div class="l">Average Rating</div></div>
+      <div class="stat"><div class="n">37<span class="small">+</span></div><div class="l">Happy Reviews</div></div>
+      <div class="stat"><div class="n">All</div><div class="l">Makes &amp; Models</div></div>
+      <div class="stat"><div class="n">100<span class="small">%</span></div><div class="l">Straight Talk</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section id="reviews" class="bg-alt">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">From The Community</div>
+      <h2>What Customers Say</h2>
+      <p><span class="stars">★★★★★</span> Rated 4.7 out of 5 by North Shore drivers.</p>
+    </div>
+    <div class="reviews">
+      <div class="review reveal"><span class="stars">★★★★★</span><p class="q">"Honest, transparent and fair. They got me in quickly and actually talked me out of a repair I didn't need. Hard to find a shop you can trust like this."</p><div class="who"><span class="avatar">S</span><div><div class="name">Sarah M.</div><div class="meta">North Vancouver</div></div></div></div>
+      <div class="review reveal"><span class="stars">★★★★★</span><p class="q">"Took my classic in expecting the worst and they treated it like their own. Fair price, great communication, and the work was spot on."</p><div class="who"><span class="avatar">D</span><div><div class="name">Dave R.</div><div class="meta">Lonsdale</div></div></div></div>
+      <div class="review reveal"><span class="stars">★★★★★</span><p class="q">"The team is exceptional — quick, upfront about pricing and saved me a ton versus the dealership. This is my go-to shop now."</p><div class="who"><span class="avatar">A</span><div><div class="name">Amrit K.</div><div class="meta">North Vancouver</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT / HOURS / MAP -->
+<section id="contact">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Find Us</div>
+      <h2>Hours &amp; Location</h2>
+      <p>Conveniently located in North Vancouver. Stop by or give us a call to book your service.</p>
+    </div>
+    <div class="contact-grid">
+      <div class="info-card reveal">
+        <div class="info-row"><div class="ic">📍</div><div><div class="lab">Address</div><a class="val" href="https://www.google.com/maps/place/Miller+Automotive/@49.3099535,-123.0763498,17z" target="_blank" rel="noopener">3&ndash;246 1st St E,<br/>North Vancouver, BC V7L 1B3</a></div></div>
+        <div class="info-row"><div class="ic">📞</div><div><div class="lab">Phone</div><a class="val" href="tel:+16049856355">(604) 985-6355</a></div></div>
+        <div class="info-row"><div class="ic">🕗</div><div><div class="lab">Hours</div><div class="val" style="font-weight:600">Mon – Fri: 8:00 AM – 5:00 PM<br/><span style="color:var(--muted);font-weight:500;font-size:15px">Saturday &amp; Sunday: Closed</span></div></div></div>
+        <div class="info-row"><div class="ic">🚘</div><div><div class="lab">Service Area</div><div class="val" style="font-weight:600">North Vancouver &amp; the North Shore</div></div></div>
+        <div style="margin-top:22px;display:flex;gap:12px;flex-wrap:wrap">
+          <a href="tel:+16049856355" class="btn btn-primary">Call Now</a>
+          <a href="https://www.google.com/maps/place/Miller+Automotive/@49.3099535,-123.0763498,17z" target="_blank" rel="noopener" class="btn btn-ghost">Get Directions</a>
+        </div>
+      </div>
+      <div class="map-frame reveal">
+        <iframe
+          src="https://www.google.com/maps?q=Miller%20Automotive%20246%201st%20St%20E%20North%20Vancouver%20BC&output=embed"
+          loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Miller Automotive location map"></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<section class="cta-band">
+  <div class="wrap reveal">
+    <h2>Ready When You Are</h2>
+    <p>Book a service or ask us a question — we're happy to help.</p>
+    <a href="tel:+16049856355" class="btn btn-primary">📞 Call (604) 985-6355</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a href="#top" class="brand"><span class="logo">M</span><span>Miller Automotive<small>North Vancouver, BC</small></span></a>
+        <p>Honest, dependable auto repair for the North Shore — from everyday vehicles to vintage collector cars.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Explore</h4>
+        <a href="#services">Services</a>
+        <a href="#why">Why Choose Us</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#contact">Hours &amp; Location</a>
+      </div>
+      <div class="foot-col">
+        <h4>Contact</h4>
+        <a href="tel:+16049856355">(604) 985-6355</a>
+        <a href="https://www.google.com/maps/place/Miller+Automotive/@49.3099535,-123.0763498,17z" target="_blank" rel="noopener">3–246 1st St E, North Vancouver</a>
+        <a href="https://www.google.com/maps/place/Miller+Automotive/@49.3099535,-123.0763498,17z" target="_blank" rel="noopener">Get Directions</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="yr"></span> Miller Automotive. All rights reserved.</span>
+      <span>North Vancouver, British Columbia</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Schema.org Local Business -->
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"AutoRepair",
+  "name":"Miller Automotive",
+  "image":"assets/shop-interior.jpeg",
+  "telephone":"+1-604-985-6355",
+  "address":{
+    "@type":"PostalAddress",
+    "streetAddress":"3-246 1st St E",
+    "addressLocality":"North Vancouver",
+    "addressRegion":"BC",
+    "postalCode":"V7L 1B3",
+    "addressCountry":"CA"
+  },
+  "geo":{"@type":"GeoCoordinates","latitude":49.30995,"longitude":-123.0737749},
+  "url":"",
+  "priceRange":"$$",
+  "aggregateRating":{"@type":"AggregateRating","ratingValue":"4.7","reviewCount":"37"},
+  "openingHoursSpecification":[{
+    "@type":"OpeningHoursSpecification",
+    "dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],
+    "opens":"08:00","closes":"17:00"
+  }]
+}
+</script>
+
+<script>
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  // mobile menu
+  var mb=document.getElementById('menuBtn'),nl=document.getElementById('navLinks');
+  mb.addEventListener('click',function(){nl.classList.toggle('open');});
+  nl.addEventListener('click',function(e){if(e.target.tagName==='A')nl.classList.remove('open');});
+
+  // highlight today's hours + open/closed badge
+  (function(){
+    var now=new Date(), day=now.getDay(), hr=now.getHours();
+    document.querySelectorAll('.hours-row').forEach(function(r){
+      if(+r.dataset.day===day){r.style.color='#fff';r.style.fontWeight='600';
+        r.querySelectorAll('span').forEach(function(s){s.style.color='#fff';});}
+    });
+    var open = day>=1 && day<=5 && hr>=8 && hr<17;
+    var b=document.getElementById('openBadge');
+    if(!open){
+      b.innerHTML='<span class="dot" style="background:#f87171;box-shadow:0 0 0 4px rgba(248,113,113,.22)"></span> Closed Now';
+      b.style.background='rgba(248,113,113,.1)';b.style.color='#f87171';b.style.borderColor='rgba(248,113,113,.3)';
+    }
+  })();
+
+  // scroll reveal
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+</script>
+</body>
+</html>
