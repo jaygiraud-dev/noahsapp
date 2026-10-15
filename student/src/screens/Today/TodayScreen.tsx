@@ -11,7 +11,7 @@ import { quoteOfDay } from '../../data/quotes';
 import { Class, Homework, CalEvent } from '../../types';
 import { isSameDay, startOfDay, effectiveStreak, parseTime, fmt12, dateKey } from '../../lib/time';
 import { getClosedReason, getDaySchedule } from '../../data/schoolCalendars';
-import { eventIcon, tagIcon } from '../../data/constants';
+import { eventIcon, tagIcon, isPersonalPlan } from '../../data/constants';
 import { classesOnDate, ScheduledClass } from '../../lib/timetable';
 import { eventsOn } from '../../lib/events';
 import DayPicker from '../../components/DayPicker';
@@ -164,6 +164,56 @@ function EventBlock({ ev, theme, cardSurface, onPress }: { ev: CalEvent; theme: 
   );
 }
 
+function planTime(ev: CalEvent): string {
+  return ev.time ? `${fmt12(ev.time)}${ev.endTime ? ` – ${fmt12(ev.endTime)}` : ''}` : 'Any time';
+}
+
+/** Like a class card, but for your own time: hanging out, birthdays, anything that's yours. */
+function PersonalBlock({ plans, homework, theme, cardSurface, onOpen, onAdd, onPlan, onToggleHw, onDetailHw }: {
+  plans: CalEvent[]; homework: Homework[]; theme: Theme; cardSurface: string;
+  onOpen: () => void; onAdd: () => void; onPlan: (ev: CalEvent) => void; onToggleHw: (id: string) => void; onDetailHw: (hw: Homework) => void;
+}) {
+  const color = theme.mint;
+  const meta = plans.length === 0 ? 'Nothing planned' : plans.length === 1 ? '1 plan' : `${plans.length} plans`;
+  return (
+    <ShineCard style={[styles.classBlock, { backgroundColor: cardSurface }]}>
+      <View style={styles.classHeader}>
+        <TouchableOpacity style={styles.personalHead} onPress={onOpen} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`Personal, ${meta}`}>
+          <View style={[styles.classIcon, { backgroundColor: color + '33' }]}>
+            <Text style={styles.classEmoji}>🙂</Text>
+          </View>
+          <View style={styles.classInfo}>
+            <Text style={[styles.className, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>Personal</Text>
+            <Text style={[styles.classMeta, { fontFamily: theme.fMono, color: theme.soft }]}>{meta}  ·  see all ›</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.addHwBtn, { borderColor: color + '88' }]} onPress={onAdd} activeOpacity={0.7} accessibilityLabel="Add a personal plan">
+          <Text style={{ color, fontSize: 20, lineHeight: 24 }}>+</Text>
+        </TouchableOpacity>
+      </View>
+      {(plans.length > 0 || homework.length > 0) && (
+        <View style={[styles.hwList, { borderTopColor: theme.line }]}>
+          {plans.map((ev) => (
+            <TouchableOpacity key={`${ev.id}-${ev.occurrence}`} style={styles.hwRow} onPress={() => onPlan(ev)} activeOpacity={0.7} accessibilityLabel={`${ev.title}, ${planTime(ev)}`}>
+              <Text style={styles.planEmoji}>{ev.icon ?? eventIcon(ev.type)}</Text>
+              <View style={styles.hwInfo}>
+                <Text style={[styles.hwTitle, { fontFamily: theme.fBody, color: theme.ink }]}>{ev.title}</Text>
+                <Text style={[styles.hwDue, { fontFamily: theme.fMono, color: theme.soft }]}>
+                  {[planTime(ev), ev.location, ev.repeat === 'weekly' ? '🔁 weekly' : ''].filter(Boolean).join('  ·  ')}
+                </Text>
+              </View>
+              <Text style={[styles.chev, { color: theme.soft }]}>›</Text>
+            </TouchableOpacity>
+          ))}
+          {homework.map((hw) => (
+            <HwRow key={hw.id} hw={hw} theme={theme} onToggle={() => onToggleHw(hw.id)} onDetail={() => onDetailHw(hw)} />
+          ))}
+        </View>
+      )}
+    </ShineCard>
+  );
+}
+
 function Banner({ icon, title, sub, color, onPress, onDismiss, theme }: {
   icon: string; title: string; sub: string; color: string; onPress: () => void; onDismiss: () => void; theme: Theme;
 }) {
@@ -200,6 +250,7 @@ export default function TodayScreen() {
   const [hwDetailId, setHwDetailId] = useState<string | null>(null);
   const [evPick, setEvPick] = useState<{ id: string; occ?: string } | null>(null);
   const [dueListOpen, setDueListOpen] = useState(false);
+  const [personalOpen, setPersonalOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const fabRotate = useRef(new Animated.Value(0)).current;
   const [dueBannerDismissed, setDueBannerDismissed] = useState(false);
@@ -267,7 +318,20 @@ export default function TodayScreen() {
   const otherHw = homework.filter((h) => (!h.classId || !classIds.has(h.classId)) && showsOnDay(h, selectedDate));
   otherHw.forEach((h) => shownIds.add(h.id));
 
-  const todayEvents = eventsOn(events, selectedDate);
+  // A class someone named "Personal" has no block; its to-dos live on the Personal card
+  const personalClass = classes.find((c) => c.name.trim().toLowerCase() === 'personal');
+  const personalHw = personalClass && !seenClass.has(personalClass.id) ? classHw(personalClass.id) : [];
+  personalHw.forEach((h) => shownIds.add(h.id));
+
+  const dayEvents = eventsOn(events, selectedDate);
+  const personalPlans = dayEvents.filter((e) => isPersonalPlan(e.type));
+  const todayEvents = dayEvents.filter((e) => !isPersonalPlan(e.type));
+
+  // Everything personal in the next four weeks, for the "see all" list
+  const personalAhead = Array.from({ length: 28 }, (_, i) => {
+    const d = startOfDay(now); d.setDate(d.getDate() + i);
+    return { day: d, plans: eventsOn(events, d).filter((e) => isPersonalPlan(e.type)) };
+  }).filter((g) => g.plans.length > 0);
 
   // Coming up: open work not already on a card — overdue, or due within the next week
   const upcomingHw = homework
@@ -285,6 +349,11 @@ export default function TodayScreen() {
   const evBase = events.find((e) => e.id === evPick?.id);
   const evDetail = evBase ? { ...evBase, occurrence: evPick?.occ } : null;
   const shownStreak = effectiveStreak(streak, lastActivityDate);
+
+  function closeFab() {
+    Animated.spring(fabRotate, { toValue: 0, useNativeDriver: true, tension: 120, friction: 8 }).start();
+    setFabOpen(false);
+  }
 
   function openAlert() {
     setDueBannerDismissed(true);
@@ -391,6 +460,18 @@ export default function TodayScreen() {
           </ShineCard>
         )}
 
+        <PersonalBlock
+          plans={personalPlans}
+          homework={personalHw}
+          theme={theme}
+          cardSurface={cardSurface}
+          onOpen={() => setPersonalOpen(true)}
+          onAdd={() => setEvSheetOpen(true)}
+          onPlan={(ev) => setEvPick({ id: ev.id, occ: ev.occurrence })}
+          onToggleHw={toggleHomework}
+          onDetailHw={(hw) => setHwDetailId(hw.id)}
+        />
+
         {todayEvents.length > 0 && (
           <Text style={[styles.sectionLabel, { fontFamily: theme.fMono, color: theme.soft }]}>{isToday ? 'AFTER SCHOOL & PLANS' : 'PLANS'}</Text>
         )}
@@ -426,15 +507,15 @@ export default function TodayScreen() {
         )}
       </ScrollView>
 
-      {fabOpen && <TouchableOpacity style={styles.fabBackdrop} onPress={() => setFabOpen(false)} activeOpacity={1} />}
+      {fabOpen && <TouchableOpacity style={styles.fabBackdrop} onPress={closeFab} activeOpacity={1} />}
       <View style={styles.fabArea}>
         {fabOpen && (
           <View style={styles.fabMenu}>
-            <TouchableOpacity style={[styles.fabMenuItem, { backgroundColor: theme.surface, borderColor: theme.line }]} onPress={() => { setFabOpen(false); setHwSheetOpen(true); }}>
+            <TouchableOpacity style={[styles.fabMenuItem, { backgroundColor: theme.surface, borderColor: theme.line }]} onPress={() => { closeFab(); setHwSheetOpen(true); }}>
               <Text style={styles.fabMenuIcon}>📚</Text>
               <Text style={[styles.fabMenuLabel, { fontFamily: theme.fMono, color: theme.ink }]}>Homework</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.fabMenuItem, { backgroundColor: theme.surface, borderColor: theme.line }]} onPress={() => { setFabOpen(false); setEvSheetOpen(true); }}>
+            <TouchableOpacity style={[styles.fabMenuItem, { backgroundColor: theme.surface, borderColor: theme.line }]} onPress={() => { closeFab(); setEvSheetOpen(true); }}>
               <Text style={styles.fabMenuIcon}>📅</Text>
               <Text style={[styles.fabMenuLabel, { fontFamily: theme.fMono, color: theme.ink }]}>Event / plan</Text>
             </TouchableOpacity>
@@ -470,6 +551,47 @@ export default function TodayScreen() {
                 </TouchableOpacity>
               );
             })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Personal: everything of yours coming up */}
+      <Modal visible={personalOpen} transparent animationType="fade" onRequestClose={() => setPersonalOpen(false)}>
+        <TouchableOpacity style={styles.listBackdrop} activeOpacity={1} onPress={() => setPersonalOpen(false)}>
+          <View style={[styles.listCard, { backgroundColor: theme.bg }]} onStartShouldSetResponder={() => true}>
+            <View style={styles.listHead}>
+              <Text style={[styles.listTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>🙂 Personal</Text>
+              <TouchableOpacity onPress={() => setPersonalOpen(false)} accessibilityLabel="Close">
+                <Text style={[styles.bannerCloseText, { color: theme.soft }]}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ maxHeight: 420 }}>
+              {personalAhead.length === 0 && (
+                <Text style={[styles.listRowSub, { fontFamily: theme.fBody, color: theme.sub, fontSize: 14, lineHeight: 20, marginBottom: 8 }]}>
+                  Nothing coming up. Add your own stuff here: hanging out with friends, birthdays, a movie night, anything that’s yours.
+                </Text>
+              )}
+              {personalAhead.map((g) => (
+                <View key={dateKey(g.day)}>
+                  <Text style={[styles.sectionLabel, { fontFamily: theme.fMono, color: theme.soft, marginTop: 10, marginBottom: 2 }]}>
+                    {isSameDay(g.day, now) ? 'TODAY' : g.day.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()}
+                  </Text>
+                  {g.plans.map((ev) => (
+                    <TouchableOpacity key={`${ev.id}-${ev.occurrence}`} style={[styles.listRow, { borderBottomColor: theme.line }]} onPress={() => { setPersonalOpen(false); setEvPick({ id: ev.id, occ: ev.occurrence }); }}>
+                      <Text style={styles.planEmoji}>{ev.icon ?? eventIcon(ev.type)}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.listRowTitle, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{ev.title}</Text>
+                        <Text style={[styles.listRowSub, { fontFamily: theme.fMono, color: theme.soft }]}>{[planTime(ev), ev.location].filter(Boolean).join(' · ')}</Text>
+                      </View>
+                      <Text style={[styles.chev, { color: theme.soft }]}>›</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={[styles.listAdd, { backgroundColor: theme.mint }]} onPress={() => { setPersonalOpen(false); setEvSheetOpen(true); }} accessibilityRole="button">
+              <Text style={[styles.listAddText, { fontFamily: theme.fBodySemiBold }]}>Add a personal plan +</Text>
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -585,6 +707,11 @@ const styles = StyleSheet.create({
   listBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 },
   listCard: { borderRadius: 24, padding: 18, gap: 4, maxWidth: 520, width: '100%', alignSelf: 'center' },
   listTitle: { fontSize: 26, marginBottom: 6 },
+  listHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  listAdd: { borderRadius: 100, paddingVertical: 13, alignItems: 'center', marginTop: 14 },
+  listAddText: { color: '#fff', fontSize: 15 },
+  personalHead: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  planEmoji: { fontSize: 18, width: 22, textAlign: 'center', marginTop: 1 },
   listRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, gap: 8 },
   listRowTitle: { fontSize: 15 },
   listRowSub: { fontSize: 11, letterSpacing: 0.3, marginTop: 2 },

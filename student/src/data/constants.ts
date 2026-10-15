@@ -25,6 +25,11 @@ export function eventIcon(type?: string): string {
   return EVENT_TYPES.find((t) => t.label === type)?.icon ?? '📅';
 }
 
+/** Plans that belong on the Personal card: your own time, hanging out, friends */
+export function isPersonalPlan(type?: string): boolean {
+  return !type || type === 'Personal' || type === 'Social';
+}
+
 export function tagIcon(tag?: string): string {
   return HW_TAGS.find((t) => t.label === tag)?.icon ?? '•';
 }
