@@ -10,7 +10,7 @@ import type { Tab } from '../navigation/MainTabNavigator';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TABS: { id: Tab; icon: IconName; activeIcon: IconName; label: string }[] = [
-  { id: 'today', icon: 'sunny-outline',         activeIcon: 'sunny',         label: 'Today' },
+  { id: 'today', icon: 'home-outline',          activeIcon: 'home',          label: 'Home'  },
   { id: 'week',  icon: 'calendar-outline',      activeIcon: 'calendar',      label: 'Week'  },
   { id: 'squad', icon: 'people-outline',        activeIcon: 'people',        label: 'Squad' },
   { id: 'me',    icon: 'person-circle-outline', activeIcon: 'person-circle', label: 'Me'    },

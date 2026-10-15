@@ -330,7 +330,7 @@ export default function TodayScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.topBar}>
-          <Text style={[styles.screenTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{isToday ? 'today' : selectedDate.toLocaleDateString('en-CA', { weekday: 'long' }).toLowerCase()}</Text>
+          <Text style={[styles.screenTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>{isToday ? 'home' : selectedDate.toLocaleDateString('en-CA', { weekday: 'long' }).toLowerCase()}</Text>
           <PointsChip points={points} streak={shownStreak} theme={theme} />
         </View>
 

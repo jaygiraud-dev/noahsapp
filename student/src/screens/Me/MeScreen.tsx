@@ -303,7 +303,7 @@ export default function MeScreen() {
           <View style={[styles.settingRow, { backgroundColor: theme.surface }]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.settingLabel, { fontFamily: theme.fBody, color: theme.ink }]}>Background photo</Text>
-              <Text style={[styles.settingHint, { fontFamily: theme.fMono, color: theme.soft }]}>{s.bgImageUri ? 'Shows behind Today, Week and Squad' : 'None'}</Text>
+              <Text style={[styles.settingHint, { fontFamily: theme.fMono, color: theme.soft }]}>{s.bgImageUri ? 'Shows behind Home, Week and Squad' : 'None'}</Text>
             </View>
             {s.bgImageUri !== '' && (
               <TouchableOpacity style={[styles.smallBtn, { borderColor: theme.line, borderWidth: 1 }]} onPress={() => s.setBgImageUri('')}>
