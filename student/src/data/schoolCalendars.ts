@@ -225,7 +225,8 @@ export function getDaySchedule(date: Date, schoolName?: string): DaySchedule | n
   return {
     periods,
     dayStart: classes[0]?.start ?? periods[0].start,
-    dayEnd: classes[classes.length - 1]?.end ?? periods[periods.length - 1].end,
+    // On early-dismissal days use the school's announced time, so the note and the dismissal line agree
+    dayEnd: early ? early.end : classes[classes.length - 1]?.end ?? periods[periods.length - 1].end,
     note,
   };
 }

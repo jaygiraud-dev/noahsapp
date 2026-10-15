@@ -40,6 +40,16 @@ function getMonthDays(year: number, month: number): (Date | null)[] {
   return cells;
 }
 
+/** Pieces of [start, end) that aren't inside a lunch period, in minutes. */
+function splitAroundLunch(start: number, end: number, lunches: [number, number][]): [number, number][] {
+  let segs: [number, number][] = [[start, end]];
+  for (const [ls, le] of lunches) {
+    segs = segs.flatMap(([s, e]): [number, number][] =>
+      ls >= e || le <= s ? [[s, e]] : [[s, ls] as [number, number], [le, e] as [number, number]].filter(([a, b]) => b - a >= 5));
+  }
+  return segs.length ? segs : [[start, end]];
+}
+
 function closedColor(label: string): string {
   if (/break/i.test(label)) return '#06d6e0';
   if (/pro-d|turnaround|curriculum/i.test(label)) return '#f59e0b';
@@ -79,6 +89,9 @@ export default function WeekScreen() {
   const isWeekend = selectedDay.getDay() === 0 || selectedDay.getDay() === 6;
   const closedReason = !isWeekend ? getClosedReason(selectedDay, school.name) : null;
   const schedule = getDaySchedule(selectedDay, school.name);
+  const lunches: [number, number][] = (schedule?.periods ?? [])
+    .filter((p) => p.kind === 'lunch')
+    .map((p) => [parseTime(p.start)!, parseTime(p.end)!]);
 
   const dayClasses = isWeekend || closedReason ? [] : classesOnDate(selectedDay, classes, timetable, school.name);
   const dayEvents = eventsOn(events, selectedDay);
@@ -207,14 +220,15 @@ export default function WeekScreen() {
         );
       }
     });
-    const marker = (min: number, label: string, key: string) => (
+    // Start tag sits just above its line and dismissal just below, so neither covers a class name
+    const marker = (min: number, label: string, key: string, above: boolean) => (
       <View key={key} pointerEvents="none" style={[styles.marker, { top: yFor(min) - 1 }]}>
         <View style={[styles.markerLine, { backgroundColor: theme.mint }]} />
-        <Text style={[styles.markerLabel, { fontFamily: theme.fMono, color: theme.mint, backgroundColor: theme.bg }]}>{label}</Text>
+        <Text style={[styles.markerLabel, above ? { bottom: 2 } : { top: 2 }, { fontFamily: theme.fMono, color: theme.mint, backgroundColor: theme.bg }]}>{label}</Text>
       </View>
     );
-    items.push(marker(startMin, `🔔 SCHOOL STARTS ${fmt12(schedule.dayStart)}`, 'start'));
-    items.push(marker(endMin, `🔔 DISMISSAL ${fmt12(schedule.dayEnd)}`, 'end'));
+    items.push(marker(startMin, `🔔 SCHOOL STARTS ${fmt12(schedule.dayStart)}`, 'start', true));
+    items.push(marker(endMin, `🔔 DISMISSAL ${fmt12(schedule.dayEnd)}`, 'end', false));
     return items;
   };
 
@@ -385,19 +399,39 @@ export default function WeekScreen() {
                   </View>
                 )}
 
-                {dayClasses.map(({ cls, start, end, slotLabel }, idx) => {
-                  const s = parseTime(start)!; const e = parseTime(end)!;
-                  return (
-                    <TouchableOpacity
-                      key={`${cls.id}-${idx}`}
-                      style={[styles.block, { top: yFor(s), left: GUTTER + 6, right: 6, height: Math.max(yFor(e) - yFor(s) - 2, 30), backgroundColor: cls.color + '22', borderLeftColor: cls.color }]}
-                      onPress={() => setSelectedClass(cls)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: cls.color }]} numberOfLines={1}>{cls.emoji ? `${cls.emoji} ` : ''}{cls.name}</Text>
-                      <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: cls.color + 'cc' }]}>{fmt12(start)} – {fmt12(end)}{slotLabel ? `  ·  ${slotLabel}` : ''}</Text>
-                    </TouchableOpacity>
-                  );
+                {dayClasses.flatMap(({ cls, start, end, slotLabel }, idx) => {
+                  // A block that runs through lunch (Sutherland's Block 3) is drawn as two pieces with lunch between
+                  const segs = splitAroundLunch(parseTime(start)!, parseTime(end)!, lunches);
+                  const name = `${cls.emoji ? `${cls.emoji} ` : ''}${cls.name}`;
+                  return segs.map(([s, e], j) => {
+                    const h = yFor(e) - yFor(s) - 2;
+                    const short = h < 40;
+                    const time = `${fmt12(start)} – ${fmt12(end)}${slotLabel ? `  ·  ${slotLabel}` : ''}`;
+                    return (
+                      <TouchableOpacity
+                        key={`${cls.id}-${idx}-${j}`}
+                        style={[styles.block, short && styles.blockShort, { top: yFor(s), left: GUTTER + 6, right: 6, height: Math.max(h, 20), backgroundColor: cls.color + '22', borderLeftColor: cls.color }]}
+                        onPress={() => setSelectedClass(cls)}
+                        activeOpacity={0.8}
+                        accessibilityLabel={`${cls.name}, ${time}`}
+                      >
+                        {j === 0 ? (
+                          short ? (
+                            <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: cls.color }]} numberOfLines={1}>
+                              {name}<Text style={[styles.blockTime, { color: cls.color + 'cc', fontWeight: '400' }]}>{'  '}{time}</Text>
+                            </Text>
+                          ) : (
+                            <>
+                              <Text style={[styles.blockTitle, { fontFamily: theme.fMono, color: cls.color }]} numberOfLines={1}>{name}</Text>
+                              <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: cls.color + 'cc' }]} numberOfLines={1}>{time}</Text>
+                            </>
+                          )
+                        ) : (
+                          <Text style={[styles.blockTime, { fontFamily: theme.fMono, color: cls.color + 'cc' }]} numberOfLines={1}>{name} · after lunch</Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  });
                 })}
 
                 {renderBells()}
@@ -530,9 +564,10 @@ const styles = StyleSheet.create({
   bellBandLabel: { fontSize: 9, letterSpacing: 0.8, textAlign: 'right' },
   gapBand: { position: 'absolute', left: GUTTER + 6, right: 6, zIndex: 1, justifyContent: 'center' },
   gapLabel: { fontSize: 8, letterSpacing: 0.5, textAlign: 'right', paddingRight: 8 },
-  marker: { position: 'absolute', left: GUTTER, right: 0, zIndex: 4, flexDirection: 'row', alignItems: 'center' },
+  marker: { position: 'absolute', left: GUTTER, right: 0, height: 2, zIndex: 4 },
   markerLine: { position: 'absolute', left: 0, right: 0, height: 2 },
-  markerLabel: { fontSize: 9, letterSpacing: 0.8, marginLeft: 'auto', marginRight: 8, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, overflow: 'hidden' },
+  markerLabel: { position: 'absolute', right: 8, fontSize: 9, letterSpacing: 0.8, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, overflow: 'hidden' },
+  blockShort: { paddingVertical: 3, justifyContent: 'center' },
   closedBanner: { position: 'absolute', right: 6, borderWidth: 1, borderRadius: 14, justifyContent: 'center', alignItems: 'center', gap: 6, zIndex: 2 },
   closedLabel: { fontSize: 12, letterSpacing: 2 },
   closedSub: { fontSize: 10, letterSpacing: 1 },
