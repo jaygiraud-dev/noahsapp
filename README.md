@@ -18,6 +18,8 @@ The original design handoff follows further down.
    host `smtp.gmail.com`, port `465`, username = the Gmail address, password = the app password,
    sender email = the same Gmail address, sender name `my agenda`. Afterwards raise the email limit under
    Authentication → Rate Limits.
+   **Messaging:** if the database was set up before messaging existed, also run `supabase_messages.sql`
+   (or re-run all of `supabase_schema.sql`). Friends can message each other; parents can't see those messages.
 4. **Email confirmation** is optional. If it's on, new accounts see "Check your inbox", tap the link, then sign in.
    It's controlled by Authentication → Providers → Email → "Confirm email".
 5. **Deploy.** Netlify builds from `main` using `netlify.toml`.

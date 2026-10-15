@@ -9,6 +9,8 @@ import TodayScreen from '../screens/Today/TodayScreen';
 import WeekScreen from '../screens/Week/WeekScreen';
 import SquadScreen from '../screens/Squad/SquadScreen';
 import MeScreen from '../screens/Me/MeScreen';
+import ChatSheet from '../screens/sheets/ChatSheet';
+import MessageAlert, { useMessagesLive } from '../components/MessageAlert';
 
 export type Tab = 'today' | 'week' | 'squad' | 'me';
 
@@ -18,6 +20,7 @@ export default function MainTabNavigator() {
   const darkMode = useStore((s) => s.darkMode);
   const reward = useStore((s) => s.reward);
   const theme = makeTheme(vibe, darkMode);
+  useMessagesLive();
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
@@ -29,6 +32,8 @@ export default function MainTabNavigator() {
       </View>
       <BottomNav activeTab={activeTab} onTabPress={setActiveTab} />
       <SaveToast />
+      <MessageAlert />
+      <ChatSheet />
       {reward && <RewardOverlay />}
     </View>
   );

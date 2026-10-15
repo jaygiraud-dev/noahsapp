@@ -9,6 +9,7 @@ import {
   addFriendByCode as rpcAddFriend, AddFriendResult, removeFriendRow, getFriends,
   getMyParents, uploadHomeworkPhoto, signPhotoPaths, deletePhotoPaths,
   fetchUnseenNudges, markNudgeSeen,
+  Message, fetchInbox, fetchConversation, sendMessage, markMessagesRead, deleteMessage,
 } from '../lib/db';
 import { dateKey } from '../lib/time';
 import { reminderTime, scheduleReminder, scheduleWeeklyReminder, cancelReminder } from '../lib/classNotifications';
@@ -61,6 +62,22 @@ interface AppState {
   retrySync: () => Promise<void>;
   clearToast: () => void;
   _hasHydrated: boolean;
+  /** Messages with friends, oldest first (not persisted). Local ones still sending carry `pending`. */
+  messages: ChatMessage[];
+  /** Whether the database has messaging switched on yet */
+  messagingStatus: 'unknown' | 'ready' | 'needs_update';
+  /** Friend whose chat is open ('' when none) */
+  openChatWith: string;
+  /** Newest message that arrived while its chat wasn't open (for the little alert) */
+  incoming: ChatMessage | null;
+  setOpenChat: (friendId: string) => void;
+  clearIncoming: () => void;
+  loadInbox: () => Promise<void>;
+  loadConversation: (friendId: string) => Promise<void>;
+  sendChat: (friendId: string, body: string) => Promise<void>;
+  retryChat: (localId: string) => Promise<void>;
+  receiveMessage: (m: Message) => void;
+  unsendMessage: (id: string) => Promise<void>;
 
   setPhase: (phase: AppPhase) => void;
   setHasHydrated: (v: boolean) => void;
@@ -98,6 +115,20 @@ interface AppState {
   dismissNudge: (id: string) => void;
   loadDataFromSupabase: () => Promise<void>;
   syncProfileState: () => void;
+}
+
+export type ChatMessage = Message & { pending?: 'sending' | 'failed' };
+
+/** Merge server messages into what we have, keeping local ones still sending, oldest first. */
+function mergeMessages(have: ChatMessage[], incoming: Message[], replaceFor?: (m: ChatMessage) => boolean): ChatMessage[] {
+  const byId = new Map<string, ChatMessage>();
+  for (const m of have) if (!replaceFor || m.pending || !replaceFor(m)) byId.set(m.id, m);
+  for (const m of incoming) byId.set(m.id, m);
+  return [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+export function unreadFrom(messages: ChatMessage[], me: string, friendId?: string): number {
+  return messages.filter((m) => m.recipientId === me && !m.readAt && (!friendId || m.senderId === friendId)).length;
 }
 
 export const GRADES = [8, 9, 10, 11, 12];
@@ -290,6 +321,10 @@ export const useStore = create<AppState>()(
   syncError: '',
   toast: '',
   _hasHydrated: false,
+  messages: [],
+  messagingStatus: 'unknown',
+  openChatWith: '',
+  incoming: null,
 
   setPhase: (phase) => set({ phase }),
   setHasHydrated: (v) => set({ _hasHydrated: v }),
@@ -320,6 +355,10 @@ export const useStore = create<AppState>()(
     unsynced: [],
     syncError: '',
     reward: null,
+    messages: [],
+    messagingStatus: 'unknown',
+    openChatWith: '',
+    incoming: null,
     phase: role === 'parent' ? 'parent' : 'onboarding',
   }),
 
@@ -609,6 +648,7 @@ export const useStore = create<AppState>()(
     get().loadFriends();
     get().loadParents();
     get().checkNudges();
+    get().loadInbox();
   },
 
   retrySync: async () => {
@@ -623,6 +663,89 @@ export const useStore = create<AppState>()(
   },
 
   clearToast: () => set({ toast: '' }),
+
+  // ─── Messages ───
+  setOpenChat: (friendId) => {
+    set((s) => ({ openChatWith: friendId, incoming: s.incoming?.senderId === friendId ? null : s.incoming }));
+    if (friendId) get().loadConversation(friendId);
+  },
+  clearIncoming: () => set({ incoming: null }),
+
+  loadInbox: async () => {
+    const { userId, userRole } = get();
+    if (!userId || userRole !== 'student') return;
+    const res = await fetchInbox();
+    if (!res.ok) { if (res.reason === 'needs_update') set({ messagingStatus: 'needs_update' }); return; }
+    const loadedBefore = get().messagingStatus === 'ready';
+    const before = new Set(get().messages.map((m) => m.id));
+    // The inbox is the full recent picture: drop anything the server no longer has (unsent)
+    set((s) => ({ messagingStatus: 'ready', messages: mergeMessages(s.messages, res.messages, () => true) }));
+    const fresh = res.messages.filter((m) => !before.has(m.id) && m.recipientId === userId && !m.readAt);
+    // Alert only for messages that arrived since the last check, not old unread ones on first load
+    if (loadedBefore && fresh.length) [...fresh].reverse().forEach((m) => get().receiveMessage(m)); // oldest first, so the alert shows the newest
+    const open = get().openChatWith;
+    if (open && get().messages.some((m) => m.senderId === open && m.recipientId === userId && !m.readAt)) {
+      get().loadConversation(open);
+    }
+  },
+
+  loadConversation: async (friendId) => {
+    const { userId } = get();
+    if (!userId) return;
+    const res = await fetchConversation(friendId);
+    if (!res.ok) { if (res.reason === 'needs_update') set({ messagingStatus: 'needs_update' }); return; }
+    const inChat = (m: ChatMessage) => m.senderId === friendId || m.recipientId === friendId;
+    set((s) => ({ messagingStatus: 'ready', messages: mergeMessages(s.messages, res.messages, inChat) }));
+    if (get().openChatWith === friendId && res.messages.some((m) => m.senderId === friendId && !m.readAt)) {
+      const now = new Date().toISOString();
+      set((s) => ({ messages: s.messages.map((m) => (m.senderId === friendId && m.recipientId === userId && !m.readAt ? { ...m, readAt: now } : m)) }));
+      markMessagesRead(friendId);
+    }
+  },
+
+  sendChat: async (friendId, body) => {
+    const { userId } = get();
+    const text = body.trim();
+    if (!userId || !text) return;
+    const localId = `local-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const draft: ChatMessage = { id: localId, senderId: userId, recipientId: friendId, body: text, createdAt: new Date().toISOString(), readAt: null, pending: 'sending' };
+    set((s) => ({ messages: [...s.messages, draft] }));
+    await get().retryChat(localId);
+  },
+
+  retryChat: async (localId) => {
+    const m = get().messages.find((x) => x.id === localId);
+    if (!m) return;
+    set((s) => ({ messages: s.messages.map((x) => (x.id === localId ? { ...x, pending: 'sending' } : x)) }));
+    const res = await sendMessage(m.senderId, m.recipientId, m.body);
+    if (res.ok) {
+      set((s) => ({ messagingStatus: 'ready', messages: mergeMessages(s.messages.filter((x) => x.id !== localId), [res.message]) }));
+    } else {
+      set((s) => ({
+        messagingStatus: res.reason === 'needs_update' ? 'needs_update' : s.messagingStatus,
+        messages: s.messages.map((x) => (x.id === localId ? { ...x, pending: 'failed' } : x)),
+      }));
+    }
+  },
+
+  receiveMessage: (m) => {
+    const { userId, openChatWith } = get();
+    if (m.recipientId !== userId) return;
+    set((s) => ({ messages: mergeMessages(s.messages, [m]) }));
+    // Someone who just added us: fetch them so their name shows
+    if (!get().friends.some((f) => f.id === m.senderId)) get().loadFriends();
+    if (openChatWith === m.senderId) get().loadConversation(m.senderId);
+    else set({ incoming: m });
+  },
+
+  unsendMessage: async (id) => {
+    const m = get().messages.find((x) => x.id === id);
+    set((s) => ({ messages: s.messages.filter((x) => x.id !== id) }));
+    if (m && !m.pending) {
+      const ok = await deleteMessage(id);
+      if (!ok) set((s) => ({ messages: mergeMessages(s.messages, [m]) }));
+    }
+  },
 
   // Debounced push of profile fields that change often.
   syncProfileState: () => {

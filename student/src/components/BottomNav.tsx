@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useStore } from '../store/useStore';
+import { useStore, unreadFrom } from '../store/useStore';
 import { makeTheme } from '../theme';
 import type { Tab } from '../navigation/MainTabNavigator';
 
@@ -28,6 +28,7 @@ export default function BottomNav({ activeTab, onTabPress }: Props) {
   const insets = useSafeAreaInsets();
   const light = theme.isClay || !theme.dark;
   const idle = light ? '#6b6478' : 'rgba(255,255,255,0.55)';
+  const unread = useStore((s) => unreadFrom(s.messages, s.userId));
 
   return (
     <View style={[styles.wrapper, { paddingBottom: insets.bottom + 8 }]}>
@@ -50,10 +51,16 @@ export default function BottomNav({ activeTab, onTabPress }: Props) {
               activeOpacity={0.65}
               accessibilityRole="tab"
               accessibilityLabel={tab.label}
+              accessibilityHint={tab.id === 'squad' && unread > 0 ? `${unread} unread message${unread === 1 ? '' : 's'}` : undefined}
               accessibilityState={{ selected: isActive }}
             >
               <View style={[styles.iconWrap, isActive && { backgroundColor: theme.accent + '22' }]}>
                 <Ionicons name={isActive ? tab.activeIcon : tab.icon} size={22} color={color} />
+                {tab.id === 'squad' && unread > 0 && (
+                  <View style={[styles.badge, { backgroundColor: theme.red }]}>
+                    <Text style={[styles.badgeText, { fontFamily: theme.fBodySemiBold }]}>{unread > 9 ? '9+' : unread}</Text>
+                  </View>
+                )}
               </View>
               <Text style={[styles.label, { color, fontFamily: isActive ? theme.fBodySemiBold : theme.fBodyMedium }]}>
                 {tab.label}
@@ -81,5 +88,7 @@ const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 2 },
   iconWrap: { width: 48, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   label: { fontSize: 13, letterSpacing: 0.2 },
+  badge: { position: 'absolute', top: -2, right: 4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, justifyContent: 'center', alignItems: 'center' },
+  badgeText: { color: '#fff', fontSize: 11, lineHeight: 14 },
   pillShine: { position: 'absolute', top: 0, left: 0, right: 0, height: 28, borderRadius: 32 },
 });

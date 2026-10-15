@@ -339,6 +339,83 @@ export async function getFriends(): Promise<Array<{
   return data ?? [];
 }
 
+// ─── MESSAGES (friends only) ─────────────────────────────────────────────────
+
+export interface Message {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  body: string;
+  createdAt: string;
+  readAt: string | null;
+}
+
+const MSG_COLS = 'id,sender_id,recipient_id,body,created_at,read_at';
+
+export function rowToMessage(r: any): Message {
+  return { id: r.id, senderId: r.sender_id, recipientId: r.recipient_id, body: r.body, createdAt: r.created_at, readAt: r.read_at };
+}
+
+/** True when the database hasn't had the messaging update run yet. */
+function isMissingTable(message: string): boolean {
+  return /schema cache|does not exist|could not find/i.test(message);
+}
+
+export type InboxResult = { ok: true; messages: Message[] } | { ok: false; reason: 'needs_update' | 'error' };
+
+/** My most recent messages with everyone (the database only returns mine), newest first. */
+export async function fetchInbox(limit = 400): Promise<InboxResult> {
+  const { data, error } = await supabase.from('messages').select(MSG_COLS).order('created_at', { ascending: false }).limit(limit);
+  if (error) {
+    console.warn('[db] fetchInbox:', error.message);
+    return { ok: false, reason: isMissingTable(error.message) ? 'needs_update' : 'error' };
+  }
+  return { ok: true, messages: (data ?? []).map(rowToMessage) };
+}
+
+/** One conversation, oldest first. RLS already limits rows to ones I'm in. */
+export async function fetchConversation(friendId: string, limit = 300): Promise<InboxResult> {
+  const { data, error } = await supabase
+    .from('messages')
+    .select(MSG_COLS)
+    .or(`sender_id.eq.${friendId},recipient_id.eq.${friendId}`)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.warn('[db] fetchConversation:', error.message);
+    return { ok: false, reason: isMissingTable(error.message) ? 'needs_update' : 'error' };
+  }
+  return { ok: true, messages: (data ?? []).map(rowToMessage).reverse() };
+}
+
+export type SendResult = { ok: true; message: Message } | { ok: false; reason: 'not_friends' | 'needs_update' | 'error' };
+
+export async function sendMessage(senderId: string, recipientId: string, body: string): Promise<SendResult> {
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({ sender_id: senderId, recipient_id: recipientId, body: body.trim() })
+    .select(MSG_COLS)
+    .single();
+  if (error) {
+    console.warn('[db] sendMessage:', error.message);
+    if (isMissingTable(error.message)) return { ok: false, reason: 'needs_update' };
+    if (/row-level security/i.test(error.message)) return { ok: false, reason: 'not_friends' };
+    return { ok: false, reason: 'error' };
+  }
+  return { ok: true, message: rowToMessage(data) };
+}
+
+export async function markMessagesRead(friendId: string): Promise<void> {
+  const { error } = await supabase.rpc('mark_messages_read', { p_friend: friendId });
+  if (error) console.warn('[db] markMessagesRead:', error.message);
+}
+
+export async function deleteMessage(id: string): Promise<boolean> {
+  const { error } = await supabase.from('messages').delete().eq('id', id);
+  if (error) console.warn('[db] deleteMessage:', error.message);
+  return !error;
+}
+
 // ─── HOMEWORK PHOTOS (private bucket) ────────────────────────────────────────
 
 const BUCKET = 'homework-photos';
