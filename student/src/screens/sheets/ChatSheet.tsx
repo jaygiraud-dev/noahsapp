@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
+  Image, Alert, ActivityIndicator, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore, ChatMessage } from '../../store/useStore';
@@ -8,6 +9,7 @@ import { makeTheme } from '../../theme';
 import Avatar from '../../components/Avatar';
 import { confirmAction } from '../../lib/confirm';
 import { isSameDay } from '../../lib/time';
+import { pickImage } from '../../lib/images';
 
 const POLL_MS = 4000;
 const MAX_LEN = 1000;
@@ -42,7 +44,13 @@ export default function ChatSheet() {
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
   const [draft, setDraft] = useState('');
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
+  const [viewing, setViewing] = useState<string | null>(null);
+  const photoUrls = useStore((s) => s.chatPhotoUrls);
   const scrollRef = useRef<ScrollView>(null);
+  const { width } = useWindowDimensions();
+  const photoW = Math.min(240, Math.round(width * 0.62));
 
   const friend = friends.find((f) => f.id === friendId);
   // While the friends list refreshes, assume they're still friends
@@ -56,6 +64,7 @@ export default function ChatSheet() {
   useEffect(() => {
     if (!friendId) return;
     setDraft('');
+    setPhoto(null);
     setCheckingFriends(true);
     loadFriends().finally(() => setCheckingFriends(false));
     const t = setInterval(() => loadConversation(friendId), POLL_MS);
@@ -69,17 +78,38 @@ export default function ChatSheet() {
 
   function send() {
     const text = draft.trim();
-    if (!text || !stillFriends) return;
+    if ((!text && !photo) || !stillFriends) return;
     setDraft('');
-    sendChat(friendId, text);
+    setPhoto(null);
+    sendChat(friendId, text, photo ?? undefined);
+  }
+
+  async function addPhoto(source: 'library' | 'camera') {
+    setPicking(true);
+    try {
+      const img = await pickImage({ source, maxSize: 1280, quality: 0.7 });
+      if (img) setPhoto(img.uri);
+    } finally {
+      setPicking(false);
+    }
+  }
+
+  function choosePhoto() {
+    if (Platform.OS === 'web') { addPhoto('library'); return; }
+    Alert.alert('Send a photo', undefined, [
+      { text: 'Camera', onPress: () => addPhoto('camera') },
+      { text: 'Photo library', onPress: () => addPhoto('library') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   }
 
   function onLongPress(m: ChatMessage) {
     if (m.senderId !== userId) return;
-    confirmAction('Unsend message?', `“${m.body.slice(0, 80)}” will be removed for both of you.`, 'Unsend', () => unsendMessage(m.id));
+    const what = m.body ? `“${m.body.slice(0, 80)}”` : 'This photo';
+    confirmAction(m.body ? 'Unsend message?' : 'Unsend photo?', `${what} will be removed for both of you.`, 'Unsend', () => unsendMessage(m.id));
   }
 
-  const canSend = stillFriends && status !== 'needs_update' && draft.trim().length > 0;
+  const canSend = stillFriends && status !== 'needs_update' && (draft.trim().length > 0 || !!photo);
 
   return (
     <Modal visible={!!friendId} animationType="slide" onRequestClose={() => setOpenChat('')}>
@@ -125,10 +155,22 @@ export default function ChatSheet() {
                       onLongPress={() => onLongPress(m)}
                       onPress={() => (m.pending === 'failed' ? retryChat(m.id) : undefined)}
                       style={[styles.bubble, { backgroundColor: color, opacity: m.pending === 'sending' ? 0.6 : 1 }, mine ? styles.bubbleMine : styles.bubbleTheirs]}
-                      accessibilityLabel={`${mine ? 'You' : name}: ${m.body}`}
+                      accessibilityLabel={`${mine ? 'You' : name}: ${m.body || 'photo'}`}
                       accessibilityHint={mine ? 'Long press to unsend' : undefined}
                     >
-                      <Text style={[styles.body, { fontFamily: theme.fBody, color: mine ? '#fff' : theme.ink }]}>{m.body}</Text>
+                      {(m.photo || m.localPhotoUri) && (() => {
+                        const src = m.localPhotoUri ?? (m.photo ? photoUrls[m.photo] : undefined);
+                        return src ? (
+                          <TouchableOpacity activeOpacity={0.9} onPress={() => setViewing(src)} onLongPress={() => onLongPress(m)} accessibilityLabel={`Photo from ${mine ? 'you' : name}. Tap to view`}>
+                            <Image source={{ uri: src }} style={[styles.photo, { width: photoW, height: photoW }]} resizeMode="cover" />
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={[styles.photo, styles.photoLoading, { width: photoW, height: photoW, backgroundColor: theme.line }]}>
+                            <ActivityIndicator color={theme.soft} />
+                          </View>
+                        );
+                      })()}
+                      {!!m.body && <Text style={[styles.body, { fontFamily: theme.fBody, color: mine ? '#fff' : theme.ink }]}>{m.body}</Text>}
                       <Text style={[styles.time, { fontFamily: theme.fBody, color: mine ? 'rgba(255,255,255,0.75)' : theme.soft }]}>{timeLabel(d)}</Text>
                     </TouchableOpacity>
                   </View>
@@ -146,12 +188,29 @@ export default function ChatSheet() {
           </ScrollView>
 
           {stillFriends ? (
-            <View style={[styles.inputRow, { borderTopColor: theme.line, backgroundColor: theme.bg }]}>
+            <View style={[styles.inputArea, { borderTopColor: theme.line, backgroundColor: theme.bg }]}>
+            {photo && (
+              <View style={styles.preview}>
+                <Image source={{ uri: photo }} style={styles.previewImg} />
+                <TouchableOpacity style={[styles.previewX, { backgroundColor: theme.ink }]} onPress={() => setPhoto(null)} accessibilityLabel="Remove photo">
+                  <Text style={[styles.previewXText, { color: theme.bg }]}>×</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={styles.inputRow}>
+              <TouchableOpacity
+                style={[styles.photoBtn, { borderColor: theme.line, backgroundColor: theme.surface }]}
+                onPress={choosePhoto}
+                disabled={picking || status === 'needs_update'}
+                accessibilityLabel="Add a photo"
+              >
+                {picking ? <ActivityIndicator size="small" color={theme.accent} /> : <Text style={styles.photoIcon}>📷</Text>}
+              </TouchableOpacity>
               <TextInput
                 style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.ink, fontFamily: theme.fBody }]}
                 value={draft}
                 onChangeText={setDraft}
-                placeholder={`Message ${name}`}
+                placeholder={photo ? 'Add a caption…' : `Message ${name}`}
                 placeholderTextColor={theme.soft}
                 multiline
                 maxLength={MAX_LEN}
@@ -170,6 +229,7 @@ export default function ChatSheet() {
                 <Text style={styles.sendIcon}>↑</Text>
               </TouchableOpacity>
             </View>
+            </View>
           ) : (
             <Text style={[styles.gone, { fontFamily: theme.fBody, color: theme.soft, borderTopColor: theme.line }]}>
               You’re not friends any more, so new messages can’t be sent.
@@ -177,6 +237,12 @@ export default function ChatSheet() {
           )}
         </KeyboardAvoidingView>
       </SafeAreaView>
+      <Modal visible={!!viewing} transparent animationType="fade" onRequestClose={() => setViewing(null)}>
+        <TouchableOpacity style={styles.viewer} activeOpacity={1} onPress={() => setViewing(null)} accessibilityLabel="Close photo">
+          {viewing && <Image source={{ uri: viewing }} style={styles.viewerImg} resizeMode="contain" />}
+          <Text style={styles.viewerClose}>×</Text>
+        </TouchableOpacity>
+      </Modal>
     </Modal>
   );
 }
@@ -208,7 +274,19 @@ const styles = StyleSheet.create({
   failRow: { alignSelf: 'flex-end', paddingVertical: 2 },
   fail: { fontSize: 12 },
   receipt: { alignSelf: 'flex-end', fontSize: 12, marginTop: 2, marginRight: 4 },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  inputArea: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, gap: 8 },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  photoBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  photoIcon: { fontSize: 20 },
+  preview: { alignSelf: 'flex-start' },
+  previewImg: { width: 84, height: 84, borderRadius: 14 },
+  previewX: { position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  previewXText: { fontSize: 18, lineHeight: 20, fontWeight: '700' },
+  photo: { borderRadius: 14, marginBottom: 4 },
+  photoLoading: { justifyContent: 'center', alignItems: 'center' },
+  viewer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.94)', justifyContent: 'center', alignItems: 'center' },
+  viewerImg: { width: '100%', height: '85%' },
+  viewerClose: { position: 'absolute', top: 40, right: 24, color: '#fff', fontSize: 36 },
   input: { flex: 1, minWidth: 0, maxHeight: 120, borderWidth: 1, borderRadius: 22, paddingHorizontal: 16, paddingTop: 11, paddingBottom: 11, fontSize: 16 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   sendIcon: { color: '#fff', fontSize: 22, fontWeight: '700', marginTop: -2 },

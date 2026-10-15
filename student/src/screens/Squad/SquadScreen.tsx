@@ -83,7 +83,7 @@ export default function SquadScreen() {
         {rows.map((r, i) => {
           const last = r.isMe ? undefined : lastWith(r.id);
           const unread = r.isMe ? 0 : unreadFrom(messages, userId, r.id);
-          const preview = last ? `${last.senderId === userId ? 'You: ' : ''}${last.body}` : '';
+          const preview = last ? `${last.senderId === userId ? 'You: ' : ''}${last.body || (last.photo || last.localPhotoUri ? '📷 Photo' : '')}` : '';
           const Row = r.isMe ? View : TouchableOpacity;
           return (
             <ShineCard key={r.id} style={[styles.row, { backgroundColor: cardSurface, borderColor: r.isMe ? theme.accent : unread ? theme.accent + '88' : 'transparent', borderWidth: r.isMe || unread ? 1 : 0 }]}>

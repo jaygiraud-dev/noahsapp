@@ -346,14 +346,16 @@ export interface Message {
   senderId: string;
   recipientId: string;
   body: string;
+  /** Path in the private chat-photos bucket, if this is a photo message */
+  photo?: string | null;
   createdAt: string;
   readAt: string | null;
 }
 
-const MSG_COLS = 'id,sender_id,recipient_id,body,created_at,read_at';
+const MSG_COLS = 'id,sender_id,recipient_id,body,photo,created_at,read_at';
 
 export function rowToMessage(r: any): Message {
-  return { id: r.id, senderId: r.sender_id, recipientId: r.recipient_id, body: r.body, createdAt: r.created_at, readAt: r.read_at };
+  return { id: r.id, senderId: r.sender_id, recipientId: r.recipient_id, body: r.body ?? '', photo: r.photo ?? null, createdAt: r.created_at, readAt: r.read_at };
 }
 
 /** True when the database hasn't had the messaging update run yet. */
@@ -390,10 +392,10 @@ export async function fetchConversation(friendId: string, limit = 300): Promise<
 
 export type SendResult = { ok: true; message: Message } | { ok: false; reason: 'not_friends' | 'needs_update' | 'error' };
 
-export async function sendMessage(senderId: string, recipientId: string, body: string): Promise<SendResult> {
+export async function sendMessage(senderId: string, recipientId: string, body: string, photo?: string | null): Promise<SendResult> {
   const { data, error } = await supabase
     .from('messages')
-    .insert({ sender_id: senderId, recipient_id: recipientId, body: body.trim() })
+    .insert({ sender_id: senderId, recipient_id: recipientId, body: body.trim(), ...(photo ? { photo } : {}) })
     .select(MSG_COLS)
     .single();
   if (error) {
@@ -408,6 +410,40 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
 export async function markMessagesRead(friendId: string): Promise<void> {
   const { error } = await supabase.rpc('mark_messages_read', { p_friend: friendId });
   if (error) console.warn('[db] markMessagesRead:', error.message);
+}
+
+const CHAT_BUCKET = 'chat-photos';
+
+/** Uploads a chat photo to <sender>/<recipient>/…; returns its path, or why it failed. */
+export async function uploadChatPhoto(senderId: string, recipientId: string, uri: string): Promise<{ path: string } | { error: 'needs_update' | 'error' }> {
+  try {
+    const path = `${senderId}/${recipientId}/${Date.now()}-${Math.floor(Math.random() * 1e6)}.jpg`;
+    const blob = await uriToBlob(uri);
+    const { error } = await supabase.storage.from(CHAT_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+    if (error) {
+      console.warn('[db] uploadChatPhoto:', error.message);
+      return { error: /bucket not found/i.test(error.message) ? 'needs_update' : 'error' };
+    }
+    return { path };
+  } catch (e: any) {
+    console.warn('[db] uploadChatPhoto:', e?.message);
+    return { error: 'error' };
+  }
+}
+
+/** path → temporary URL (valid for a day) for chat photos I'm allowed to see. */
+export async function signChatPhotos(paths: string[]): Promise<Record<string, string>> {
+  if (paths.length === 0) return {};
+  const { data, error } = await supabase.storage.from(CHAT_BUCKET).createSignedUrls(paths, 60 * 60 * 24);
+  if (error || !data) { console.warn('[db] signChatPhotos:', error?.message); return {}; }
+  const out: Record<string, string> = {};
+  data.forEach((d: any) => { if (d.signedUrl && d.path) out[d.path] = d.signedUrl; });
+  return out;
+}
+
+export async function deleteChatPhoto(path: string): Promise<void> {
+  const { error } = await supabase.storage.from(CHAT_BUCKET).remove([path]);
+  if (error) console.warn('[db] deleteChatPhoto:', error.message);
 }
 
 export async function deleteMessage(id: string): Promise<boolean> {

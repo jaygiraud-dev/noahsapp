@@ -10,6 +10,7 @@ import {
   getMyParents, uploadHomeworkPhoto, signPhotoPaths, deletePhotoPaths,
   fetchUnseenNudges, markNudgeSeen,
   Message, fetchInbox, fetchConversation, sendMessage, markMessagesRead, deleteMessage,
+  uploadChatPhoto, signChatPhotos, deleteChatPhoto,
 } from '../lib/db';
 import { dateKey } from '../lib/time';
 import { reminderTime, scheduleReminder, scheduleWeeklyReminder, cancelReminder } from '../lib/classNotifications';
@@ -74,7 +75,9 @@ interface AppState {
   clearIncoming: () => void;
   loadInbox: () => Promise<void>;
   loadConversation: (friendId: string) => Promise<void>;
-  sendChat: (friendId: string, body: string) => Promise<void>;
+  /** Temporary viewing links for chat photos (path → URL, not persisted) */
+  chatPhotoUrls: Record<string, string>;
+  sendChat: (friendId: string, body: string, photoUri?: string) => Promise<void>;
   retryChat: (localId: string) => Promise<void>;
   receiveMessage: (m: Message) => void;
   unsendMessage: (id: string) => Promise<void>;
@@ -117,7 +120,16 @@ interface AppState {
   syncProfileState: () => void;
 }
 
-export type ChatMessage = Message & { pending?: 'sending' | 'failed' };
+export type ChatMessage = Message & { pending?: 'sending' | 'failed'; /** On-device copy of a photo still being sent */ localPhotoUri?: string };
+
+/** Get viewing links for any chat photos we don't have one for yet. */
+async function signMissingPhotos(messages: ChatMessage[]) {
+  const have = useStore.getState().chatPhotoUrls;
+  const need = [...new Set(messages.map((m) => m.photo).filter((p): p is string => !!p && !have[p]))];
+  if (!need.length) return;
+  const urls = await signChatPhotos(need);
+  if (Object.keys(urls).length) useStore.setState((s) => ({ chatPhotoUrls: { ...s.chatPhotoUrls, ...urls } }));
+}
 
 /** Merge server messages into what we have, keeping local ones still sending, oldest first. */
 function mergeMessages(have: ChatMessage[], incoming: Message[], replaceFor?: (m: ChatMessage) => boolean): ChatMessage[] {
@@ -325,6 +337,7 @@ export const useStore = create<AppState>()(
   messagingStatus: 'unknown',
   openChatWith: '',
   incoming: null,
+  chatPhotoUrls: {},
 
   setPhase: (phase) => set({ phase }),
   setHasHydrated: (v) => set({ _hasHydrated: v }),
@@ -359,6 +372,7 @@ export const useStore = create<AppState>()(
     messagingStatus: 'unknown',
     openChatWith: '',
     incoming: null,
+    chatPhotoUrls: {},
     phase: role === 'parent' ? 'parent' : 'onboarding',
   }),
 
@@ -680,6 +694,7 @@ export const useStore = create<AppState>()(
     const before = new Set(get().messages.map((m) => m.id));
     // The inbox is the full recent picture: drop anything the server no longer has (unsent)
     set((s) => ({ messagingStatus: 'ready', messages: mergeMessages(s.messages, res.messages, () => true) }));
+    signMissingPhotos(res.messages);
     const fresh = res.messages.filter((m) => !before.has(m.id) && m.recipientId === userId && !m.readAt);
     // Alert only for messages that arrived since the last check, not old unread ones on first load
     if (loadedBefore && fresh.length) [...fresh].reverse().forEach((m) => get().receiveMessage(m)); // oldest first, so the alert shows the newest
@@ -696,6 +711,7 @@ export const useStore = create<AppState>()(
     if (!res.ok) { if (res.reason === 'needs_update') set({ messagingStatus: 'needs_update' }); return; }
     const inChat = (m: ChatMessage) => m.senderId === friendId || m.recipientId === friendId;
     set((s) => ({ messagingStatus: 'ready', messages: mergeMessages(s.messages, res.messages, inChat) }));
+    signMissingPhotos(res.messages);
     if (get().openChatWith === friendId && res.messages.some((m) => m.senderId === friendId && !m.readAt)) {
       const now = new Date().toISOString();
       set((s) => ({ messages: s.messages.map((m) => (m.senderId === friendId && m.recipientId === userId && !m.readAt ? { ...m, readAt: now } : m)) }));
@@ -703,12 +719,15 @@ export const useStore = create<AppState>()(
     }
   },
 
-  sendChat: async (friendId, body) => {
+  sendChat: async (friendId, body, photoUri) => {
     const { userId } = get();
     const text = body.trim();
-    if (!userId || !text) return;
+    if (!userId || (!text && !photoUri)) return;
     const localId = `local-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
-    const draft: ChatMessage = { id: localId, senderId: userId, recipientId: friendId, body: text, createdAt: new Date().toISOString(), readAt: null, pending: 'sending' };
+    const draft: ChatMessage = {
+      id: localId, senderId: userId, recipientId: friendId, body: text, photo: null, localPhotoUri: photoUri,
+      createdAt: new Date().toISOString(), readAt: null, pending: 'sending',
+    };
     set((s) => ({ messages: [...s.messages, draft] }));
     await get().retryChat(localId);
   },
@@ -717,14 +736,25 @@ export const useStore = create<AppState>()(
     const m = get().messages.find((x) => x.id === localId);
     if (!m) return;
     set((s) => ({ messages: s.messages.map((x) => (x.id === localId ? { ...x, pending: 'sending' } : x)) }));
-    const res = await sendMessage(m.senderId, m.recipientId, m.body);
+    const fail = (needsUpdate: boolean) => set((s) => ({
+      messagingStatus: needsUpdate ? 'needs_update' : s.messagingStatus,
+      messages: s.messages.map((x) => (x.id === localId ? { ...x, pending: 'failed' } : x)),
+    }));
+    // Upload the photo first (once — a retry reuses the uploaded file)
+    let photo = m.photo ?? null;
+    if (m.localPhotoUri && !photo) {
+      const up = await uploadChatPhoto(m.senderId, m.recipientId, m.localPhotoUri);
+      if ('error' in up) { fail(up.error === 'needs_update'); return; }
+      photo = up.path;
+      set((s) => ({ messages: s.messages.map((x) => (x.id === localId ? { ...x, photo } : x)) }));
+    }
+    const res = await sendMessage(m.senderId, m.recipientId, m.body, photo);
     if (res.ok) {
+      // Show the on-device copy right away instead of waiting for a download link
+      if (photo && m.localPhotoUri) set((s) => ({ chatPhotoUrls: { ...s.chatPhotoUrls, [photo!]: m.localPhotoUri! } }));
       set((s) => ({ messagingStatus: 'ready', messages: mergeMessages(s.messages.filter((x) => x.id !== localId), [res.message]) }));
     } else {
-      set((s) => ({
-        messagingStatus: res.reason === 'needs_update' ? 'needs_update' : s.messagingStatus,
-        messages: s.messages.map((x) => (x.id === localId ? { ...x, pending: 'failed' } : x)),
-      }));
+      fail(res.reason === 'needs_update');
     }
   },
 
@@ -732,6 +762,7 @@ export const useStore = create<AppState>()(
     const { userId, openChatWith } = get();
     if (m.recipientId !== userId) return;
     set((s) => ({ messages: mergeMessages(s.messages, [m]) }));
+    signMissingPhotos([m]);
     // Someone who just added us: fetch them so their name shows
     if (!get().friends.some((f) => f.id === m.senderId)) get().loadFriends();
     if (openChatWith === m.senderId) get().loadConversation(m.senderId);
@@ -743,8 +774,9 @@ export const useStore = create<AppState>()(
     set((s) => ({ messages: s.messages.filter((x) => x.id !== id) }));
     if (m && !m.pending) {
       const ok = await deleteMessage(id);
-      if (!ok) set((s) => ({ messages: mergeMessages(s.messages, [m]) }));
+      if (!ok) { set((s) => ({ messages: mergeMessages(s.messages, [m]) })); return; }
     }
+    if (m?.photo) deleteChatPhoto(m.photo);
   },
 
   // Debounced push of profile fields that change often.

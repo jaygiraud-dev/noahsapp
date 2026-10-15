@@ -55,6 +55,7 @@ export default function MessageAlert() {
 
   if (!incoming) return null;
   const name = friends.find((f) => f.id === incoming.senderId)?.name ?? 'A friend';
+  const text = incoming.body || (incoming.photo ? '📷 Photo' : '');
 
   return (
     <Animated.View style={[styles.wrap, { top: insets.top + 6, transform: [{ translateY: slide }] }]}>
@@ -63,12 +64,12 @@ export default function MessageAlert() {
         activeOpacity={0.85}
         onPress={() => setOpenChat(incoming.senderId)}
         accessibilityRole="button"
-        accessibilityLabel={`New message from ${name}: ${incoming.body}. Open chat`}
+        accessibilityLabel={`New message from ${name}: ${text}. Open chat`}
       >
         <Text style={styles.icon}>💬</Text>
         <View style={styles.text}>
           <Text style={[styles.name, { fontFamily: theme.fBodySemiBold, color: theme.ink }]} numberOfLines={1}>{name}</Text>
-          <Text style={[styles.body, { fontFamily: theme.fBody, color: theme.sub }]} numberOfLines={2}>{incoming.body}</Text>
+          <Text style={[styles.body, { fontFamily: theme.fBody, color: theme.sub }]} numberOfLines={2}>{text}</Text>
         </View>
         <TouchableOpacity onPress={clearIncoming} accessibilityLabel="Dismiss" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Text style={[styles.close, { color: theme.soft }]}>×</Text>
