@@ -11,10 +11,16 @@ The original design handoff follows further down.
 2. **Email links.** In Supabase → Authentication → URL Configuration, set **Site URL** to the Netlify address
    (for example `https://your-site.netlify.app`) and add the same address under **Redirect URLs**.
    Confirmation and password-reset emails send people back there.
-3. **Email confirmation** is on by default in Supabase. The app handles it: after signing up you see
-   "Check your inbox", tap the link, then sign in. To skip it while testing, turn off
-   Authentication → Providers → Email → "Confirm email".
-4. **Deploy.** Netlify builds from `main` using `netlify.toml`.
+3. **Email sender.** Supabase's built-in sender only emails the Supabase account's own team members,
+   and only a few per hour, so other people's password-reset emails never arrive. Plug in your own sender
+   under Authentication → Emails → SMTP Settings → Enable custom SMTP. With a Gmail account:
+   turn on 2-Step Verification, create an app password at myaccount.google.com/apppasswords, then use
+   host `smtp.gmail.com`, port `465`, username = the Gmail address, password = the app password,
+   sender email = the same Gmail address, sender name `my agenda`. Afterwards raise the email limit under
+   Authentication → Rate Limits.
+4. **Email confirmation** is optional. If it's on, new accounts see "Check your inbox", tap the link, then sign in.
+   It's controlled by Authentication → Providers → Email → "Confirm email".
+5. **Deploy.** Netlify builds from `main` using `netlify.toml`.
 
 ## Trying the full flow
 

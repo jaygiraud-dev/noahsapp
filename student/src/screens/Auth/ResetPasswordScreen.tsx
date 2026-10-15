@@ -43,17 +43,28 @@ export default function ResetPasswordScreen({ navigation, route }: any) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Seconds until another link can be requested (Supabase allows one per minute per email)
+  const [wait, setWait] = useState(0);
+  useEffect(() => {
+    if (wait <= 0) return;
+    const t = setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+
   async function handleSendLink() {
     const trimmed = email.trim();
-    if (!trimmed) return;
+    if (!trimmed || wait > 0) return;
     setLoading(true);
     setError('');
     const { error: err } = await supabase.auth.resetPasswordForEmail(trimmed.toLowerCase(), { redirectTo: authRedirectUrl() });
     setLoading(false);
     if (err) {
-      setError(err.message);
+      const after = /after (\d+) seconds/i.exec(err.message);
+      if (after) setWait(Number(after[1]));
+      setError(friendlyResetError(err.message));
     } else {
       setSent(true);
+      setWait(60);
     }
   }
 
@@ -147,9 +158,26 @@ export default function ResetPasswordScreen({ navigation, route }: any) {
         </SerifTitle>
 
         {sent ? (
-          <Text style={[styles.body, { fontFamily: theme.fBody, color: theme.sub }]}>
-            We sent a reset link to {email}. Tap the link in your email — it'll bring you back here to set a new password.
-          </Text>
+          <View style={styles.form}>
+            <Text style={[styles.body, { fontFamily: theme.fBody, color: theme.sub, marginBottom: 0 }]}>
+              If there’s an account for {email.trim()}, a reset link is on its way. Tap it and you’ll come back here to set a new password.
+            </Text>
+            <Text style={[styles.body, { fontFamily: theme.fBody, color: theme.sub, marginBottom: 0 }]}>
+              Not there after a couple of minutes? Check Junk or Spam, and make sure this is the email you signed up with.
+            </Text>
+            {!!error && (
+              <Text style={[styles.errorText, { fontFamily: theme.fBody }]}>{error}</Text>
+            )}
+            <PrimaryBtn
+              label={wait > 0 ? `Send again in ${wait}s` : 'Send it again'}
+              onPress={handleSendLink}
+              loading={loading}
+              disabled={wait > 0}
+            />
+            <TouchableOpacity onPress={() => { setSent(false); setError(''); }} accessibilityRole="button">
+              <Text style={[styles.backText, { fontFamily: theme.fMono, color: theme.accent, textAlign: 'center' }]}>Use a different email</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <View style={styles.form}>
             <Text style={[styles.body, { fontFamily: theme.fBody, color: theme.sub }]}>
@@ -170,12 +198,27 @@ export default function ResetPasswordScreen({ navigation, route }: any) {
             {!!error && (
               <Text style={[styles.errorText, { fontFamily: theme.fBody }]}>{error}</Text>
             )}
-            <PrimaryBtn label="Send reset link" onPress={handleSendLink} loading={loading} />
+            <PrimaryBtn
+              label={wait > 0 ? `Try again in ${wait}s` : 'Send reset link'}
+              onPress={handleSendLink}
+              loading={loading}
+              disabled={wait > 0}
+            />
           </View>
         )}
       </View>
     </SafeAreaView>
   );
+}
+
+function friendlyResetError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes('rate limit')) return 'Too many emails have been sent from the app in the last hour. Wait a while, then try again.';
+  if (/after \d+ seconds/.test(m)) return 'A link was just sent. You can ask for another in a minute.';
+  if (m.includes('not authorized')) return 'The app can’t email this address yet. Its email sender still needs setting up (README, setup step 3).';
+  if (m.includes('invalid') && m.includes('email')) return 'That doesn’t look like an email address.';
+  if (m.includes('fetch') || m.includes('network')) return 'Couldn’t reach the server. Check your connection and try again.';
+  return message;
 }
 
 const styles = StyleSheet.create({
