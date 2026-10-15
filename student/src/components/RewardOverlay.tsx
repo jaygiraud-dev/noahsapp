@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     lineHeight: 68,
   },
   ptsLabel: {
-    fontSize: 14,
+    fontSize: 16,
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginTop: -4,

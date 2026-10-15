@@ -35,5 +35,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { fontSize: 16, letterSpacing: 0.3 },
+  label: { fontSize: 17, letterSpacing: 0.3 },
 });

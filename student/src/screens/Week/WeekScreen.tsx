@@ -40,6 +40,19 @@ function getMonthDays(year: number, month: number): (Date | null)[] {
   return cells;
 }
 
+/** Month boxes are narrow: short forms that never split a word mid-way. */
+const SHORT_CLOSED: Record<string, string> = {
+  'Thanksgiving': 'Thanks-\ngiving',
+  'Remembrance Day': 'Remem-\nbrance',
+  'Truth & Reconciliation': 'Truth & Recon.',
+  'Semester Turnaround': 'Semester switch',
+  'Easter Monday': 'Easter Mon',
+  'Victoria Day': 'Victoria Day',
+};
+function shortClosedLabel(label: string): string {
+  return SHORT_CLOSED[label] ?? label;
+}
+
 function closedColor(label: string): string {
   if (/break/i.test(label)) return '#06d6e0';
   if (/pro-d|turnaround|curriculum/i.test(label)) return '#f59e0b';
@@ -150,7 +163,7 @@ export default function WeekScreen() {
                   {dotColor && <View style={[mStyles.dot, { backgroundColor: dotColor }]} />}
                   {hasPersonal && <View style={[mStyles.dot, { backgroundColor: theme.accent }]} />}
                 </View>
-                {closedLabel && <Text style={[mStyles.holidayLabel, { fontFamily: theme.fMono, color: dotColor! }]} numberOfLines={2}>{closedLabel}</Text>}
+                {closedLabel && <Text style={[mStyles.holidayLabel, { fontFamily: theme.fMono, color: dotColor! }]} numberOfLines={2}>{shortClosedLabel(closedLabel)}</Text>}
               </TouchableOpacity>
             );
           })}
@@ -477,26 +490,26 @@ const detailStyles = StyleSheet.create({
   colorBar: { width: 5 },
   body: { flex: 1, padding: 16, gap: 6 },
   cardTitle: { fontSize: 22, lineHeight: 28 },
-  cardMeta: { fontSize: 12, letterSpacing: 0.3 },
+  cardMeta: { fontSize: 14, letterSpacing: 0.3 },
   closeX: { fontSize: 24, lineHeight: 28, paddingHorizontal: 14, paddingTop: 12 },
 });
 
 const mStyles = StyleSheet.create({
   weekRow: { flexDirection: 'row', paddingHorizontal: 4, paddingBottom: 4 },
   weekCell: { flex: 1, alignItems: 'center' },
-  weekLabel: { fontSize: 10, letterSpacing: 1 },
+  weekLabel: { fontSize: 12, letterSpacing: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 4 },
   cell: { width: '14.285%', minHeight: 72, padding: 3, borderRadius: 12, alignItems: 'center' },
   dayCircle: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  dayNum: { fontSize: 13 },
+  dayNum: { fontSize: 15 },
   dotRow: { flexDirection: 'row', gap: 3, marginTop: 2, height: 5 },
   dot: { width: 5, height: 5, borderRadius: 3 },
-  holidayLabel: { fontSize: 7, letterSpacing: 0.2, textAlign: 'center', marginTop: 2 },
+  holidayLabel: { fontSize: 9, lineHeight: 11, letterSpacing: -0.3, textAlign: 'center', marginTop: 2 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 7, height: 7, borderRadius: 4 },
-  legendLabel: { fontSize: 10, letterSpacing: 0.5 },
-  source: { fontSize: 9, letterSpacing: 0.3, paddingHorizontal: 16, paddingTop: 10 },
+  legendLabel: { fontSize: 12, letterSpacing: 0.5 },
+  source: { fontSize: 11, letterSpacing: 0.3, paddingHorizontal: 16, paddingTop: 10 },
 });
 
 const styles = StyleSheet.create({
@@ -504,58 +517,58 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 6, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   headerLeft: { gap: 2 },
   title: { fontSize: 36 },
-  monthLabel: { fontSize: 10, letterSpacing: 1.5 },
+  monthLabel: { fontSize: 12, letterSpacing: 1.5 },
   navRow: { flexDirection: 'row', gap: 4, paddingBottom: 4, alignItems: 'center' },
   navBtn: { padding: 8 },
   navArrow: { fontSize: 18 },
   toggleViewBtn: { marginLeft: 4, height: 34, paddingHorizontal: 12, borderRadius: 17, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  toggleViewText: { fontSize: 12 },
+  toggleViewText: { fontSize: 14 },
   addBtn: { marginLeft: 4, height: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
-  addBtnText: { color: '#fff', fontSize: 12 },
+  addBtnText: { color: '#fff', fontSize: 14 },
   dayStrip: { flexDirection: 'row', paddingHorizontal: 8, paddingBottom: 10, paddingTop: 4, borderBottomWidth: StyleSheet.hairlineWidth },
   dayPill: { flex: 1, alignItems: 'center', gap: 4 },
-  dayAbbr: { fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase' },
+  dayAbbr: { fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' },
   dayNumWrap: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
-  dayNum: { fontSize: 15 },
+  dayNum: { fontSize: 16 },
   closedDot: { width: 5, height: 5, borderRadius: 3 },
   gridScroll: { flex: 1 },
-  dayNote: { fontSize: 11, letterSpacing: 0.3, paddingHorizontal: 16, paddingTop: 8 },
+  dayNote: { fontSize: 13, letterSpacing: 0.3, paddingHorizontal: 16, paddingTop: 8 },
   hwRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, paddingRight: 8, paddingTop: 8, paddingBottom: 4, alignItems: 'center' },
-  hwRowLabel: { fontSize: 9, letterSpacing: 1, marginRight: 2 },
+  hwRowLabel: { fontSize: 11, letterSpacing: 1, marginRight: 2 },
   hwChip: { borderRadius: 32, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, maxWidth: 220 },
-  hwChipText: { fontSize: 10, letterSpacing: 0.2 },
+  hwChipText: { fontSize: 12, letterSpacing: 0.2 },
   hourRow: { position: 'absolute', left: 0, right: 0, height: ROW_H, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'flex-start', paddingTop: 4 },
-  timeLabel: { fontSize: 10, letterSpacing: 0.3, textAlign: 'right', paddingRight: 8 },
+  timeLabel: { fontSize: 12, letterSpacing: 0.3, textAlign: 'right', paddingRight: 8 },
   hourLine: { flex: 1, height: StyleSheet.hairlineWidth, marginTop: 7 },
   block: { position: 'absolute', borderRadius: 12, borderLeftWidth: 3, paddingHorizontal: 10, paddingVertical: 6, gap: 2, overflow: 'hidden' },
-  blockTitle: { fontSize: 12, letterSpacing: 0.2, fontWeight: '700' },
-  blockTime: { fontSize: 10, letterSpacing: 0.2 },
+  blockTitle: { fontSize: 14, letterSpacing: 0.2, fontWeight: '700' },
+  blockTime: { fontSize: 12, letterSpacing: 0.2 },
   bellBand: { position: 'absolute', left: GUTTER + 6, right: 6, borderWidth: 1, borderStyle: 'dashed', borderRadius: 8, zIndex: 2, justifyContent: 'center', paddingHorizontal: 8 },
-  bellBandLabel: { fontSize: 9, letterSpacing: 0.8, textAlign: 'right' },
+  bellBandLabel: { fontSize: 11, letterSpacing: 0.8, textAlign: 'right' },
   gapBand: { position: 'absolute', left: GUTTER + 6, right: 6, zIndex: 1, justifyContent: 'center' },
-  gapLabel: { fontSize: 8, letterSpacing: 0.5, textAlign: 'right', paddingRight: 8 },
+  gapLabel: { fontSize: 10, letterSpacing: 0.5, textAlign: 'right', paddingRight: 8 },
   marker: { position: 'absolute', left: GUTTER, right: 0, height: 2, zIndex: 4 },
   markerLine: { position: 'absolute', left: 0, right: 0, height: 2 },
-  markerLabel: { position: 'absolute', right: 8, fontSize: 9, letterSpacing: 0.8, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, overflow: 'hidden' },
+  markerLabel: { position: 'absolute', right: 8, fontSize: 11, letterSpacing: 0.8, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, overflow: 'hidden' },
   closedBanner: { position: 'absolute', right: 6, borderWidth: 1, borderRadius: 14, justifyContent: 'center', alignItems: 'center', gap: 6, zIndex: 2 },
-  closedLabel: { fontSize: 12, letterSpacing: 2 },
-  closedSub: { fontSize: 10, letterSpacing: 1 },
+  closedLabel: { fontSize: 14, letterSpacing: 2 },
+  closedSub: { fontSize: 12, letterSpacing: 1 },
   nowLine: { position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', zIndex: 6 },
   nowDot: { width: 8, height: 8, borderRadius: 4 },
   nowBar: { flex: 1, height: 2 },
   weekendContent: { padding: 20, gap: 8, paddingBottom: 110 },
   weekendTitle: { fontSize: 32, marginBottom: 2 },
-  weekendSub: { fontSize: 11, letterSpacing: 0.5, marginBottom: 8 },
+  weekendSub: { fontSize: 13, letterSpacing: 0.5, marginBottom: 8 },
   wkSection: { gap: 8, marginTop: 16 },
-  wkSectionLabel: { fontSize: 10, letterSpacing: 1.2 },
+  wkSectionLabel: { fontSize: 12, letterSpacing: 1.2 },
   wkItem: { borderLeftWidth: 3, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, gap: 4 },
   wkItemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
-  wkItemTitle: { fontSize: 15, flex: 1, lineHeight: 20 },
-  wkItemBadge: { fontSize: 10, letterSpacing: 0.3, borderRadius: 32, paddingHorizontal: 8, paddingVertical: 3, overflow: 'hidden' },
-  wkItemSub: { fontSize: 11, letterSpacing: 0.3 },
+  wkItemTitle: { fontSize: 16, flex: 1, lineHeight: 21 },
+  wkItemBadge: { fontSize: 12, letterSpacing: 0.3, borderRadius: 32, paddingHorizontal: 8, paddingVertical: 3, overflow: 'hidden' },
+  wkItemSub: { fontSize: 13, letterSpacing: 0.3 },
   wkEmpty: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   wkEmptyIcon: { fontSize: 40 },
-  wkEmptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  wkEmptyText: { fontSize: 16, textAlign: 'center', lineHeight: 22 },
   addPlan: { borderWidth: 1, borderStyle: 'dashed', borderRadius: 16, padding: 14, alignItems: 'center', marginTop: 16 },
-  addPlanText: { fontSize: 12, letterSpacing: 0.5 },
+  addPlanText: { fontSize: 14, letterSpacing: 0.5 },
 });

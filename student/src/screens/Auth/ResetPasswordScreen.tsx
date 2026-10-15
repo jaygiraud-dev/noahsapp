@@ -225,9 +225,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 16 },
   back: { marginBottom: 32 },
-  backText: { fontSize: 13, letterSpacing: 0.5 },
+  backText: { fontSize: 15, letterSpacing: 0.5 },
   title: { marginBottom: 16 },
-  body: { fontSize: 15, lineHeight: 22, marginBottom: 24 },
+  body: { fontSize: 16, lineHeight: 23, marginBottom: 24 },
   form: { gap: 16 },
   fieldGroup: { gap: 6 },
   input: {
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: 17,
   },
-  errorText: { fontSize: 13, color: '#f87171' },
+  errorText: { fontSize: 15, color: '#f87171' },
 });

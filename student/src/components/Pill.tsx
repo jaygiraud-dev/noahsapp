@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   label: {
-    fontSize: 11,
+    fontSize: 13,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },

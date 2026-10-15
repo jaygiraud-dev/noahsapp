@@ -55,5 +55,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   disabled: { opacity: 0.5 },
-  label: { color: '#fff', fontSize: 16, letterSpacing: 0.3 },
+  label: { color: '#fff', fontSize: 17, letterSpacing: 0.3 },
 });

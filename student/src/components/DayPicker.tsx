@@ -115,12 +115,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dayName: {
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   dayNum: {
-    fontSize: 16,
+    fontSize: 17,
   },
   dot: {
     width: 4,

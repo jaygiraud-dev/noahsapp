@@ -80,6 +80,6 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 2 },
   iconWrap: { width: 48, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  label: { fontSize: 11, letterSpacing: 0.2 },
+  label: { fontSize: 13, letterSpacing: 0.2 },
   pillShine: { position: 'absolute', top: 0, left: 0, right: 0, height: 28, borderRadius: 32 },
 });

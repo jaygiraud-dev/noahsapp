@@ -29,7 +29,7 @@ export default function MicroLabel({ children, color, style }: Props) {
 
 const styles = StyleSheet.create({
   text: {
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
