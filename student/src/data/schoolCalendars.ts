@@ -9,7 +9,8 @@
 //   https://www.sd44.ca/school/sutherland/About/Calendar/Documents/Sutherland%20Overview%20Calendar%202026-2027.pdf
 //   https://sutherland.sd44.ca/about-our-school/daily-schedules/
 //   https://www.sd44.ca/school/sutherland/About/Calendar/Documents/Sutherland%20Bell%20Schedule%202026-2027.pdf
-// To verify with the school: lunch time (one source says 13:05–13:50), the school-based
+// Lunch starts 13:05 after Block 3 (confirmed by a Sutherland student).
+// To verify with the school: the school-based
 // Pro-D days (Nov 20, Apr 9), the semester turnaround day (Jan 27) and the March
 // early-dismissal time.
 
@@ -40,9 +41,8 @@ const range = (from: string, to: string, label: string): ClosedDay[] => {
 const SUTHERLAND_REGULAR: BellPeriod[] = [
   { label: 'Block 1', start: '09:15', end: '10:25', kind: 'class' },
   { label: 'Block 2', start: '10:35', end: '11:45', kind: 'class' },
-  { label: 'Block 3', start: '11:55', end: '12:20', kind: 'class' },
-  { label: 'Lunch',   start: '12:20', end: '12:50', kind: 'lunch' },
-  { label: 'Block 3', start: '12:50', end: '13:35', kind: 'class' },
+  { label: 'Block 3', start: '11:55', end: '13:05', kind: 'class' },
+  { label: 'Lunch',   start: '13:05', end: '13:45', kind: 'lunch' },
   { label: 'Block 4', start: '13:45', end: '15:00', kind: 'class' },
 ];
 
