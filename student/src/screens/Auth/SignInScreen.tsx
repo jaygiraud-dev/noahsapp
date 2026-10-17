@@ -37,7 +37,7 @@ function friendlyAuthError(msg: string): string {
 }
 
 export default function SignInScreen({ navigation, route }: any) {
-  const [accountType, setAccountType] = useState<AccountType>('student');
+  const [accountType, setAccountType] = useState<AccountType>(route?.params?.accountType ?? 'student');
   const [name, setName] = useState('');
   const [email, setEmail] = useState(route?.params?.email ?? '');
   const [password, setPassword] = useState('');
@@ -53,6 +53,7 @@ export default function SignInScreen({ navigation, route }: any) {
   useEffect(() => {
     if (route?.params?.email) setEmail(route.params.email);
     if (route?.params?.mode) setMode(route.params.mode);
+    if (route?.params?.accountType) setAccountType(route.params.accountType);
   }, [route?.params]);
 
   // Entrance animation

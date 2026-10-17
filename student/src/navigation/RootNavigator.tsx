@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useStore } from '../store/useStore';
 import { makeTheme } from '../theme';
 import SignInScreen from '../screens/Auth/SignInScreen';
+import IntroScreen from '../screens/Auth/IntroScreen';
 import ConfirmEmailScreen from '../screens/Auth/ConfirmEmailScreen';
 import ResetPasswordScreen from '../screens/Auth/ResetPasswordScreen';
 import SchoolPickerScreen from '../screens/Onboarding/SchoolPickerScreen';
@@ -22,6 +23,7 @@ export default function RootNavigator() {
   const phase = useStore((s) => s.phase);
   const passwordRecovery = useStore((s) => s.passwordRecovery);
   const onboardingStart = useStore((s) => s.onboardingStart);
+  const seenIntro = useStore((s) => s.seenIntro);
   const vibe = useStore((s) => s.vibe);
   const darkMode = useStore((s) => s.darkMode);
   const theme = makeTheme(vibe, darkMode);
@@ -46,6 +48,8 @@ export default function RootNavigator() {
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           ) : (
             <>
+              {/* First open on this device: the intro, which then hands over to sign-up */}
+              {!seenIntro && <Stack.Screen name="Intro" component={IntroScreen} />}
               <Stack.Screen name="SignIn" component={SignInScreen} />
               <Stack.Screen name="ConfirmEmail" component={ConfirmEmailScreen} />
               <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />

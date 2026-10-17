@@ -63,6 +63,9 @@ interface AppState {
   retrySync: () => Promise<void>;
   clearToast: () => void;
   _hasHydrated: boolean;
+  /** Has this device been through the intro slides? */
+  seenIntro: boolean;
+  setSeenIntro: (v: boolean) => void;
   /** Messages with friends, oldest first (not persisted). Local ones still sending carry `pending`. */
   messages: ChatMessage[];
   /** Whether the database has messaging switched on yet */
@@ -333,6 +336,7 @@ export const useStore = create<AppState>()(
   syncError: '',
   toast: '',
   _hasHydrated: false,
+  seenIntro: false,
   messages: [],
   messagingStatus: 'unknown',
   openChatWith: '',
@@ -340,6 +344,7 @@ export const useStore = create<AppState>()(
   chatPhotoUrls: {},
 
   setPhase: (phase) => set({ phase }),
+  setSeenIntro: (seenIntro) => set({ seenIntro }),
   setHasHydrated: (v) => set({ _hasHydrated: v }),
   setPasswordRecovery: (v) => set({ passwordRecovery: v }),
   editSetup: (start) => set({ onboardingStart: start, phase: 'onboarding' }),
@@ -811,6 +816,7 @@ export const useStore = create<AppState>()(
       },
       partialize: (state) => ({
         phase: state.phase,
+        seenIntro: state.seenIntro,
         school: state.school,
         grade: state.grade,
         classes: state.classes,
