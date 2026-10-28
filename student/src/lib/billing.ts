@@ -25,6 +25,8 @@ export interface PlanState {
   plan: ParentPlan | null;
   /** Off until the owner switches it on in Supabase (app_settings.paywall_enabled) */
   paywallEnabled: boolean;
+  /** On the free-forever list (the app's creators) */
+  free: boolean;
   loaded: boolean;
 }
 
@@ -41,17 +43,23 @@ function rowToPlan(r: any): ParentPlan {
 }
 
 export async function fetchParentPlan(parentId: string): Promise<PlanState> {
-  const [subRes, setRes] = await Promise.all([
+  const [subRes, setRes, freeRes] = await Promise.all([
     supabase.from('subscriptions').select('*').eq('parent_id', parentId).maybeSingle(),
     supabase.from('app_settings').select('paywall_enabled').maybeSingle(),
+    supabase.rpc('my_account_is_free'),
   ]);
   // Tables missing (database update not run yet) → behave as free
-  if (setRes.error || subRes.error) return { plan: null, paywallEnabled: false, loaded: true };
-  return { plan: subRes.data ? rowToPlan(subRes.data) : null, paywallEnabled: !!setRes.data?.paywall_enabled, loaded: true };
+  if (setRes.error || subRes.error) return { plan: null, paywallEnabled: false, free: false, loaded: true };
+  return {
+    plan: subRes.data ? rowToPlan(subRes.data) : null,
+    paywallEnabled: !!setRes.data?.paywall_enabled,
+    free: freeRes.data === true,
+    loaded: true,
+  };
 }
 
 export function hasAccess(s: PlanState, now = new Date()): boolean {
-  if (!s.paywallEnabled) return true;
+  if (!s.paywallEnabled || s.free) return true;
   const p = s.plan;
   if (!p) return true; // no kid linked yet, so nothing to lock
   if (p.status === 'active' || p.status === 'paused') return true;
@@ -132,11 +140,11 @@ function takeCheckoutResult(): 'success' | 'cancel' | null {
 }
 
 export function useParentPlan(parentId: string) {
-  const [state, setState] = useState<PlanState>({ plan: null, paywallEnabled: false, loaded: false });
+  const [state, setState] = useState<PlanState>({ plan: null, paywallEnabled: false, free: false, loaded: false });
   const [checkout] = useState(takeCheckoutResult);
 
   const reload = useCallback(async () => {
-    if (!parentId) { setState({ plan: null, paywallEnabled: false, loaded: true }); return; }
+    if (!parentId) { setState({ plan: null, paywallEnabled: false, free: false, loaded: true }); return; }
     setState(await fetchParentPlan(parentId));
   }, [parentId]);
 

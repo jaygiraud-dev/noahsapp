@@ -15,6 +15,7 @@ import {
 
 function planLine(p: ReturnType<typeof useParentPlan>): string {
   const plan = p.plan;
+  if (p.free) return 'Free for creators ✨ You’ll never be charged.';
   if (!p.paywallEnabled && !plan?.hasStripe) return 'Free for now while we get started.';
   if (!plan) return 'Your free week starts when you link your kid.';
   const date = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
@@ -126,7 +127,7 @@ export default function ParentSettingsScreen({ navigation }: any) {
                 <TouchableOpacity style={[styles.btnWide, { backgroundColor: theme.accent }]} onPress={managePlan} disabled={planBusy} accessibilityRole="button">
                   {planBusy ? <ActivityIndicator color="#fff" /> : <Text style={[styles.btnText, { fontFamily: theme.fMono }]}>Manage plan</Text>}
                 </TouchableOpacity>
-              ) : plan.paywallEnabled && (
+              ) : plan.paywallEnabled && !plan.free && (
                 <TouchableOpacity style={[styles.btnWide, { backgroundColor: theme.accent }]} onPress={() => setShowPlans((v) => !v)} accessibilityRole="button">
                   <Text style={[styles.btnText, { fontFamily: theme.fMono }]}>{showPlans ? 'Hide plans' : 'Choose a plan'}</Text>
                 </TouchableOpacity>

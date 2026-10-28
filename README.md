@@ -46,6 +46,8 @@ The original design handoff follows further down.
    7. Turn the paywall on in Supabase SQL Editor: `update public.app_settings set paywall_enabled = true;`
       (set it back to `false` to make everything free again). Test with Stripe's test card 4242 4242 4242 4242,
       then switch Stripe to live mode and replace the keys, price IDs and webhook secret with the live ones.
+   8. **Free accounts.** Emails on `public.free_accounts` never pay (the creators are already on it).
+      Add someone: `insert into public.free_accounts (email, note) values ('name@example.com', 'Friend');`
 
 ## Trying the full flow
 

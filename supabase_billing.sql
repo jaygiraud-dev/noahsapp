@@ -71,10 +71,41 @@ select distinct l.parent_id, 'trial',
 from public.parent_student_links l
 on conflict (parent_id) do nothing;
 
+-- Accounts that never pay (the app's creators). Matched on email, so it still
+-- works if an account is deleted and made again. Not readable from the app.
+create table if not exists public.free_accounts (
+  email text primary key,
+  note  text
+);
+alter table public.free_accounts enable row level security;
+insert into public.free_accounts (email, note) values
+  ('jaygiraud@gmail.com', 'Creator'),
+  ('noahkaigiraud@icloud.com', 'Creator')
+on conflict (email) do nothing;
+
+create or replace function public.is_free_account(p uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from auth.users u
+    join public.free_accounts f on lower(f.email) = lower(u.email)
+    where u.id = p
+  );
+$$;
+
+-- Lets the app show "Free for creators" instead of trial banners
+create or replace function public.my_account_is_free()
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.is_free_account(auth.uid());
+$$;
+revoke all on function public.is_free_account(uuid) from public, anon, authenticated;
+revoke all on function public.my_account_is_free() from public, anon;
+grant execute on function public.my_account_is_free() to authenticated;
+
 -- Can this parent see their kids' stuff right now?
 create or replace function public.parent_has_access(p uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select not coalesce((select paywall_enabled from public.app_settings), false)
+      or public.is_free_account(p)
       or exists (
         select 1 from public.subscriptions s
         where s.parent_id = p and (

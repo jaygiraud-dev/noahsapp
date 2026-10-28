@@ -47,6 +47,7 @@ export function PlanBanners({ theme, state, checkout, reload }: {
     if (!r.ok) setError(billingErrorText(r.error)); else reload();
   }
 
+  if (state.free) return null;
   const items: React.ReactNode[] = [];
   if (checkout === 'success') {
     items.push(<Banner key="ok" theme={theme} tone={theme.mint} text="🎉 You’re all set. Thanks for subscribing!" />);
