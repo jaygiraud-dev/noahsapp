@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
 import { makeTheme, Vibe } from '../../theme';
@@ -8,6 +8,29 @@ import { deleteParentLink } from '../../lib/db';
 import { useParentData } from '../../lib/parentData';
 import { confirmAction } from '../../lib/confirm';
 import MicroLabel from '../../components/MicroLabel';
+import PlanPicker from './PlanPicker';
+import {
+  useParentPlan, trialDaysLeft, openBillingPortal, setSummerKeep, billingErrorText, PRICES,
+} from '../../lib/billing';
+
+function planLine(p: ReturnType<typeof useParentPlan>): string {
+  const plan = p.plan;
+  if (!p.paywallEnabled && !plan?.hasStripe) return 'Free for now while we get started.';
+  if (!plan) return 'Your free week starts when you link your kid.';
+  const date = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+  const name = plan.plan ? `${PRICES[plan.plan].label} (${PRICES[plan.plan].price}${PRICES[plan.plan].per})` : '';
+  switch (plan.status) {
+    case 'trial': {
+      const d = trialDaysLeft(plan);
+      return d > 0 ? `Free trial · ${d} day${d === 1 ? '' : 's'} left` : 'Your free week is over.';
+    }
+    case 'active': return `${name} · renews ${date(plan.currentPeriodEnd)}`;
+    case 'paused': return `${name} · paused for summer, restarts ${date(plan.pausedUntil) || 'Sept 1'}`;
+    case 'past_due': return `${name} · payment didn’t go through`;
+    case 'canceled': return plan.currentPeriodEnd && new Date(plan.currentPeriodEnd) > new Date() ? `Cancelled · works until ${date(plan.currentPeriodEnd)}` : 'Cancelled';
+  }
+  return '';
+}
 
 const VIBES: Array<{ id: Vibe; label: string }> = [
   { id: 'twilight', label: 'Aura' }, { id: 'clay', label: 'Clay' }, { id: 'paper', label: 'Paper' }, { id: 'mono', label: 'Mono' },
@@ -23,6 +46,25 @@ export default function ParentSettingsScreen({ navigation }: any) {
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const plan = useParentPlan(isDemo ? '' : store.userId);
+  const [planBusy, setPlanBusy] = useState(false);
+  const [planMsg, setPlanMsg] = useState('');
+  const [showPlans, setShowPlans] = useState(false);
+  const p = plan.plan;
+  const canManage = !!p?.hasStripe;
+
+  async function managePlan() {
+    setPlanBusy(true); setPlanMsg('');
+    const r = await openBillingPortal();
+    if (!r.ok) { setPlanMsg(billingErrorText(r.error)); setPlanBusy(false); }
+  }
+
+  async function toggleSummer(keep: boolean) {
+    setPlanBusy(true); setPlanMsg('');
+    const r = await setSummerKeep(keep);
+    setPlanBusy(false);
+    if (!r.ok) setPlanMsg(billingErrorText(r.error)); else plan.reload();
+  }
 
   function saveName() {
     const n = name.trim();
@@ -72,6 +114,38 @@ export default function ParentSettingsScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
             <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.soft }]}>Your kid sees this name under Me → Parents. Signed in as {store.email}.</Text>
+          </View>
+        )}
+
+        {!isDemo && plan.loaded && (
+          <View style={styles.section}>
+            <MicroLabel>Your plan</MicroLabel>
+            <View style={[styles.planCard, { backgroundColor: theme.surface }]}>
+              <Text style={[styles.planLine, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{planLine(plan)}</Text>
+              {canManage ? (
+                <TouchableOpacity style={[styles.btnWide, { backgroundColor: theme.accent }]} onPress={managePlan} disabled={planBusy} accessibilityRole="button">
+                  {planBusy ? <ActivityIndicator color="#fff" /> : <Text style={[styles.btnText, { fontFamily: theme.fMono }]}>Manage plan</Text>}
+                </TouchableOpacity>
+              ) : plan.paywallEnabled && (
+                <TouchableOpacity style={[styles.btnWide, { backgroundColor: theme.accent }]} onPress={() => setShowPlans((v) => !v)} accessibilityRole="button">
+                  <Text style={[styles.btnText, { fontFamily: theme.fMono }]}>{showPlans ? 'Hide plans' : 'Choose a plan'}</Text>
+                </TouchableOpacity>
+              )}
+              {canManage && <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.soft }]}>Switch plans, update your card, see receipts or cancel.</Text>}
+            </View>
+            {showPlans && !canManage && <PlanPicker theme={theme} trialDays={trialDaysLeft(p)} />}
+            {p?.plan === 'monthly' && canManage && (
+              <View style={[styles.planCard, styles.summerRow, { backgroundColor: theme.surface }]}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={[styles.planLine, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>Keep it on over summer</Text>
+                  <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.soft }]}>
+                    Off: no charges July and August, it starts again Sept 1. Turn on for summer camps, jobs or summer school.
+                  </Text>
+                </View>
+                <Switch value={p.summerKeep} onValueChange={toggleSummer} disabled={planBusy} accessibilityLabel="Keep the plan on over summer" />
+              </View>
+            )}
+            {planMsg !== '' && <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.red }]}>{planMsg}</Text>}
           </View>
         )}
 
@@ -136,6 +210,9 @@ const styles = StyleSheet.create({
   btnWide: { borderRadius: 14, paddingVertical: 12, alignItems: 'center' },
   btnText: { color: '#fff', fontSize: 15 },
   hint: { fontSize: 15, lineHeight: 21 },
+  planCard: { borderRadius: 16, padding: 14, gap: 10 },
+  planLine: { fontSize: 16, lineHeight: 22 },
+  summerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   kidRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderRadius: 14, padding: 14 },
   kidName: { fontSize: 16 },
   unlink: { fontSize: 14 },

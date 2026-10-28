@@ -3,6 +3,10 @@
   command = "npm ci --legacy-peer-deps && npx expo export --platform web --no-minify"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"

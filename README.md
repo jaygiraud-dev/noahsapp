@@ -22,7 +22,30 @@ The original design handoff follows further down.
    (or re-run all of `supabase_schema.sql`). Friends can message each other and send photos; parents can't see those messages or photos.
 4. **Email confirmation** is optional. If it's on, new accounts see "Check your inbox", tap the link, then sign in.
    It's controlled by Authentication → Providers → Email → "Confirm email".
-5. **Deploy.** Netlify builds from `main` using `netlify.toml`.
+5. **Deploy.** Netlify builds from `main` using `netlify.toml`. Payments need this Git deploy: a dragged-in
+   folder has no server functions.
+6. **Parent plan (payments).** Kids are free. Parents get a 7-day trial from when they link a kid
+   (Sept 1 if they link in July/August), then $4.99/month or $39.99 per school year (CAD).
+   Monthly plans pause by themselves July 1 – Aug 31 unless the parent turns "Keep it on over summer" on.
+   Nothing is locked until you switch the paywall on (last step).
+   1. Run `supabase_billing.sql` in Supabase (or re-run all of `supabase_schema.sql`).
+   2. Create a Stripe account (stripe.com, Canada, CAD). Work in **Test mode** first.
+   3. Stripe → Product catalog → **Add product** "my agenda Parent" with two prices:
+      $4.99 CAD monthly, and $39.99 CAD yearly. Copy each price's ID (`price_…`).
+   4. Stripe → Settings → Payment methods: make sure **Apple Pay** and **Google Pay** are on (they show
+      on Stripe's checkout page automatically). Settings → Billing → **Customer portal**: turn it on and allow
+      cancelling, switching between the two prices and updating the card.
+   5. Stripe → Developers → Webhooks → **Add endpoint**:
+      `https://<your-site>.netlify.app/.netlify/functions/stripe-webhook`, events
+      `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`,
+      `customer.subscription.deleted`. Copy its signing secret (`whsec_…`).
+   6. Netlify → Site configuration → Environment variables, add:
+      `STRIPE_SECRET_KEY` (Developers → API keys → Secret key), `STRIPE_WEBHOOK_SECRET`,
+      `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, and `SUPABASE_SERVICE_ROLE_KEY`
+      (Supabase → Project Settings → API Keys → secret key; never put it in the app). Redeploy.
+   7. Turn the paywall on in Supabase SQL Editor: `update public.app_settings set paywall_enabled = true;`
+      (set it back to `false` to make everything free again). Test with Stripe's test card 4242 4242 4242 4242,
+      then switch Stripe to live mode and replace the keys, price IDs and webhook secret with the live ones.
 
 ## Trying the full flow
 

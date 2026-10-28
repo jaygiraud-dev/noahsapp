@@ -18,6 +18,8 @@ import { getClosedReason } from '../../data/schoolCalendars';
 import { eventIcon } from '../../data/constants';
 import Avatar from '../../components/Avatar';
 import NudgeSheet from './NudgeSheet';
+import { PlanBanners, Paywall } from './PlanBanners';
+import { useParentPlan, hasAccess } from '../../lib/billing';
 
 type Theme = ReturnType<typeof makeTheme>;
 
@@ -198,8 +200,11 @@ export default function ParentDashboardScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [nudgeKid, setNudgeKid] = useState<Kid | null>(null);
   const isDemo = !userId;
+  const plan = useParentPlan(isDemo ? '' : userId);
+  const locked = plan.loaded && !isDemo && !hasAccess(plan);
 
   useEffect(() => { load(); }, [userId]);
+  useEffect(() => navigation.addListener('focus', () => plan.reload()), [navigation, plan.reload]);
   useEffect(() => navigation.addListener('focus', () => { if (loaded) load(); }), [navigation, loaded]);
 
   // Live updates while the dashboard is open, plus a slow poll as a backup
@@ -248,32 +253,39 @@ export default function ParentDashboardScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}>
-        {isDemo && (
-          <Text style={[styles.demoNote, { fontFamily: theme.fBody, color: theme.sub }]}>
-            This demo shows the sample student’s homework. Create a parent account to see your kid’s.
-          </Text>
+        {!isDemo && plan.loaded && <PlanBanners theme={theme} state={plan} checkout={plan.checkout} reload={plan.reload} />}
+        {locked ? (
+          <Paywall theme={theme} state={plan} kidNames={kids.map((k) => k.name)} />
+        ) : (
+          <>
+            {isDemo && (
+              <Text style={[styles.demoNote, { fontFamily: theme.fBody, color: theme.sub }]}>
+                This demo shows the sample student’s homework. Create a parent account to see your kid’s.
+              </Text>
+            )}
+            {loading && !loaded && <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />}
+            {error !== '' && <Text style={[styles.err, { fontFamily: theme.fBody, color: theme.red }]}>{error}</Text>}
+            {loaded && kids.length === 0 && (
+              <View style={styles.emptyWrap}>
+                <Text style={styles.emptyIcon}>👨‍👩‍👧</Text>
+                <Text style={[styles.emptyTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>One step left.</Text>
+                <Text style={[styles.emptySub, { fontFamily: theme.fBody, color: theme.sub }]}>
+                  Enter your kid’s code below to see their homework, due dates and plans. You won’t see their friends or messages.
+                </Text>
+              </View>
+            )}
+            {kids.map((k) => (
+              <KidCard
+                key={k.id}
+                kid={k}
+                theme={theme}
+                onOpen={(view) => navigation.navigate('ParentKid', { kidId: k.id, view })}
+                onNudge={() => setNudgeKid(k)}
+              />
+            ))}
+            <LinkKidCard theme={theme} hasKids={kids.length > 0} isDemo={isDemo} onLinked={() => { load(); plan.reload(); }} />
+          </>
         )}
-        {loading && !loaded && <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />}
-        {error !== '' && <Text style={[styles.err, { fontFamily: theme.fBody, color: theme.red }]}>{error}</Text>}
-        {loaded && kids.length === 0 && (
-          <View style={styles.emptyWrap}>
-            <Text style={styles.emptyIcon}>👨‍👩‍👧</Text>
-            <Text style={[styles.emptyTitle, { fontFamily: theme.fDisplayItalic, color: theme.ink }]}>One step left.</Text>
-            <Text style={[styles.emptySub, { fontFamily: theme.fBody, color: theme.sub }]}>
-              Enter your kid’s code below to see their homework, due dates and plans. You won’t see their friends or messages.
-            </Text>
-          </View>
-        )}
-        {kids.map((k) => (
-          <KidCard
-            key={k.id}
-            kid={k}
-            theme={theme}
-            onOpen={(view) => navigation.navigate('ParentKid', { kidId: k.id, view })}
-            onNudge={() => setNudgeKid(k)}
-          />
-        ))}
-        <LinkKidCard theme={theme} hasKids={kids.length > 0} isDemo={isDemo} onLinked={load} />
       </ScrollView>
 
       <NudgeSheet
