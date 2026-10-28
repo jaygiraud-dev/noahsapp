@@ -213,7 +213,7 @@ create policy "Students read own links" on public.parent_student_links
 -- Helper used by the policies below
 -- ─── PARENT PLAN (billing) ───────────────────────────────────────────────────
 -- The kid side is free. Parents get a 7-day trial that starts when they first
--- connect to a kid (Sept 1 if that happens in July/August), then pay monthly or
+-- connect to a kid (Sept 5 if that happens over summer), then pay monthly or
 -- for the school year through Stripe. Stripe's webhook (a Netlify function using
 -- the service-role key) is the only thing that writes subscriptions.
 -- Nothing is locked until app_settings.paywall_enabled is switched on.
@@ -246,12 +246,13 @@ drop policy if exists "Parents read own subscription" on public.subscriptions;
 create policy "Parents read own subscription" on public.subscriptions
   for select to authenticated using (auth.uid() = parent_id);
 
--- A trial that would start in July/August starts on Sept 1 instead (Vancouver time)
+-- A trial that would start over summer (July 1 – Sept 4) starts on Sept 5 instead (Vancouver time)
 create or replace function public.trial_start_for(ts timestamptz)
 returns timestamptz language sql immutable as $$
   select case
     when extract(month from ts at time zone 'America/Vancouver') in (7, 8)
-      then make_timestamptz(extract(year from ts at time zone 'America/Vancouver')::int, 9, 1, 0, 0, 0, 'America/Vancouver')
+      or (extract(month from ts at time zone 'America/Vancouver') = 9 and extract(day from ts at time zone 'America/Vancouver') < 5)
+      then make_timestamptz(extract(year from ts at time zone 'America/Vancouver')::int, 9, 5, 0, 0, 0, 'America/Vancouver')
     else ts
   end;
 $$;

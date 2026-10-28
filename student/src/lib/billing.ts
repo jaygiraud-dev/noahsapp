@@ -69,7 +69,7 @@ export function summerNotice(p: ParentPlan | null, now = new Date()): 'pausing' 
   if (!p || p.plan !== 'monthly') return null;
   const m = now.getMonth() + 1; const d = now.getDate();
   if (m === 6 && d >= 20 && p.status === 'active' && !p.summerKeep) return 'pausing';
-  if (m === 8 && d >= 20 && p.status === 'paused') return 'resuming';
+  if (((m === 8 && d >= 20) || (m === 9 && d < 5)) && p.status === 'paused') return 'resuming';
   return null;
 }
 

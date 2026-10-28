@@ -25,8 +25,8 @@ The original design handoff follows further down.
 5. **Deploy.** Netlify builds from `main` using `netlify.toml`. Payments need this Git deploy: a dragged-in
    folder has no server functions.
 6. **Parent plan (payments).** Kids are free. Parents get a 7-day trial from when they link a kid
-   (Sept 1 if they link in July/August), then $4.99/month or $39.99 per school year (CAD).
-   Monthly plans pause by themselves July 1 – Aug 31 unless the parent turns "Keep it on over summer" on.
+   (Sept 5 if they link over summer), then $4.99/month or $39.99 per school year (CAD).
+   Monthly plans pause by themselves July 1 – Sept 4 and start again Sept 5 unless the parent turns "Keep it on over summer" on.
    Nothing is locked until you switch the paywall on (last step).
    1. Run `supabase_billing.sql` in Supabase (or re-run all of `supabase_schema.sql`).
    2. Create a Stripe account (stripe.com, Canada, CAD). Work in **Test mode** first.

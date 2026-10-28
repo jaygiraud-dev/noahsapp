@@ -1,5 +1,5 @@
-// Runs every day. From July 1 to Aug 31 it pauses monthly plans (no charges)
-// unless the parent chose to keep it on. Stripe restarts billing by itself on Sept 1.
+// Runs every day. From July 1 to Sept 4 it pauses monthly plans (no charges)
+// unless the parent chose to keep it on. Stripe restarts billing by itself on Sept 5.
 // The yearly plan already covers summer, so it's never paused.
 import { json, missingConfig, sbSelect, isSummer, setSummerPause } from '../lib/billing.mjs';
 

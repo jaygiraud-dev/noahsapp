@@ -78,7 +78,7 @@ export function PlanBanners({ theme, state, checkout, reload }: {
   if (notice === 'resuming') {
     items.push(
       <Banner key="fall" theme={theme} tone={theme.mint}
-        text="School’s back soon. Your plan starts again September 1."
+        text="School’s back soon. Your plan starts again September 5."
         action="Manage plan" onAction={portal} busy={busy} />,
     );
   }

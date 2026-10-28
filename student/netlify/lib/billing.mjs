@@ -117,15 +117,18 @@ export function localDate(d = new Date()) {
   return { year: p.year, month: p.month, day: p.day };
 }
 
+/** Monthly plans are paused July 1 – Sept 4 and start again Sept 5. */
+export const RESUME_DAY = 5;
+
 export function isSummer(d = new Date()) {
-  const { month } = localDate(d);
-  return month === 7 || month === 8;
+  const { month, day } = localDate(d);
+  return month === 7 || month === 8 || (month === 9 && day < RESUME_DAY);
 }
 
-/** Sept 1, midnight Vancouver (PDT, UTC-7), as a Unix timestamp. */
-export function septemberFirst(d = new Date()) {
+/** Sept 5, midnight Vancouver (PDT, UTC-7), as a Unix timestamp: when paused plans bill again. */
+export function summerResume(d = new Date()) {
   const { year } = localDate(d);
-  return Math.floor(Date.UTC(year, 8, 1, 7, 0, 0) / 1000);
+  return Math.floor(Date.UTC(year, 8, RESUME_DAY, 7, 0, 0) / 1000);
 }
 
 // ─── Stripe subscription → our row ───────────────────────────────────────────
@@ -155,9 +158,9 @@ export function rowFromSubscription(sub) {
   };
 }
 
-/** Pause a monthly plan for summer (no charges until Sept 1), or lift the pause. */
+/** Pause a monthly plan for summer (no charges until Sept 5), or lift the pause. */
 export async function setSummerPause(subscriptionId, pause, now = new Date()) {
   return stripe('POST', `subscriptions/${subscriptionId}`, pause
-    ? { pause_collection: { behavior: 'void', resumes_at: septemberFirst(now) } }
+    ? { pause_collection: { behavior: 'void', resumes_at: summerResume(now) } }
     : { pause_collection: '' });
 }

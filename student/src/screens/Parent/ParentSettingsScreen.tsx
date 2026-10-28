@@ -25,7 +25,7 @@ function planLine(p: ReturnType<typeof useParentPlan>): string {
       return d > 0 ? `Free trial · ${d} day${d === 1 ? '' : 's'} left` : 'Your free week is over.';
     }
     case 'active': return `${name} · renews ${date(plan.currentPeriodEnd)}`;
-    case 'paused': return `${name} · paused for summer, restarts ${date(plan.pausedUntil) || 'Sept 1'}`;
+    case 'paused': return `${name} · paused for summer, restarts ${date(plan.pausedUntil) || 'Sept 5'}`;
     case 'past_due': return `${name} · payment didn’t go through`;
     case 'canceled': return plan.currentPeriodEnd && new Date(plan.currentPeriodEnd) > new Date() ? `Cancelled · works until ${date(plan.currentPeriodEnd)}` : 'Cancelled';
   }
@@ -139,7 +139,7 @@ export default function ParentSettingsScreen({ navigation }: any) {
                 <View style={{ flex: 1, gap: 4 }}>
                   <Text style={[styles.planLine, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>Keep it on over summer</Text>
                   <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.soft }]}>
-                    Off: no charges July and August, it starts again Sept 1. Turn on for summer camps, jobs or summer school.
+                    Off: no charges July 1 to Sept 4, it starts again Sept 5. Turn on for summer camps, jobs or summer school.
                   </Text>
                 </View>
                 <Switch value={p.summerKeep} onValueChange={toggleSummer} disabled={planBusy} accessibilityLabel="Keep the plan on over summer" />
