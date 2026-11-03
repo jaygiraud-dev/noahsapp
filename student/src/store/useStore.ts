@@ -8,7 +8,7 @@ import {
   deleteHomeworkRow, deleteEventRow, logActivity, getParentPushTokens, sendExpoPush,
   addFriendByCode as rpcAddFriend, AddFriendResult, removeFriendRow, getFriends,
   getMyParents, uploadHomeworkPhoto, signPhotoPaths, deletePhotoPaths,
-  fetchUnseenNudges, markNudgeSeen,
+  fetchUnseenNudges, markNudgeSeen, uploadBackground, listBackgrounds,
   Message, fetchInbox, fetchConversation, sendMessage, markMessagesRead, deleteMessage,
   uploadChatPhoto, signChatPhotos, deleteChatPhoto,
 } from '../lib/db';
@@ -40,6 +40,9 @@ interface AppState {
   vibe: Vibe;
   darkMode: boolean;
   bgImageUri: string;
+  /** Where the background is saved in the account ('' = only on this device) */
+  bgPath: string;
+  syncBackground: () => Promise<void>;
   avatar: string;
   reward: { points: number; streak: number } | null;
   userId: string;
@@ -322,6 +325,7 @@ export const useStore = create<AppState>()(
   vibe: 'twilight',
   darkMode: true,
   bgImageUri: '',
+  bgPath: '',
   avatar: '',
   reward: null,
   userId: '',
@@ -368,6 +372,7 @@ export const useStore = create<AppState>()(
     parents: [],
     avatar: '',
     bgImageUri: '',
+    bgPath: '',
     onboarded: false,
     nudges: [],
     unsynced: [],
@@ -573,7 +578,41 @@ export const useStore = create<AppState>()(
     ...(vibe === 'paper' || vibe === 'twilight' || vibe === 'mono' ? { darkMode: true } : {}),
   }),
   setDarkMode: (darkMode) => set({ darkMode }),
-  setBgImageUri: (bgImageUri) => set({ bgImageUri }),
+  // Shows right away on this device, then saved to the account so it follows the
+  // student to the Home Screen app and other devices
+  setBgImageUri: (bgImageUri) => {
+    const { userId, bgPath: old } = get();
+    set({ bgImageUri });
+    if (!userId) return;
+    if (!bgImageUri) {
+      set({ bgPath: '' });
+      listBackgrounds(userId).then((paths) => { if (paths?.length) deletePhotoPaths(paths); }).catch(() => {});
+      return;
+    }
+    uploadBackground(userId, bgImageUri).then((path) => {
+      if (!path || get().bgImageUri !== bgImageUri) return;
+      set({ bgPath: path });
+      if (old && old !== path) deletePhotoPaths([old]).catch(() => {});
+    });
+  },
+
+  syncBackground: async () => {
+    const { userId, bgPath, bgImageUri } = get();
+    if (!userId) return;
+    const paths = await listBackgrounds(userId);
+    if (paths === null) return; // offline: keep what's here
+    const newest = paths[0];
+    if (!newest) {
+      // Removed on another device (or never saved there): a background only on this device gets uploaded
+      if (bgPath) set({ bgImageUri: '', bgPath: '' });
+      else if (bgImageUri.startsWith('data:')) get().setBgImageUri(bgImageUri);
+      return;
+    }
+    // Keep the on-device copy when it's the same picture; otherwise fetch the account's
+    if (newest === bgPath && bgImageUri.startsWith('data:')) return;
+    const urls = await signPhotoPaths([newest]);
+    if (urls[newest]) set({ bgImageUri: urls[newest], bgPath: newest });
+  },
   clearReward: () => set({ reward: null }),
 
   loadFriends: async () => {
@@ -668,6 +707,7 @@ export const useStore = create<AppState>()(
     get().loadParents();
     get().checkNudges();
     get().loadInbox();
+    get().syncBackground().catch(() => {});
   },
 
   retrySync: async () => {
@@ -836,7 +876,9 @@ export const useStore = create<AppState>()(
         parents: state.parents,
         vibe: state.vibe,
         darkMode: state.darkMode,
-        bgImageUri: state.bgImageUri,
+        // A background too big for browser storage would stop everything else saving
+        bgImageUri: state.bgImageUri.length < 1500000 ? state.bgImageUri : '',
+        bgPath: state.bgPath,
         avatar: state.avatar,
         userId: state.userId,
         userRole: state.userRole,

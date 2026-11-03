@@ -484,6 +484,27 @@ export async function signPhotoPaths(paths: string[]): Promise<Record<string, st
   return out;
 }
 
+/** Background photo lives in the student's private folder: <uid>/background/<time>.jpg */
+export async function uploadBackground(userId: string, uri: string): Promise<string | null> {
+  try {
+    const path = `${userId}/background/${Date.now()}.jpg`;
+    const blob = await uriToBlob(uri);
+    const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+    if (error) { console.warn('[db] uploadBackground:', error.message); return null; }
+    return path;
+  } catch (e: any) {
+    console.warn('[db] uploadBackground:', e?.message);
+    return null;
+  }
+}
+
+/** Every saved background, newest first (normally just one). */
+export async function listBackgrounds(userId: string): Promise<string[] | null> {
+  const { data, error } = await supabase.storage.from(BUCKET).list(`${userId}/background`, { limit: 20, sortBy: { column: 'name', order: 'desc' } });
+  if (error) { console.warn('[db] listBackgrounds:', error.message); return null; }
+  return (data ?? []).filter((f: any) => f.name && f.name.endsWith('.jpg')).map((f: any) => `${userId}/background/${f.name}`);
+}
+
 export async function deletePhotoPaths(paths: string[]): Promise<void> {
   if (paths.length === 0) return;
   const { error } = await supabase.storage.from(BUCKET).remove(paths);
