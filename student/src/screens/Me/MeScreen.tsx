@@ -11,6 +11,7 @@ import { makeTheme, Vibe } from '../../theme';
 import MicroLabel from '../../components/MicroLabel';
 import { supabase } from '../../lib/supabase';
 import { pickImage } from '../../lib/images';
+import LegalLinks from '../../components/LegalLinks';
 import { effectiveStreak } from '../../lib/time';
 
 const VIBES: { id: Vibe; label: string; emoji: string; bg: string; card: string; dots: string[]; textColor: string }[] = [
@@ -329,6 +330,7 @@ export default function MeScreen() {
           </View>
         </View>
 
+        <LegalLinks color={theme.soft} linkColor={theme.sub} font={theme.fBody} style={{ marginTop: 4 }} />
         <TouchableOpacity style={[styles.signOut, { borderColor: theme.red + '55' }]} onPress={handleSignOut}>
           <Text style={[styles.signOutText, { fontFamily: theme.fMono, color: theme.red }]}>{isDemo ? 'LEAVE DEMO' : 'SIGN OUT'}</Text>
         </TouchableOpacity>

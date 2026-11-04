@@ -8,6 +8,7 @@ import { deleteParentLink } from '../../lib/db';
 import { useParentData } from '../../lib/parentData';
 import { confirmAction } from '../../lib/confirm';
 import MicroLabel from '../../components/MicroLabel';
+import LegalLinks from '../../components/LegalLinks';
 import PlanPicker from './PlanPicker';
 import {
   useParentPlan, trialDaysLeft, openBillingPortal, setSummerKeep, billingErrorText, PRICES,
@@ -191,6 +192,7 @@ export default function ParentSettingsScreen({ navigation }: any) {
           </View>
         </View>
 
+        <LegalLinks color={theme.soft} linkColor={theme.sub} font={theme.fBody} />
         <TouchableOpacity style={[styles.signOut, { borderColor: theme.red + '55' }]} onPress={signOut}>
           <Text style={[styles.signOutText, { fontFamily: theme.fMono, color: theme.red }]}>{isDemo ? 'LEAVE DEMO' : 'SIGN OUT'}</Text>
         </TouchableOpacity>

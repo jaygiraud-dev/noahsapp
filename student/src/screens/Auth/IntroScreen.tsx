@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../../store/useStore';
+import LegalLinks from '../../components/LegalLinks';
 
 // The intro always uses the app's default look, whatever vibe is saved later.
 const C = {
@@ -404,6 +405,7 @@ export default function IntroScreen({ navigation }: any) {
               <Text style={s.loginLink}>Log in</Text>
             </TouchableOpacity>
           </View>
+          <LegalLinks agree color={C.soft} linkColor="rgba(245,240,235,0.8)" font={F.body} />
         </View>
       </SafeAreaView>
     );

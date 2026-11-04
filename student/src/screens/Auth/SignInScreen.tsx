@@ -18,6 +18,7 @@ import { supabase, authRedirectUrl } from '../../lib/supabase';
 import { enterApp } from '../../lib/session';
 import PrimaryBtn from '../../components/PrimaryBtn';
 import MicroLabel from '../../components/MicroLabel';
+import LegalLinks from '../../components/LegalLinks';
 
 type AccountType = 'student' | 'parent';
 type Mode = 'signin' | 'signup';
@@ -267,6 +268,7 @@ export default function SignInScreen({ navigation, route }: any) {
                 loading={loading}
                 style={styles.btn}
               />
+              {mode === 'signup' && <LegalLinks agree color={theme.soft} linkColor={theme.sub} font={theme.fBody} />}
 
               <TouchableOpacity onPress={switchMode} style={styles.switchWrap}>
                 <Text style={[styles.switch, { fontFamily: theme.fBody, color: theme.soft }]}>
