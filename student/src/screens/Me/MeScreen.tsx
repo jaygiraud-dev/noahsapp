@@ -62,10 +62,22 @@ export default function MeScreen() {
     } finally { setPhotoBusy(false); }
   }
 
+  const [bgPickError, setBgPickError] = useState('');
   async function changeBackground() {
-    const img = await pickImage({ maxSize: 1400, quality: 0.6 });
-    if (img) s.setBgImageUri(img.uri);
+    setBgPickError('');
+    try {
+      const img = await pickImage({ maxSize: 1400, quality: 0.6 });
+      if (img) s.setBgImageUri(img.uri);
+    } catch (e: any) {
+      setBgPickError(`Couldn’t open that photo (${e?.message || 'unknown error'}). Try another one.`);
+    }
   }
+  const bgStatus = bgPickError
+    ? { text: bgPickError, color: theme.red }
+    : s.bgSave.state === 'saving' ? { text: 'Saving…', color: theme.soft }
+    : s.bgSave.state === 'saved' ? { text: '✓ Saved', color: theme.mint }
+    : s.bgSave.state === 'error' ? { text: s.bgSave.message, color: theme.red }
+    : null;
 
   async function handleSavePassword() {
     setPasswordError('');
@@ -304,6 +316,7 @@ export default function MeScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.settingLabel, { fontFamily: theme.fBody, color: theme.ink }]}>Background photo</Text>
               <Text style={[styles.settingHint, { fontFamily: theme.fMono, color: theme.soft }]}>{s.bgImageUri ? 'Shows behind Home, Week and Squad' : 'None'}</Text>
+              {bgStatus && <Text style={[styles.settingHint, { fontFamily: theme.fBody, color: bgStatus.color, marginTop: 4 }]} accessibilityLiveRegion="polite">{bgStatus.text}</Text>}
             </View>
             {s.bgImageUri !== '' && (
               <TouchableOpacity style={[styles.smallBtn, { borderColor: theme.line, borderWidth: 1 }]} onPress={() => s.setBgImageUri('')}>

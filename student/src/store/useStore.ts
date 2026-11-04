@@ -42,6 +42,8 @@ interface AppState {
   bgImageUri: string;
   /** Where the background is saved in the account ('' = only on this device) */
   bgPath: string;
+  /** How the last background change went (not persisted) */
+  bgSave: { state: 'idle' | 'saving' | 'saved' | 'error'; message: string };
   syncBackground: () => Promise<void>;
   avatar: string;
   reward: { points: number; streak: number } | null;
@@ -143,6 +145,20 @@ function mergeMessages(have: ChatMessage[], incoming: Message[], replaceFor?: (m
   for (const m of have) if (!replaceFor || m.pending || !replaceFor(m)) byId.set(m.id, m);
   for (const m of incoming) byId.set(m.id, m);
   return [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+/** Web only: confirm the browser really kept the background (it fails silently when full). */
+function checkSavedOnDevice(uri: string) {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  setTimeout(() => {
+    try {
+      const st = JSON.parse(window.localStorage.getItem('my-agenda-store') || '{}').state;
+      if (st?.bgImageUri === uri) useStore.setState({ bgSave: { state: 'saved', message: '' } });
+      else useStore.setState({ bgSave: { state: 'error', message: 'This phone couldn’t store the photo. Try a different one, or sign in so it’s saved to your account.' } });
+    } catch {
+      useStore.setState({ bgSave: { state: 'error', message: 'This phone couldn’t store the photo.' } });
+    }
+  }, 1500);
 }
 
 export function unreadFrom(messages: ChatMessage[], me: string, friendId?: string): number {
@@ -326,6 +342,7 @@ export const useStore = create<AppState>()(
   darkMode: true,
   bgImageUri: '',
   bgPath: '',
+  bgSave: { state: 'idle', message: '' },
   avatar: '',
   reward: null,
   userId: '',
@@ -582,17 +599,21 @@ export const useStore = create<AppState>()(
   // student to the Home Screen app and other devices
   setBgImageUri: (bgImageUri) => {
     const { userId, bgPath: old } = get();
-    set({ bgImageUri });
-    if (!userId) return;
+    set({ bgImageUri, bgSave: { state: bgImageUri ? 'saving' : 'idle', message: '' } });
+    if (!userId) { if (bgImageUri) checkSavedOnDevice(bgImageUri); return; }
     if (!bgImageUri) {
       set({ bgPath: '' });
       listBackgrounds(userId).then((paths) => { if (paths?.length) deletePhotoPaths(paths); }).catch(() => {});
       return;
     }
-    uploadBackground(userId, bgImageUri).then((path) => {
-      if (!path || get().bgImageUri !== bgImageUri) return;
-      set({ bgPath: path });
-      if (old && old !== path) deletePhotoPaths([old]).catch(() => {});
+    uploadBackground(userId, bgImageUri).then((res) => {
+      if (get().bgImageUri !== bgImageUri) return;
+      if ('error' in res) {
+        set({ bgSave: { state: 'error', message: `Couldn’t save it to your account (${res.error}). It may disappear when you reopen the app.` } });
+        return;
+      }
+      set({ bgPath: res.path, bgSave: { state: 'saved', message: '' } });
+      if (old && old !== res.path) deletePhotoPaths([old]).catch(() => {});
     });
   },
 

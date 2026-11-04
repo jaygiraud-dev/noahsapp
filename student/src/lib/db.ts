@@ -485,16 +485,16 @@ export async function signPhotoPaths(paths: string[]): Promise<Record<string, st
 }
 
 /** Background photo lives in the student's private folder: <uid>/background/<time>.jpg */
-export async function uploadBackground(userId: string, uri: string): Promise<string | null> {
+export async function uploadBackground(userId: string, uri: string): Promise<{ path: string } | { error: string }> {
   try {
     const path = `${userId}/background/${Date.now()}.jpg`;
     const blob = await uriToBlob(uri);
     const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
-    if (error) { console.warn('[db] uploadBackground:', error.message); return null; }
-    return path;
+    if (error) { console.warn('[db] uploadBackground:', error.message); return { error: error.message }; }
+    return { path };
   } catch (e: any) {
     console.warn('[db] uploadBackground:', e?.message);
-    return null;
+    return { error: e?.message || 'upload failed' };
   }
 }
 
