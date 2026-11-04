@@ -16,6 +16,7 @@ import { dateKey } from '../lib/time';
 import { reminderTime, scheduleReminder, scheduleWeeklyReminder, cancelReminder } from '../lib/classNotifications';
 import { nextOccurrence, repeatLabel } from '../lib/events';
 import { defaultPeriods } from '../lib/timetable';
+import { pingParents } from '../lib/webPush';
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -464,7 +465,8 @@ export const useStore = create<AppState>()(
     pushHw(updated);
     get().syncProfileState();
     if (newDone) {
-      logActivity(userId, 'hw_done', `Finished ${hw.title}`, hw.subject, hw.classColor).catch(() => {});
+      // Logged first: the parents' notification is built from this record
+      logActivity(userId, 'hw_done', `Finished ${hw.title}`, hw.subject, hw.classColor).then(pingParents).catch(() => {});
       notifyParents('✓ Homework done', `${get().displayName}: ${hw.subject ? hw.subject + ' — ' : ''}${hw.title}`);
       const s = get().streak;
       if (s > oldStreak && STREAK_MILESTONES.includes(s)) {

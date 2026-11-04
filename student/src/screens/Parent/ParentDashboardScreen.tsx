@@ -20,6 +20,8 @@ import Avatar from '../../components/Avatar';
 import NudgeSheet from './NudgeSheet';
 import { PlanBanners, Paywall } from './PlanBanners';
 import { useParentPlan, hasAccess } from '../../lib/billing';
+import NotifyCard from './NotifyCard';
+import { markParentSeen } from '../../lib/webPush';
 
 type Theme = ReturnType<typeof makeTheme>;
 
@@ -205,6 +207,14 @@ export default function ParentDashboardScreen({ navigation }: any) {
 
   useEffect(() => { load(); }, [userId]);
   useEffect(() => navigation.addListener('focus', () => plan.reload()), [navigation, plan.reload]);
+  // Opening the dashboard clears the red number on the app icon
+  useEffect(() => {
+    if (isDemo) return;
+    markParentSeen();
+    const onVisible = () => { if (document.visibilityState === 'visible') markParentSeen(); };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisible);
+    return () => { if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible); };
+  }, [isDemo]);
   useEffect(() => navigation.addListener('focus', () => { if (loaded) load(); }), [navigation, loaded]);
 
   // Live updates while the dashboard is open, plus a slow poll as a backup
@@ -274,6 +284,7 @@ export default function ParentDashboardScreen({ navigation }: any) {
                 </Text>
               </View>
             )}
+            {!isDemo && kids.length > 0 && <NotifyCard theme={theme} kidName={kids.length === 1 ? kids[0].name : ''} />}
             {kids.map((k) => (
               <KidCard
                 key={k.id}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../../store/useStore';
@@ -9,6 +9,13 @@ import { useParentData } from '../../lib/parentData';
 import { confirmAction } from '../../lib/confirm';
 import MicroLabel from '../../components/MicroLabel';
 import LegalLinks from '../../components/LegalLinks';
+import { getPushStatus, enablePush, getNotifyMode, setNotifyMode, NotifyMode, PushStatus } from '../../lib/webPush';
+
+const NOTIFY_OPTIONS: Array<{ id: NotifyMode; label: string; hint: string }> = [
+  { id: 'each', label: 'Every finished task', hint: 'A notification each time, and the red number on the app icon' },
+  { id: 'daily', label: 'Daily summary', hint: 'One notification around 6:30 PM with what got done' },
+  { id: 'off', label: 'Off', hint: 'No notifications' },
+];
 import PlanPicker from './PlanPicker';
 import {
   useParentPlan, trialDaysLeft, openBillingPortal, setSummerKeep, billingErrorText, PRICES,
@@ -52,6 +59,25 @@ export default function ParentSettingsScreen({ navigation }: any) {
   const [planBusy, setPlanBusy] = useState(false);
   const [planMsg, setPlanMsg] = useState('');
   const [showPlans, setShowPlans] = useState(false);
+  const [notifyMode, setNotifyModeState] = useState<NotifyMode>('each');
+  const [pushStatus, setPushStatus] = useState<PushStatus | null>(null);
+  const [pushMsg, setPushMsg] = useState('');
+  useEffect(() => {
+    if (isDemo) return;
+    getNotifyMode(store.userId).then(setNotifyModeState);
+    getPushStatus().then(setPushStatus);
+  }, [isDemo, store.userId]);
+
+  async function chooseNotify(mode: NotifyMode) {
+    const prev = notifyMode;
+    setNotifyModeState(mode); setPushMsg('');
+    if (!(await setNotifyMode(mode))) { setNotifyModeState(prev); setPushMsg('Couldn’t save that. Try again.'); return; }
+    if (mode !== 'off' && pushStatus === 'off') {
+      const r = await enablePush();
+      if (!r.ok) setPushMsg(r.error === 'denied' ? 'Notifications are off for this app in your phone’s Settings.' : r.error === 'not_configured' ? 'Notifications aren’t switched on for the app yet.' : 'Couldn’t turn on notifications on this phone.');
+      getPushStatus().then(setPushStatus);
+    }
+  }
   const p = plan.plan;
   const canManage = !!p?.hasStripe;
 
@@ -151,6 +177,38 @@ export default function ParentSettingsScreen({ navigation }: any) {
           </View>
         )}
 
+        {!isDemo && (
+          <View style={styles.section}>
+            <MicroLabel>Notifications</MicroLabel>
+            {NOTIFY_OPTIONS.map((o) => {
+              const on = notifyMode === o.id;
+              return (
+                <TouchableOpacity key={o.id} onPress={() => chooseNotify(o.id)} accessibilityRole="radio" accessibilityState={{ selected: on }}
+                  style={[styles.notifyRow, { backgroundColor: theme.surface, borderColor: on ? theme.accent : 'transparent' }]}>
+                  <View style={[styles.radio, { borderColor: on ? theme.accent : theme.soft }]}>{on && <View style={[styles.radioDot, { backgroundColor: theme.accent }]} />}</View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.planLine, { fontFamily: theme.fBodyMedium, color: theme.ink }]}>{o.label}</Text>
+                    <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.soft, fontSize: 14 }]}>{o.hint}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+            {notifyMode !== 'off' && pushStatus === 'needs_home_screen' && (
+              <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.amber }]}>To get these on this phone, save my agenda to your Home Screen (Share → Add to Home Screen) and open it from there.</Text>
+            )}
+            {notifyMode !== 'off' && pushStatus === 'blocked' && (
+              <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.amber }]}>Notifications are blocked for this app. Turn them on in your phone’s Settings → Notifications → my agenda.</Text>
+            )}
+            {notifyMode !== 'off' && pushStatus === 'off' && (
+              <TouchableOpacity style={[styles.btnWide, { backgroundColor: theme.accent }]} onPress={() => chooseNotify(notifyMode)} accessibilityRole="button">
+                <Text style={[styles.btnText, { fontFamily: theme.fMono }]}>Turn on for this phone</Text>
+              </TouchableOpacity>
+            )}
+            {pushStatus === 'on' && notifyMode !== 'off' && <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.mint }]}>✓ On for this phone</Text>}
+            {pushMsg !== '' && <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.red }]}>{pushMsg}</Text>}
+          </View>
+        )}
+
         <View style={styles.section}>
           <MicroLabel>Linked kids</MicroLabel>
           {kids.length === 0 && <Text style={[styles.hint, { fontFamily: theme.fBody, color: theme.soft }]}>No kids linked yet.</Text>}
@@ -213,6 +271,9 @@ const styles = StyleSheet.create({
   btnWide: { borderRadius: 14, paddingVertical: 12, alignItems: 'center' },
   btnText: { color: '#fff', fontSize: 15 },
   hint: { fontSize: 15, lineHeight: 21 },
+  notifyRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, borderWidth: 1.5, padding: 14 },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
+  radioDot: { width: 10, height: 10, borderRadius: 5 },
   planCard: { borderRadius: 16, padding: 14, gap: 10 },
   planLine: { fontSize: 16, lineHeight: 22 },
   summerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

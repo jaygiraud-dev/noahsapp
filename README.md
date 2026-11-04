@@ -48,6 +48,14 @@ The original design handoff follows further down.
       then switch Stripe to live mode and replace the keys, price IDs and webhook secret with the live ones.
    8. **Free accounts.** Emails on `public.free_accounts` never pay (the creators are already on it).
       Add someone: `insert into public.free_accounts (email, note) values ('name@example.com', 'Friend');`
+7. **Parent notifications + red number on the app icon.** When a kid finishes homework, parents get a
+   notification and a red number on the Home Screen app icon (homework finished since they last opened it).
+   Parents choose Every finished task / Daily summary (~6:30 PM) / Off in Settings. iPhone needs iOS 16.4+
+   and the app saved to the Home Screen.
+   1. Run `supabase_notifications.sql` in Supabase (or re-run all of `supabase_schema.sql`).
+   2. Make a key pair once: `npx web-push generate-vapid-keys`, and add to Netlify's environment variables
+      `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `SUPABASE_SERVICE_ROLE_KEY` (if not already added for payments).
+      Optional: `VAPID_SUBJECT` = `mailto:` your contact email. Redeploy from GitHub (a dragged-in zip has no functions).
 
 ## Trying the full flow
 
