@@ -13,3 +13,4 @@ parent/web-build/
 *.log
 .env
 .env.local
+.netlify
