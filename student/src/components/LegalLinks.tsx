@@ -5,7 +5,9 @@ const SITE = 'https://xaziss.netlify.app';
 
 export function openLegal(page: 'privacy' | 'terms') {
   const path = `/${page}.html`;
-  if (Platform.OS === 'web' && typeof window !== 'undefined') window.open(path, '_blank', 'noopener');
+  // Same window: in the Home Screen app a new window opens a separate browser,
+  // where "Back to my agenda" would start a second copy of the app
+  if (Platform.OS === 'web' && typeof window !== 'undefined') window.location.assign(path);
   else Linking.openURL(`${SITE}${path}`);
 }
 
